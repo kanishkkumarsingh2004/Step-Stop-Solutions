@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
+    <!-- Dashboard Header -->
+    <div class="text-center mb-2 sm:mb-3">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 animate-fade-in">
+            <span class="text-gray-800">Dashboard</span>
+        </h1>
+    </div>
+
+    <!-- Header Section -->
+    <div class="mb-4 md:mb-8 bg-gradient-to-r from-blue-50 to-green-50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 text-left">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 animate-fade-in">
+            <div class="text-blue-600 block mb-2">
+                <span class="font-medium text-gray-500">Library's Name:</span> 
+                {{ library.venue_name }}
+            </div>
+            <div class="text-green-600 block">
+                <span class="font-medium text-gray-500">Owner's Name:</span> 
+                {{ library.first_name }}
+            </div>
+        </h1>
+        <p class="text-sm sm:text-base text-gray-600 leading-relaxed flex items-center">
+            <i class="bi bi-gear-fill text-blue-500 mr-2 animate-spin-slow"></i>
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600">
+                Manage your library operations efficiently
+            </span>
+        </p>
+    </div>
+    <!-- Navigation Buttons -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-4 md:mb-8">
+        <a href="{% url 'manage_users' library.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
+            <i class="bi bi-people-fill text-sm sm:text-lg"></i>
+            <span>Manage Users</span>
+        </a>
+        <a href="{% url 'nfc_add_user_page' library.id %}" class="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
+            <i class="bi bi-nfc text-sm sm:text-lg"></i>
+            <span>Add User via NFC</span>
+        </a>
+        <a href="{% url 'attendance_page' library.id %}" class="bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
+            <i class="bi bi-clipboard-data text-sm sm:text-lg"></i>
+            <span>Attendance</span>
+        </a>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <!-- Vender Details Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="bi bi-shop text-orange-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Vender Details</h2>
+                </div>
+                <a href="{% url 'edit_library_profile' library.id %}" class="text-sm sm:text-base text-blue-600 hover:text-blue-700 flex items-center space-x-1">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Edit</span>
+                </a>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Capacity</span>
+                    <span class="font-semibold text-blue-600 text-sm sm:text-base md:text-lg">{{ library.capacity }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Email</span>
+                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ library.email|slice:":35" }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Mobile</span>
+                    <span class="font-semibold text-purple-600 text-sm sm:text-base md:text-lg">{{ library.mobile_number }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Address</span>
+                    <span class="font-semibold text-indigo-600 text-sm sm:text-base md:text-lg">{{ library.venue_location|slice:":35" }}...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-bar-chart-line-fill text-green-500 text-lg sm:text-xl"></i>
+                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Statistics</h2>
+            </div>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <span class="text-xs sm:text-sm text-gray-600">Total Users Joined</span>
+                    <span class="font-semibold text-blue-600 text-base sm:text-lg">{{ user_count }}</span>
+                </div>
+                <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <span class="text-xs sm:text-sm text-gray-600">Active Subscriptions</span>
+                    <span class="font-semibold text-green-600 text-base sm:text-lg">{{ active_subscriptions_count }}</span>
+                </div>
+                <a href="{% url 'expense_dashboard' library.id %}" class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <span class="text-xs sm:text-sm text-gray-600">View Expenses</span>
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-currency-rupee text-green-600" viewBox="0 0 16 16">
+                            <path d="M4 3.06h2.726c1.22 0 2.12.575 2.325 1.724H4v1.051h5.051C8.855 7.001 8 7.558 6.788 7.558H4v1.317L8.437 14h2.11L6.095 8.884h.855c2.316-.018 3.465-1.476 3.688-3.049H12V4.784h-1.345c-.08-.778-.357-1.335-.793-1.732H12V2H4v1.06z"/>
+                        </svg>
+                        <i class="bi bi-chevron-right text-green-600"></i>
+                    </div>
+                </a>
+                <a href="{% url 'expense_chart' library.id %}" class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <span class="text-xs sm:text-sm text-gray-600">Visualize Charts</span>
+                    <div class="flex items-center space-x-2">
+                        <i class="bi bi-bar-chart text-purple-600 fs-5"></i>
+                        <i class="bi bi-chevron-right text-purple-600"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Quick Actions Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-lightning-fill text-yellow-500 text-lg sm:text-xl"></i>
+                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Quick Actions</h2>
+            </div>
+            <div class="space-y-2">
+                <a href="{% url 'verify_payments' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Verify Payments</span>
+                    <i class="bi bi-check-circle text-gray-500 text-sm sm:text-base"></i>
+                </a>
+                <a href="{% url 'all_attendance' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>View all Attendance</span>
+                    <i class="bi bi-check-circle text-gray-500 text-sm sm:text-base"></i>
+                </a>
+
+                <a href="{% url 'library_staff_management' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Staff management</span>
+                    <i class="bi bi-check-circle text-gray-500 text-sm sm:text-base"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Subscription Plans Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-credit-card-fill text-purple-500 text-lg sm:text-xl"></i>
+                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Subscription Plans</h2>
+            </div>
+            <div class="space-y-2">
+                <a href="{% url 'create_subscription' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Add New Subscription Plan</span>
+                    <i class="bi bi-plus-lg text-gray-500 text-sm sm:text-base"></i>
+                </a>
+                <a href="{% url 'subscription_page' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>View Existing Plans</span>
+                    <i class="bi bi-eye text-gray-500 text-sm sm:text-base"></i>
+                </a>
+                <a href="{% url 'manage_subscriptions' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Edit Existing Plans</span>
+                    <i class="bi bi-pencil-square text-gray-500 text-sm sm:text-base"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Add this card next to the Subscription Plans card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-tag-fill text-green-500 text-lg sm:text-xl"></i>
+                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Coupons</h2>
+            </div>
+            
+            <div class="space-y-2">
+                <a href="{% url 'manage_coupons' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Manage Coupons</span>
+                    <i class="bi bi-gear-fill text-gray-500 text-sm sm:text-base"></i>
+                </a>
+                <a href="{% url 'create_coupon' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Add Coupons</span>
+                    <i class="bi bi-plus-circle-fill text-gray-500 text-sm sm:text-base"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

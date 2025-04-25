@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:shadow-3xl">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-200">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                    {{ library.venue_name }} Details
+                </h1>
+                <div class="flex items-center space-x-4">
+                    <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm
+                        {% if library.business_type == 'Library' %}bg-blue-100 text-blue-800
+                        {% else %}bg-green-100 text-green-800{% endif %}">
+                        {{ library.business_type }}
+                    </span>
+                    <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm
+                        {% if library.is_approved %}bg-green-100 text-green-800
+                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        {% if library.is_approved %}Approved{% else %}Pending Approval{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="p-6 sm:p-10 space-y-8 sm:space-y-10">
+            <!-- Library Information Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Owner Information Card -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">👤 Owner Information</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Full Name</p>
+                                <p class="text-gray-800 font-medium">{{ library.owner.get_full_name }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Contact</p>
+                                <p class="text-gray-800 font-medium">{{ library.mobile_number }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Email</p>
+                            <p class="text-gray-800 font-medium">{{ library.email }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Venue Information Card -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">🏢 Venue Details</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Location</p>
+                                <p class="text-gray-800 font-medium">{{ library.venue_location }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Capacity</p>
+                                <p class="text-gray-800 font-medium">{{ library.capacity }} people</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Address</p>
+                            <p class="text-gray-800 font-medium">{{ library.address }}</p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">City</p>
+                                <p class="text-gray-800 font-medium">{{ library.city }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">State</p>
+                                <p class="text-gray-800 font-medium">{{ library.state }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Pincode</p>
+                                <p class="text-gray-800 font-medium">{{ library.pincode }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operations Card -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">⏰ Operations</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Business Hours</p>
+                            <p class="text-gray-800 font-medium">{{ library.business_hours }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Description</p>
+                            <p class="text-gray-800 font-medium">{{ library.description }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services Card -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">✨ Services</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Equipment</p>
+                            <p class="text-gray-800 font-medium">{{ library.equipment_available }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Additional Services</p>
+                            <p class="text-gray-800 font-medium">{{ library.additional_services }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Social Media</p>
+                            <p class="text-gray-800 font-medium">{{ library.social_media_links }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval Section -->
+            <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">📝 Library Status</h2>
+                <form method="post" action="{% url 'toggle_library_approval' library.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 text-base sm:text-lg font-semibold shadow-md hover:shadow-lg">
+                        {% if library.is_approved %}Revoke Approval{% else %}Approve Library{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

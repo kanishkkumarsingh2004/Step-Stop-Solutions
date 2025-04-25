@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-12">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Edit Library Profile</h1>
+
+        <!-- Error Messages -->
+        {% if form.errors %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-8" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">Please correct the following errors:</span>
+            <ul class="mt-2 list-disc list-inside">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- First Name (Read-only) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                    <input type="text" name="first_name" value="{{ form.first_name|default_if_none:'' }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed"
+                           readonly>
+                </div>
+
+                <!-- Last Name (Read-only) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                    <input type="text" name="last_name" value="{{ form.last_name|default_if_none:'' }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed"
+                           readonly>
+                </div>
+
+                <!-- Email (Read-only) -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" value="{{ form.email|default_if_none:'' }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed"
+                           readonly>
+                </div>
+
+                <!-- Mobile Number (Read-only) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                    <input type="text" name="mobile_number" value="{{ form.mobile_number|default_if_none:'' }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed"
+                           readonly>
+                </div>
+
+                <!-- Business Type (Read-only) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+                    <input type="text" name="business_type" value="{{ form.business_type|default_if_none:'' }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed"
+                           readonly>
+                </div>
+
+                <!-- Address -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <textarea name="address"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              rows="3" required>{{ form.address|default_if_none:'' }}</textarea>
+                </div>
+
+                <!-- Description -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              rows="3">{{ form.description|default_if_none:'' }}</textarea>
+                </div>
+
+                <!-- Venue Location -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Venue location</label>
+                    <textarea name="venue_location"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              rows="3" required>{{ form.venue_location|default_if_none:'' }}</textarea>
+                    <p class="mt-2 text-sm text-gray-500">Detailed location of the venue</p>
+                </div>
+
+                 <!-- Pincode -->
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                    <input type="text" name="pincode" value="{{ form.pincode }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           maxlength="6"
+                           required>
+                </div>
+
+                 <!-- Pincode -->
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <input type="text" name="state" value="{{ form.state }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           required>
+                </div>
+
+                 <!-- Pincode -->
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <input type="text" name="city" value="{{ form.city }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           required>
+                </div>
+
+                 <!-- Pincode -->
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">District</label>
+                    <input type="text" name="district" value="{{ form.district }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           required>
+                </div>
+
+                <!-- Venue Name -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Venue name</label>
+                    <input type="text" name="venue_name" value="{{ form.venue_name|default_if_none:'' }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           required>
+                    <p class="mt-2 text-sm text-gray-500">Name of the venue</p>
+                </div>
+
+                <!-- Social Media Links -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Social media links</label>
+                    <textarea name="social_media_links"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              rows="3">{{ form.social_media_links|default_if_none:'' }}</textarea>
+                    <p class="mt-2 text-sm text-gray-500">Comma separated list of social media links</p>
+                </div>
+
+                <!-- Business Hours and Equipment Available -->
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Business Hours -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Business hours</label>
+                            <input type="text" name="business_hours" value="{{ form.business_hours|default_if_none:'' }}"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   required>
+                            <p class="mt-2 text-sm text-gray-500">Operating hours of the business</p>
+                        </div>
+
+                        <!-- Capacity -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+                            <input type="number" name="capacity" value="{{ form.capacity|default_if_none:'' }}"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   required>
+                            <p class="mt-2 text-sm text-gray-500">Maximum capacity of the venue</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equipment Available -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Equipment available</label>
+                    <textarea name="equipment_available"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              rows="3">{{ form.equipment_available|default_if_none:'' }}</textarea>
+                    <p class="mt-2 text-sm text-gray-500">List of available equipment</p>
+                </div>
+
+                <!-- Additional Services -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Additional services</label>
+                    <textarea name="additional_services"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              rows="3">{{ form.additional_services|default_if_none:'' }}</textarea>
+                    <p class="mt-2 text-sm text-gray-500">Any additional services offered</p>
+                </div>
+
+               
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

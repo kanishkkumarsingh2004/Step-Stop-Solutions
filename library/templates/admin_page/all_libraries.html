@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">All Libraries</h1>
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm overflow-x-auto">
+        <div class="block sm:hidden">
+            <!-- Mobile View -->
+            <div class="space-y-4">
+                {% for library in libraries %}
+                <div class="p-4 border rounded-lg">
+                    <div class="space-y-2">
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Name:</span>
+                            <span class="text-sm text-gray-900">{{ library.venue_name }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Owner:</span>
+                            <span class="text-sm text-gray-900">{{ library.owner.get_full_name }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Status:</span>
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full {% if library.is_approved %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if library.is_approved %}Approved{% else %}Pending{% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            <a href="{% url 'admin_full_info_library_details' library.id %}" class="text-blue-600 hover:text-blue-900 text-sm">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="hidden sm:block">
+            <!-- Desktop View -->
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for library in libraries %}
+                    <tr>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">{{ library.venue_name }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">{{ library.owner.get_full_name }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full {% if library.is_approved %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if library.is_approved %}Approved{% else %}Pending{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">
+                            <a href="{% url 'admin_full_info_library_details' library.id %}" class="text-blue-600 hover:text-blue-900 text-xs">
+                                View Details
+                            </a>                    
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

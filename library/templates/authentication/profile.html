@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <!-- Profile Header -->
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-gray-800">User Profile</h1>
+            <p class="text-sm text-gray-600 mt-1">Viewing profile information</p>
+        </div>
+
+        <!-- Profile Form Section -->
+        <div class="px-6 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Basic Information -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.get_full_name|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.email|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.mobile_number|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Emergency Number</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.emergency_number|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <!-- Personal Information -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.get_gender_display|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.get_category_display|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.dob|date:"Y-m-d"|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.age|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <!-- Address Information -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.address|default:"Not provided"|linebreaks }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pin Code</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.pincode|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">District</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.district|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.city|default:"Not provided" }}
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">SSID</label>
+                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100">
+                        {{ user.ssid|default:"Not provided" }}
+                    </div>
+                </div>
+            </div>
+
+            {% if request.user == user %}
+            <!-- Buttons Container -->
+            <div class="mt-8 flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+                <!-- Update Profile Button -->
+                <a href="{% url 'update_profile' user.id %}" class="w-full sm:w-auto bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200 font-medium focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-center">
+                    Update Profile
+                </a>
+                <!-- Change Password Button -->
+                <a href="{% url 'password_change' %}" class="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-medium focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-center">
+                    Change Password
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 md:py-4">
+    <div class="mb-4 md:mb-6">
+        <h1 class="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-800 mb-1">All Transactions</h1>
+        <p class="text-xs xs:text-sm sm:text-base text-gray-600">Review all transactions (valid, invalid, and pending)</p>
+    </div>
+
+    <!-- Filter and Search Section -->
+    <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row items-stretch sm:items-center justify-between mb-4">
+        <!-- Filter Buttons -->
+        <div class="flex flex-row space-x-1 justify-center">
+            <a href="?status=all" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                All
+            </a>
+            <a href="?status=valid" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'valid' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Valid
+            </a>
+            <a href="?status=pending" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'pending' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Pending
+            </a>
+            <a href="?status=invalid" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'invalid' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Invalid
+            </a>
+        </div>
+
+        <!-- Search Field -->
+        <form method="get" class="w-full sm:w-56">
+            <div class="relative">
+                <input type="text" name="search" placeholder="Search transactions..." value="{{ request.GET.search }}" class="w-full px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <button type="submit" class="absolute inset-y-0 right-0 px-2 flex items-center">
+                    <i class="bi bi-search text-gray-500 text-sm"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg md:rounded-xl shadow p-2 sm:p-4 md:p-6">
+        {% if transactions %}
+        <div class="block md:hidden space-y-2">
+            {% for transaction in transactions %}
+            <div class="p-2 sm:p-3 border rounded-md">
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">User:</span>
+                        <span>{{ transaction.user.get_full_name }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Transaction ID:</span>
+                        <span>{{ transaction.transaction_id }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Subscription name:</span>
+                        <span>{{ transaction.subscription.name }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Amount:</span>
+                        <span>₹{{ transaction.amount }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Status:</span>
+                        <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="inline">
+                            {% csrf_token %}
+                            <select name="status" onchange="this.form.submit()" class="text-2xs xs:text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500">
+                                <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %}>Valid</option>
+                                <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %}>Invalid</option>
+                            </select>
+                        </form>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Date:</span>
+                        <span>{{ transaction.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription</th>
+                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.user.get_full_name }}</td>
+                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.transaction_id }}</td>
+                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.subscription.name }}</td>
+                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">₹{{ transaction.amount }}</td>
+                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">
+                            <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="inline">
+                                {% csrf_token %}
+                                <select name="status" onchange="this.form.submit()" class="text-2xs xs:text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500">
+                                    <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %}>Valid</option>
+                                    <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %}>Invalid</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-600 text-center py-2 text-xs xs:text-sm">No transactions found</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

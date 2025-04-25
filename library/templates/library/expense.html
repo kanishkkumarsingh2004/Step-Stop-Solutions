@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <h1 class="text-xl md:text-2xl font-bold mb-6">Expense Dashboard - {{ library.venue_name }}</h1>
+    
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+        <!-- Top Row -->
+        <div class="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+            <!-- Total Earnings -->
+            <div class="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="mr-2 sm:mr-3">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xs sm:text-sm md:text-lg font-semibold">Total Earnings</h3>
+                </div>
+                <p class="text-sm sm:text-lg md:text-2xl font-bold text-green-600">₹{{ total_earnings }}</p>
+            </div>
+            
+            <!-- Valid Amount -->
+            <div class="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="mr-2 sm:mr-3">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xs sm:text-sm md:text-lg font-semibold">Valid Transactions</h3>
+                </div>
+                <p class="text-sm sm:text-lg md:text-2xl font-bold text-blue-600">₹{{ valid_amount }}</p>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+            <!-- Total Expenses -->
+            <div class="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="mr-2 sm:mr-3">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xs sm:text-sm md:text-lg font-semibold">Total Expenses</h3>
+                </div>
+                <p class="text-sm sm:text-lg md:text-2xl font-bold text-orange-600">₹{{ total_expenses }}</p>
+            </div>
+            
+            <!-- Invalid Amount -->
+            <div class="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="mr-2 sm:mr-3">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xs sm:text-sm md:text-lg font-semibold">Invalid Transactions</h3>
+                </div>
+                <p class="text-sm sm:text-lg md:text-2xl font-bold text-red-600">₹{{ invalid_amount }}</p>
+            </div>
+        </div>
+
+        <!-- Total Profit -->
+        <div class="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="mr-2 sm:mr-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xs sm:text-sm md:text-lg font-semibold">Total Profit</h3>
+            </div>
+            <p class="text-sm sm:text-lg md:text-2xl font-bold text-purple-600">₹{{ total_profit }}</p>
+        </div>
+    </div>
+
+    <!-- Add this above the expense form -->
+    <div class="mb-6 bg-white p-4 rounded-lg shadow-sm">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">From Date</label>
+                <input type="date" name="from_date" value="{{ from_date }}"
+                       class="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">To Date</label>
+                <input type="date" name="to_date" value="{{ to_date }}"
+                       class="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" 
+                        class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition duration-200 text-sm">
+                    Apply Filter
+                </button>
+                {% if from_date or to_date %}
+                <a href="{% url 'expense_dashboard' library.id %}" 
+                   class="bg-gray-500 text-white px-4 py-1.5 rounded-lg hover:bg-gray-600 transition duration-200 text-sm">
+                    Clear Filter
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <!-- Expense Tracking Section -->
+    <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg md:text-xl font-bold">Expense Tracking</h2>
+            <button onclick="openExpenseModal()"
+                    class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center text-sm">
+                <svg class="w-4 h-4 mr-1 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Add Expense
+            </button>
+        </div>
+
+        <!-- Expense List -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-2 py-2 md:px-4 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
+                        <th class="px-2 py-2 md:px-4 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-2 py-2 md:px-4 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Expense Name</th>
+                        <th class="px-2 py-2 md:px-4 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Description</th>
+                        <th class="px-2 py-2 md:px-4 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Payment Mode</th>
+                        <th class="px-2 py-2 md:px-4 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th class="px-2 py-2 md:px-4 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for expense in expenses %}
+                    <tr>
+                        <td class="px-2 py-3 md:px-4 md:py-4 text-center whitespace-nowrap text-xs md:text-sm text-gray-500">{{ expense.transaction_id }}</td>
+                        <td class="px-2 py-3 md:px-4 md:py-4 text-center whitespace-nowrap text-xs md:text-sm text-gray-500">{{ expense.date|date:"M d, Y" }}</td>
+                        <td class="px-2 py-3 md:px-4 md:py-4 text-center whitespace-nowrap text-xs md:text-sm text-gray-800">{{ expense.expense_name }}</td>
+                        <td class="px-2 py-3 md:px-4 md:py-4 text-center whitespace-nowrap text-xs md:text-sm text-gray-500">{{ expense.expense_description }}</td>
+                        <td class="px-2 py-3 md:px-4 md:py-4 text-center whitespace-nowrap text-xs md:text-sm text-gray-500">{{ expense.get_payment_mode_display }}</td>
+                        <td class="px-2 py-3 md:px-4 md:py-4 text-center whitespace-nowrap text-xs md:text-sm text-red-600">₹{{ expense.amount }}</td>
+                        <td class="px-2 py-3 md:px-4 md:py-4 text-center whitespace-nowrap text-xs md:text-sm">
+                            <div class="flex justify-center space-x-2">
+                                {% if request.user == library.owner %}
+                                <a href="{% url 'edit_expense' library_id=library.id expense_id=expense.id %}" class="text-blue-600 hover:text-blue-800 focus:outline-none">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                    </svg>
+                                </a>
+                                <form action="{% url 'delete_expense' library.id expense.id %}" method="POST" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-600 hover:text-red-800" onclick="return confirm('Are you sure you want to delete this expense?')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Valid Transactions Section -->
+    <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+        <h2 class="text-lg md:text-xl font-bold mb-4">Valid Transactions</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-2 py-2 md:px-6 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-2 py-2 md:px-6 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th class="px-2 py-2 md:px-6 md:py-3 text-center text-xs font-medium text-gray-500 uppercase">Date</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for transaction in valid_transactions %}
+                    <tr>
+                        <td class="px-2 py-3 md:px-6 md:py-4 whitespace-nowrap text-center text-xs md:text-sm text-gray-800">{{ transaction.user.get_full_name }}</td>
+                        <td class="px-2 py-3 md:px-6 md:py-4 whitespace-nowrap text-center text-xs md:text-sm text-green-600">₹{{ transaction.amount }}</td>
+                        <td class="px-2 py-3 md:px-6 md:py-4 whitespace-nowrap text-center text-xs md:text-sm text-gray-500">{{ transaction.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expenseModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-semibold">Add Expense</h3>
+                <button onclick="closeExpenseModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form method="POST" action="{% url 'add_expense' library.id %}" class="p-4">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Name</label>
+                        <select name="expense_name" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">---SELECT---</option>     
+                            <option value="Wifi">Wifi</option>
+                            <option value="Water">Water</option>
+                            <option value="Chair">Chair</option>
+                            <option value="Table">Table</option>
+                            <option value="Light">Light</option>
+                            <option value="Books">Books</option>
+                            <option value="Electricity Bills">Electricity Bills</option>
+                            <option value="Rent Paid">Rent Paid</option>
+                            <option value="Stationary Items">Stationary Items</option>
+                            <option value="Legal Charges">Legal Charges</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Description</label>
+                        <textarea name="expense_description" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                        <input type="number" step="0.01" name="amount" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="date" required max="{% now 'Y-m-d' %}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Payment Mode</label>
+                        <select name="payment_mode" id="payment_mode" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="CASH">Cash</option>
+                            <option value="CARD">Card</option>
+                            <option value="UPI">UPI</option>
+                        </select>
+                    </div>
+                    <div id="transaction_id_field" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
+                        <input type="text" name="transaction_id" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-2">
+                    <button type="button" onclick="closeExpenseModal()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                        Add Expense
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openExpenseModal() {
+            document.getElementById('expenseModal').classList.remove('hidden');
+            // Reset form fields when opening modal
+            document.getElementById('payment_mode').value = 'CASH';
+            document.getElementById('transaction_id_field').classList.add('hidden');
+            document.querySelector('input[name="transaction_id"]').required = false;
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expenseModal').classList.add('hidden');
+        }
+
+        document.getElementById('payment_mode').addEventListener('change', function() {
+            const transactionIdField = document.getElementById('transaction_id_field');
+            const transactionIdInput = document.querySelector('input[name="transaction_id"]');
+            
+            if (this.value === 'CARD' || this.value === 'UPI') {
+                transactionIdField.classList.remove('hidden');
+                transactionIdInput.required = true;
+            } else {
+                transactionIdField.classList.add('hidden');
+                transactionIdInput.required = false;
+                transactionIdInput.value = ''; // Clear the input when hidden
+            }
+        });
+    </script>
+{% endblock %}

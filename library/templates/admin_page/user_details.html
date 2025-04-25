@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">User Profile Details</h1>
+        <a href="{% url 'all_users' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+            <i class="bi bi-arrow-left-short mr-2"></i>
+            Back to User List
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <!-- Personal Information Section -->
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800">Personal Information</h2>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Full Name</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.get_full_name }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Email Address</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.email }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Mobile Number</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.mobile_number }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Emergency Contact</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.emergency_number }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Gender</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.get_gender_display }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">User Category</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.get_category_display }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Information Section -->
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800">Address Information</h2>
+            <div class="mt-4 space-y-1">
+                <label class="block text-sm font-medium text-gray-500">Residential Address</label>
+                <p class="text-base font-medium text-gray-900">{{ user.address }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

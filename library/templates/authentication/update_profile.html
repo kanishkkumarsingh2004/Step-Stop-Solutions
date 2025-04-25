@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-lg mx-auto my-10">
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-8 py-6 border-b border-gray-200">
+            <h1 class="text-2xl font-semibold text-gray-800">Update Profile</h1>
+            <p class="text-sm text-gray-600 mt-1">Edit your personal information</p>
+        </div>
+        <div class="px-8 py-6">
+            {% if form.errors %}
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="CurrentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">
+                            Please correct the following errors:
+                            <ul class="list-disc pl-5 mt-1">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ field }}</li>
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <form method="post" action="{% url 'update_profile' user.id %}" class="space-y-5">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">Email Address <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" id="id_email" value="{{ user.email }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="id_first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                        </div>
+                        <div>
+                            <label for="id_last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="id_mobile_number" class="block text-sm font-medium text-gray-700 mb-1">Mobile Number <span class="text-red-500">*</span></label>
+                        <input type="tel" name="mobile_number" id="id_mobile_number" value="{{ user.mobile_number }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                    </div>
+                    <div>
+                        <label for="id_gender" class="block text-sm font-medium text-gray-700 mb-1">Gender <span class="text-red-500">*</span></label>
+                        <input type="text" name="gender" id="id_gender" value="{{ user.get_gender_display }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                    </div>
+                    <div>
+                        <label for="id_dob" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth <span class="text-red-500">*</span></label>
+                        <input type="text" name="dob" id="id_dob" value="{{ user.dob|date:'Y-m-d' }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                    </div>
+                    <div>
+                        <label for="id_emergency_number" class="block text-sm font-medium text-gray-700 mb-1">Emergency Number <span class="text-red-500">*</span></label>
+                        <input type="tel" name="emergency_number" id="id_emergency_number" value="{{ user.emergency_number }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" placeholder="Enter emergency contact number" required>
+                    </div>
+                    <div>
+                        <label for="id_address" class="block text-sm font-medium text-gray-700 mb-1">Address <span class="text-red-500">*</span></label>
+                        <textarea name="address" id="id_address" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" rows="3" required placeholder="Enter your address">{{ user.address }}</textarea>
+                    </div>
+                    <div>
+                        <label for="id_pincode" class="block text-sm font-medium text-gray-700 mb-1">Pin Code <span class="text-red-500">*</span></label>
+                        <input type="text" name="pincode" id="id_pincode" value="{{ user.pincode }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" placeholder="Enter your pin code" required>
+                    </div>
+                    <div>
+                        <label for="id_district" class="block text-sm font-medium text-gray-700 mb-1">District</label>
+                        <input type="text" name="district" id="id_district" value="{{ user.district }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" readonly>
+                    </div>
+                    <div>
+                        <label for="id_city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        <input type="text" name="city" id="id_city" value="{{ user.city }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" readonly>
+                    </div>
+                    <div>
+                        <label for="id_state" class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                        <input type="text" name="state" id="id_state" value="{{ user.state }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category <span class="text-red-500">*</span></label>
+                        <select name="category" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all" required>
+                            <option value="GEN" {% if user.category == "GEN" %}selected{% endif %}>General</option>
+                            <option value="OBC" {% if user.category == "OBC" %}selected{% endif %}>OBC</option>
+                            <option value="SC" {% if user.category == "SC" %}selected{% endif %}>SC</option>
+                            <option value="ST" {% if user.category == "ST" %}selected{% endif %}>ST</option>
+                            <option value="PWD" {% if user.category == "PWD" %}selected{% endif %}>PWD</option>
+                            <option value="OTHER" {% if user.category == "OTHER" %}selected{% endif %}>Others</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-6 flex space-x-4">
+                    <button type="submit" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-300 font-medium text-base focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        Save Changes
+                    </button>
+                    <a href="{% url 'user_profile' user.id %}" class="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition duration-300 font-medium text-base focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateAge() {
+        const dobInput = document.getElementById('id_dob');
+        const ageInput = document.getElementById('id_age');
+        const dob = new Date(dobInput.value);
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+            age--;
+        }
+        ageInput.value = age;
+    }
+
+    async function fetchLocationDetails() {
+        const pincode = document.getElementById('id_pincode').value;
+        if (pincode.length === 6) {
+            try {
+                const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+                const data = await response.json();
+                
+                if (data[0].Status === 'Success') {
+                    const postOffice = data[0].PostOffice[0];
+                    document.getElementById('id_district').value = postOffice.District;
+                    document.getElementById('id_city').value = postOffice.Name;
+                    document.getElementById('id_state').value = postOffice.State;
+                }
+            } catch (error) {
+                console.error('Error fetching location details:', error);
+            }
+        }
+    }
+    
+    // Calculate age on page load if DOB is already set
+    document.addEventListener('DOMContentLoaded', function() {
+        const dobInput = document.getElementById('id_dob');
+        if (dobInput.value) {
+            calculateAge();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
+    <!-- Top Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+        <!-- User Details Card - Top Left -->
+        <div class="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg">
+            <div class="border-b border-gray-100 pb-4 sm:pb-6 mb-4 sm:mb-6">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+            </div>
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Your Details</h2>
+            <div class="space-y-2 sm:space-y-4">
+                <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-gray-500">Full Name</p>
+                    <p class="text-sm sm:text-base font-medium text-gray-800">{{ user.get_full_name }}</p>
+                </div>
+                <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-gray-500">Email Address</p>
+                    <p class="text-sm sm:text-base font-medium text-gray-800">{{ user.email }}</p>
+                </div>
+                <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-gray-500">Mobile Number</p>
+                    <p class="text-sm sm:text-base font-medium text-gray-800">{{ user.mobile_number }}</p>
+                </div>
+                <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-gray-500">Address</p>
+                    <p class="text-sm sm:text-base font-medium text-gray-800">{{ user.address }}</p>
+                </div>
+                <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-gray-500">SSID</p>
+                    <p class="text-sm sm:text-base font-medium text-gray-800">{{ user.ssid }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Status Card - Top Right -->
+        <div class="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Subscription Status</h2>
+                <a href="{% url 'user_subscriptions' %}" class="text-blue-600 hover:text-blue-700">
+                    View All Subscriptions
+                </a>
+            </div>
+            
+            {% if active_subscriptions %}
+            <div class="space-y-4">
+                {% for subscription in active_subscriptions %}
+                <div class="p-4 border rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-semibold">{{ subscription.subscription.name }}</h3>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-{{ subscription.payment_status.color }}-50 text-{{ subscription.payment_status.color }}-700">
+                                {{ subscription.payment_status.status }}
+                            </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <p class="text-xs text-gray-500">Start Date</p>
+                            <p class="text-sm font-medium text-gray-800">{{ subscription.start_date|date:"F d, Y" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">End Date</p>
+                            <p class="text-sm font-medium text-gray-800">{{ subscription.end_date|date:"F d, Y" }}</p>
+                        </div>
+                        <div class="col-span-2">
+                            <p class="text-xs text-gray-500">Price</p>
+                            <p class="text-lg font-bold text-gray-800">₹{{ subscription.cost }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4 sm:py-8">
+                <p class="text-sm sm:text-base text-gray-500">You don't have any active subscriptions</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bottom Section - Attendance -->
+    <div class="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg w-full">
+        <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 text-center">Recent Attendance</h2>
+        <div class="rounded-lg border border-gray-100 overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Check-in Time
+                        </th>
+                        <th scope="col" class="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Check-out Time
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    {% for attendance in attendances|slice:":10" %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-800 text-center">
+                            {{ attendance.check_in_time }}
+                        </td>
+                        <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-800 text-center">
+                            {{ attendance.check_out_time|default:"-" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

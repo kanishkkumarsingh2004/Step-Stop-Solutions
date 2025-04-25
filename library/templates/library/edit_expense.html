@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="space-y-2">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Edit Expense</h1>
+            <p class="text-sm text-gray-500">Update your expense details</p>
+        </div>
+
+        <!-- Form Container -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="space-y-5">
+                    <!-- Expense Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Expense Name</label>
+                        <input type="text" name="expense_name" value="{{ form.expense_name.value }}" required
+                               class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                    </div>
+
+                    <!-- Expense Description -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea name="expense_description" rows="3"
+                                  class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">{{ form.expense_description.value }}</textarea>
+                    </div>
+
+                    <!-- Amount and Date -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                            <input type="number" step="0.01" name="amount" value="{{ form.amount.value }}" required
+                                   class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                            <input type="date" name="date" value="{{ form.date.value|date:'Y-m-d' }}" required max="{% now 'Y-m-d' %}"
+                                   class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                    </div>
+
+                    <!-- Payment Mode -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Payment Mode</label>
+                        <select name="payment_mode" id="id_payment_mode" 
+                                class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                            <option value="CASH" {% if form.payment_mode.value == 'CASH' %}selected{% endif %}>Cash</option>
+                            <option value="CARD" {% if form.payment_mode.value == 'CARD' %}selected{% endif %}>Card</option>
+                            <option value="UPI" {% if form.payment_mode.value == 'UPI' %}selected{% endif %}>UPI</option>
+                        </select>
+                    </div>
+
+                    <!-- Transaction ID -->
+                    <div id="transaction_id_field" class="{% if form.payment_mode.value != 'CARD' and form.payment_mode.value != 'UPI' %}hidden{% endif %}">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
+                        <input type="text" name="transaction_id" value="{{ form.transaction_id.value|default_if_none:'' }}"
+                               class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+                    <a href="{% url 'expense_dashboard' library.id %}" 
+                       class="w-full sm:w-auto bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 text-center text-sm sm:text-base">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 text-sm sm:text-base">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('id_payment_mode').addEventListener('change', function() {
+        const transactionIdField = document.getElementById('transaction_id_field');
+        const transactionIdInput = document.querySelector('input[name="transaction_id"]');
+        
+        if (this.value === 'CARD' || this.value === 'UPI') {
+            transactionIdField.classList.remove('hidden');
+            transactionIdInput.required = true;
+        } else {
+            transactionIdField.classList.add('hidden');
+            transactionIdInput.required = false;
+            transactionIdInput.value = '';
+        }
+    });
+</script>
+{% endblock %}

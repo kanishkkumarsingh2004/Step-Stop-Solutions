@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-8">
+    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6">Admin Dashboard</h1>
+
+    <!-- Admin Stats Grid -->
+    <div class="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6 sm:mb-8">
+        <!-- Total Users Card -->
+        <div class="bg-blue-50 p-3 sm:p-4 rounded-lg shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base sm:text-lg font-semibold text-blue-800">Total Users</h3>
+                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ total_users }}</p>
+                </div>
+                <i class="bi bi-people text-xl sm:text-2xl md:text-3xl text-blue-600"></i>
+            </div>
+        </div>
+
+        <!-- Libraries Card -->
+        <div class="bg-green-50 p-3 sm:p-4 rounded-lg shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base sm:text-lg font-semibold text-green-800">Libraries</h3>
+                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-1">
+                        {{ approved_libraries }}/{{ total_libraries }}
+                    </p>
+                </div>
+                <i class="bi bi-book text-xl sm:text-2xl md:text-3xl text-green-600"></i>
+            </div>
+        </div>
+
+        <!-- Total Institutions Card -->
+        <div class="bg-purple-50 p-3 sm:p-4 rounded-lg shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base sm:text-lg font-semibold text-purple-800">Institutions</h3>
+                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-1">
+                        {{ approved_institutions }}/{{ total_institutions }}
+                    </p>
+                </div>
+                <i class="bi bi-building text-xl sm:text-2xl md:text-3xl text-purple-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex gap-4 sm:gap-8">
+        <a href="{% url 'all_users' %}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 text-center font-medium flex-1">
+            View All Users
+        </a>
+        <a href="{% url 'all_libraries' %}" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200 text-center font-medium flex-1">
+            View All Libraries
+        </a>
+    </div>
+
+    <!-- Admin Actions Section -->
+    <div class="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 text-center">Admin Actions</h2>
+        <div class="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2">
+            <a href="{% url 'manage_libraries' %}" class="bg-blue-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-sm sm:text-base font-semibold flex items-center justify-center">
+                Manage Libraries
+            </a>
+            <a href="{% url 'manage_institutions' %}" class="bg-purple-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg hover:bg-purple-700 transition duration-300 text-sm sm:text-base font-semibold flex items-center justify-center">
+                Manage Institutions
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

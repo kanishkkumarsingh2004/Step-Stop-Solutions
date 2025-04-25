@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">All Users</h1>
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+        <!-- Mobile View -->
+        <div class="block sm:hidden">
+            <div class="space-y-4">
+                {% for user in users %}
+                <div class="p-4 border rounded-lg">
+                    <div class="space-y-2">
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Name:</span>
+                            <span class="text-sm text-gray-900">{{ user.get_full_name }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Email:</span>
+                            <span class="text-sm text-gray-900">{{ user.email }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Mobile:</span>
+                            <span class="text-sm text-gray-900">{{ user.mobile_number }}</span>
+                        </div>
+                        <div>
+                            <a href="{% url 'user_details' user.id %}" class="text-blue-600 hover:text-blue-900 text-sm">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Desktop View -->
+        <div class="hidden sm:block">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Mobile</th>
+                        <th class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for user in users %}
+                    <tr>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">{{ user.get_full_name }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">{{ user.email }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">{{ user.mobile_number }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-3 text-sm text-gray-900">
+                            <a href="{% url 'user_details' user.id %}" class="text-blue-600 hover:text-blue-900">View Details</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

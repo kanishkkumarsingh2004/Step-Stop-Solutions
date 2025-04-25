@@ -1,0 +1,189 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="My Library - Your digital gateway to a world of books and personalized reading experiences">
+    <title>My Library | Digital Book Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <script src="{% static 'js/preloader.js' %}"></script>
+    <script src="{% static 'js/mobile-menu.js' %}"></script>
+    <script src="{% static 'js/see.js' %}"></script>
+    
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+</head>
+<body class="bg-gray-100 font-sans antialiased">
+    <div id="preloader" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div class="loadingio-spinner-eclipse-nq4q5u6dq7r">
+            <div class="ldio-x2uulkbinbj">
+                <div></div>
+                <div style="animation-delay: -0.5s"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Navigation -->
+    <nav class="bg-gray-900 shadow-lg sticky top-0 z-50">
+        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center">
+                    <a href="/" class="text-white text-3xl font-bold hover:text-gray-300 transition-all duration-300 flex items-center">
+                        <svg class="w-8 h-8 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 12L3 7M12 12L21 7M12 12V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 10L12 13L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Step Stop Solutions
+                    </a>
+                </div>
+                <!-- Mobile Menu Button -->
+                <div class="flex items-center md:hidden">
+                    
+                    <button id="mobile-menu-button" class="text-gray-300 hover:text-white focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Home</a>
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser %}
+                            <a href="{% url 'admin_dashboard' %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Admin Dashboard</a>
+                            <a href="/dashboard/" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Dashboard</a>
+                        {% else %}
+                            <a href="/dashboard/" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Dashboard</a>
+                        {% endif %}
+                        <a href="{% url 'user_profile' user.id %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">My Profile</a>
+                    {% endif %}
+                    {% for library in user.owned_libraries.all %}
+                        {% if library.is_approved %}
+                            <a href="{% url 'library_dashboard' library.id %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">
+                                Library Dashboard
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'logout' %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Logout</a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-gray-900 fixed inset-0 z-40 mt-20 overflow-y-auto">
+            <div class="px-6 py-8 space-y-4">
+                <a href="/" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                    <i class="bi bi-house-door text-xl mr-3"></i>
+                    <span>Home</span>
+                </a>
+                {% if user.is_authenticated %}
+                    {% if user.is_superuser %}
+                        <a href="{% url 'admin_dashboard' %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span>Admin Dashboard</span>
+                        </a>
+                        <a href="/dashboard/" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                    {% else %}
+                        <a href="/dashboard/" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <i class="bi bi-speedometer2 text-xl mr-3"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'user_profile' user.id %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                        <i class="bi bi-person-circle text-xl mr-3"></i>
+                        <span>My Profile</span>
+                    </a>
+                {% endif %}
+                {% for library in user.owned_libraries.all %}
+                    {% if library.is_approved %}
+                        <a href="{% url 'library_dashboard' library.id %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <i class="bi bi-shop text-xl mr-3"></i>
+                            <span>Library Dashboard</span>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'logout' %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                        <i class="bi bi-box-arrow-right text-xl mr-3"></i>
+                        <span>Logout</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                        <i class="bi bi-box-arrow-in-right text-xl mr-3"></i>
+                        <span>Login</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content Block -->
+    <main class="min-h-screen">
+        {% block content %}
+        {% endblock %}
+    </main>
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+                <!-- About Us Section -->
+                <div class="mb-6 sm:mb-0">
+                    <h3 class="text-lg font-bold mb-3 sm:mb-4">About Us</h3>
+                    <p class="text-sm text-gray-300 leading-relaxed">We are dedicated to providing a seamless library experience for both readers and library owners.</p>
+                </div>
+
+                <!-- Quick Links Section -->
+                <div class="mb-6 sm:mb-0">
+                    <h3 class="text-lg font-bold mb-3 sm:mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Home</a></li>
+                        <li><a href="{% url 'register_venders_shop' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Libraries</a></li>
+                        <li><a href="{% url 'terms_conditions' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Terms & Conditions</a></li>
+                        <li><a href="{% url 'privacy_policy' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Privacy Policy</a></li>
+                    </ul>
+                </div>
+
+                <!-- Become a Vendor Section -->
+                <div>
+                    <h3 class="text-lg font-bold mb-3 sm:mb-4">Become a Vendor</h3>
+                    <p class="text-sm text-gray-300 mb-3 sm:mb-4">Want to register your library with us?</p>
+                    <div class="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:space-x-4">
+                        {% if user.is_authenticated and not user.is_vendor %}
+                        <a href="{% url 'apply_for_vendor' %}" class="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200 text-center">
+                            Apply for Vendor
+                        </a>
+                        {% elif not user.is_authenticated %}
+                        <a href="{% url 'signup' %}" class="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200 text-center">
+                            Sign Up to Apply
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copyright Section -->
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
+                &copy; 2025 My Library. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

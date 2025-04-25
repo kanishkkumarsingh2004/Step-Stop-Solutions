@@ -1,0 +1,57 @@
+.ldio-x2uulkbinbj div {
+    position: absolute;
+    animation: ldio-x2uulkbinbj 1s linear infinite;
+    width: 160px;
+    height: 160px;
+    top: 20px;
+    left: 20px;
+    border-radius: 50%;
+    box-shadow: 0 4px 0 0 #212493;
+    transform-origin: 80px 82px;
+}
+.ldio-x2uulkbinbj div:nth-child(2) {
+    box-shadow: 0 4px 0 0 #212493;
+}
+.loadingio-spinner-eclipse-nq4q5u6dq7r {
+    width: 200px;
+    height: 200px;
+    display: inline-block;
+    overflow: hidden;
+    background: transparent;
+    position: relative;
+}
+.ldio-x2uulkbinbj {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform: translateZ(0) scale(1);
+    backface-visibility: hidden;
+    transform-origin: 0 0;
+}
+.ldio-x2uulkbinbj div { box-sizing: content-box; }
+
+
+@keyframes ldio-x2uulkbinbj {
+    0% { transform: rotate(0deg) }
+    50% { transform: rotate(180deg) }
+    100% { transform: rotate(360deg) }
+}
+
+.nfc-compatibility-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.25rem;
+}
+
+.nfc-compatibility-error h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.nfc-compatibility-error p {
+    margin: 0.5rem 0;
+}

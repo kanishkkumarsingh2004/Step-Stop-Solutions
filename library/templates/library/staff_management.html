@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Staff Management</h1>
+    
+    <!-- Search User by SSID -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-xl font-semibold mb-4">Search User by SSID</h2>
+        <div class="mb-4">
+            <form id="search-user-form" class="flex items-center">
+                {% csrf_token %}
+                <input type="text" name="ssid" placeholder="Enter SSID" class="px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">Search</button>
+            </form>
+        </div>
+        <div id="search-results" class="mt-4">
+            
+        </div>
+    </div>
+
+    <!-- Existing Staff List -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Current Staff</h2>
+        <div id="staffList" class="space-y-4">
+            {% for staff in staff_members %}
+                <div class="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                        <p class="font-medium">{{ staff.get_full_name }}</p>
+                        <p class="text-sm text-gray-600">{{ staff.email }}</p>
+                    </div>
+                    <!-- <button onclick="removeStaff({{ staff.id }}, {{ library.id }})" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Remove</button> -->
+                </div>
+            {% empty %}
+                <p class="text-gray-500">No staff members found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>c vfd                                                                                                                                                                                                                                           
+<div id="libid" class="hidden" data-library-id="{{ library.id }}"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchUserForm = document.getElementById('search-user-form');
+    const searchResults = document.getElementById('search-results');
+    const libraryId = document.getElementById('libid').dataset.libraryId;
+
+    const handleFormSubmit = async (form, url) => { 
+        const formData = new FormData(form);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Error:', error);
+            return { success: false, message: 'An error occurred. Please try again.' };
+        }
+    };
+
+   
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function loadStaffList() {
+        try {
+            const response = await fetch(`/${libraryId}/get-staff/`);
+            const data = await response.json();
+            
+            if (data.staff) {
+                const staffList = document.getElementById('staffList');
+                staffList.innerHTML = data.staff.map(staff => `
+                    <div class="p-4 border rounded-lg mb-2">
+                        <p class="font-medium">${staff.full_name}</p>
+                        <p class="text-sm text-gray-600">SSID: ${staff.ssid}</p>
+                    </div>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Error loading staff list:', error);
+            const staffList = document.getElementById('staffList');
+            staffList.innerHTML = `<p class="text-red-600">Error loading staff list. Please try again.</p>`;
+        }
+    }
+
+    if (searchUserForm) {
+        searchUserForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = await handleFormSubmit(searchUserForm, '/search-user/');
+            
+            if (data.success) {
+                searchResults.innerHTML = `
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <p class="font-semibold">Name: ${data.user.name}</p>
+                        <p>Email: ${data.user.email}</p>
+                        <p>Mobile: ${data.user.mobile_number}</p>
+                        <button onclick="appointUser(${data.user.id}, ${libraryId})" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                            Appoint
+                        </button>
+                    </div>
+                `;
+            } else {
+                searchResults.innerHTML = `
+                    <div class="bg-red-100 p-4 rounded-lg text-red-700">
+                        ${data.message}
+                    </div>
+                `;
+            }
+        });
+    }
+});
+</script>
+
+<script>
+function appointUser(userId, libraryId) {
+    if (confirm("Are you sure you want to appoint this user as staff?")) {
+        fetch(`/appoint-staff/${libraryId}/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP error! Status: ${response.status}, Body: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // Refresh the page to reflect changes
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while appointing the user.');
+        });
+    }
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<!-- Add this to your HTML template where you want to store the library ID -->
+{% endblock %}
