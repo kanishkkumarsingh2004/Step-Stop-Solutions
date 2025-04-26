@@ -2,16 +2,16 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-xl p-8 border border-blue-200">
-        <h1 class="text-3xl font-bold text-blue-800 mb-8">Subscription Plans for {{ vendor.get_full_name }}</h1>
+    <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-xl p-8 border border-gray-200">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Subscription Plans for {{ vendor.get_full_name }}</h1>
         
         <div class="mb-8">
             <label for="coupon_code" class="block text-sm font-medium text-gray-700 mb-2">Apply Coupon Code</label>
             <div class="flex gap-2">
                 <input type="text" name="coupon_code" id="coupon_code" 
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" 
                        placeholder="Enter coupon code">
-                <button type="button" onclick="applyCoupon()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                <button type="button" onclick="applyCoupon()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition duration-200">
                     Apply
                 </button>
             </div>
@@ -21,13 +21,13 @@
         {% if subscription_plans %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for plan in subscription_plans %}
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-blue-200">
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200">
                 <div class="p-6 relative">
-                    <div class="absolute top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-bl-lg percentage-difference">
+                    <div class="absolute top-0 right-0 bg-indigo-600 text-white px-3 py-1 rounded-bl-lg percentage-difference">
                         {{ plan.percentage_difference }}% off
                     </div>
-                    <h3 class="text-xl font-semibold text-blue-800 mb-2">{{ plan.name }}</h3>
-                    <div class="text-blue-600 space-y-2 mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ plan.name }}</h3>
+                    <div class="text-gray-700 space-y-2 mb-4">
                         <p class="flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -41,19 +41,19 @@
                             {{ plan.duration_in_hours }} hours
                         </p>
                     </div>
-                    <p class="text-2xl font-bold text-blue-800 mb-6" id="plan_{{ plan.id }}">
+                    <p class="text-2xl font-bold text-gray-900 mb-6" id="plan_{{ plan.id }}">
                         {% if plan.has_discount %}
                             <span class="line-through text-gray-400 mr-2" id="normal_price">₹{{ plan.normal_price }}</span>
                             ₹<span class="price-display">{{ plan.discount_price }}</span>
                         {% else %}
                             ₹<span class="price-display">{{ plan.normal_price }}</span>
                         {% endif %}
-                        <span class="text-sm text-green-600 ml-2 hidden" id="coupon_discount_{{ plan.id }}"></span>
+                        <span class="text-sm text-emerald-600 ml-2 hidden" id="coupon_discount_{{ plan.id }}"></span>
                     </p>
-                    <form method="post" action="{% url 'payment' plan.id %}">
+                    <form method="post" action="{% url 'payment' plan.id %}?coupon={{ coupon_code }}">
                         {% csrf_token %}
                         <input type="hidden" name="vendor_id" value="{{ library.id }}">
-                        <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-lg hover:from-blue-600 hover:to-blue-700 transition duration-200 flex items-center justify-center shadow-md">
+                        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition duration-200 flex items-center justify-center shadow-md">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 3v2m10-2v2M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
@@ -66,11 +66,11 @@
         </div>
         {% else %}
         <div class="text-center py-8">
-            <svg class="mx-auto h-12 w-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <h3 class="mt-2 text-sm font-medium text-blue-900">No subscription plans available</h3>
-            <p class="mt-1 text-sm text-blue-500">This vendor hasn't created any subscription plans yet.</p>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No subscription plans available</h3>
+            <p class="mt-1 text-sm text-gray-500">This vendor hasn't created any subscription plans yet.</p>
         </div>
         {% endif %}
         <p id="libid" class="hidden">{{ library.id }}</p>
@@ -78,28 +78,49 @@
 </div>
 
 <script>
-function handlePaymentSuccess(couponId) {
+function handlePaymentSuccess(response) {
     const csrfToken = '{{ csrf_token }}';
+    const couponId = new URLSearchParams(window.location.search).get('coupon');
 
-    fetch('/handle-payment-success/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({
-            coupon_id: couponId
+    if (couponId) {
+        fetch('/handle-payment-success/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                coupon_id: couponId
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Payment and coupon usage recorded successfully');
-        } else {
-            console.error('Error recording coupon usage:', data.message);
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log('Coupon usage recorded successfully');
+            } else {
+                console.error('Error recording coupon usage:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const couponCode = document.getElementById('coupon_code').value;
+        if (couponCode) {
+            const action = this.getAttribute('action');
+            this.setAttribute('action', `${action}?coupon=${couponCode}`);
         }
     });
-}
+});
 
 function applyCoupon() {
     const couponCode = document.getElementById('coupon_code').value;

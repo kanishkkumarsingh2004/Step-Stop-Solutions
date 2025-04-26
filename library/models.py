@@ -33,6 +33,9 @@ class Library(models.Model):
     city = models.CharField(max_length=100, help_text="City of the venue location")
     state = models.CharField(max_length=100, help_text="State of the venue location")
     staff = models.ManyToManyField('CustomUser', related_name='libraries_staffed', blank=True)
+    upi_id = models.CharField(max_length=50)
+    recipient_name = models.CharField(max_length=100)
+    thank_you_message = models.CharField(max_length=200)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

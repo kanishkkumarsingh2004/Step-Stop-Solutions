@@ -147,4 +147,7 @@ urlpatterns = [
     path('appoint-staff/<int:library_id>/<int:user_id>/', views.appoint_staff, name='appoint_staff'),
     path('password-change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
     path('mark-attendance/', views.mark_attendance, name='mark_attendance'),
+    path('library/<int:library_id>/update-upi-data/', views.update_upi_data, name='update_upi_data'),
+    path('remove-staff/<int:library_id>/<int:user_id>/', views.remove_staff, name='remove_staff'),
+    path('library/<int:library_id>/staff-dashboard/', views.staff_dashboard, name='staff_dashboard'),
 ]

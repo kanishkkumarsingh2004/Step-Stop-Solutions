@@ -4,12 +4,12 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12">
     <!-- Hero Section -->
     <div class="text-center mb-6 sm:mb-10 lg:mb-12">
-        <h1 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-2 sm:mb-3 md:mb-4">Welcome to My Library</h1>
-        <p class="text-sm xs:text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">Your gateway to knowledge and community. Explore, learn, and grow with us.</p>
+        <h1 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-2 sm:mb-3 md:mb-4">Welcome to Step Stop Solutions</h1>
+        <p class="text-sm xs:text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">Your trusted partner in innovative business solutions. We help businesses grow through technology and strategy.</p>
         <div class="mt-4 sm:mt-6 lg:mt-8 flex flex-col space-y-3 sm:space-y-0 sm:flex-row justify-center sm:space-x-4 px-2 sm:px-0">
             <a href="{% url 'register_venders_shop' %}" class="bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
-                <i class="bi bi-building"></i>
-                <span>Browse Libraries</span>
+                <i class="bi bi-gear"></i>
+                <span>Our Services</span>
             </a>
             {% if not user.is_authenticated %}
             <a href="{% url 'signup' %}" class="bg-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
@@ -24,33 +24,33 @@
     <div class="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:gap-8 mb-6 sm:mb-10 lg:mb-12 px-2 sm:px-0">
         <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="text-center">
-                <i class="bi bi-book text-2xl sm:text-3xl md:text-4xl text-blue-600 mb-2 sm:mb-3 md:mb-4"></i>
-                <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Vast Collection</h3>
-                <p class="text-xs sm:text-sm md:text-base text-gray-600">Access thousands of books across various genres and subjects.</p>
+                <i class="bi bi-lightbulb text-2xl sm:text-3xl md:text-4xl text-blue-600 mb-2 sm:mb-3 md:mb-4"></i>
+                <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Strategic Consulting</h3>
+                <p class="text-xs sm:text-sm md:text-base text-gray-600">Tailored business strategies to drive growth and efficiency.</p>
             </div>
         </div>
         <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="text-center">
-                <i class="bi bi-people text-2xl sm:text-3xl md:text-4xl text-purple-600 mb-2 sm:mb-3 md:mb-4"></i>
-                <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Community Hub</h3>
-                <p class="text-xs sm:text-sm md:text-base text-gray-600">Connect with fellow readers and participate in community events.</p>
+                <i class="bi bi-laptop text-2xl sm:text-3xl md:text-4xl text-purple-600 mb-2 sm:mb-3 md:mb-4"></i>
+                <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Technology Solutions</h3>
+                <p class="text-xs sm:text-sm md:text-base text-gray-600">Cutting-edge technology implementations for modern businesses.</p>
             </div>
         </div>
         <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="text-center">
-                <i class="bi bi-building text-2xl sm:text-3xl md:text-4xl text-green-600 mb-2 sm:mb-3 md:mb-4"></i>
-                <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Multiple Locations</h3>
-                <p class="text-xs sm:text-sm md:text-base text-gray-600">Find libraries near you with our extensive network of locations.</p>
+                <i class="bi bi-graph-up text-2xl sm:text-3xl md:text-4xl text-green-600 mb-2 sm:mb-3 md:mb-4"></i>
+                <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Business Optimization</h3>
+                <p class="text-xs sm:text-sm md:text-base text-gray-600">Streamline operations and maximize your business potential.</p>
             </div>
         </div>
     </div>
 
     <!-- Call to Action Section -->
     <div class="bg-blue-600 text-white rounded-lg p-4 sm:p-6 md:p-8 text-center mx-2 sm:mx-0">
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-3 md:mb-4">Ready to Explore?</h2>
-        <p class="text-sm sm:text-base md:text-lg mb-3 sm:mb-4 md:mb-6">Join our community today and start your journey of discovery.</p>
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-3 md:mb-4">Ready to Transform Your Business?</h2>
+        <p class="text-sm sm:text-base md:text-lg mb-3 sm:mb-4 md:mb-6">Let us help you take your business to the next level.</p>
         <a href="{% url 'register_venders_shop' %}" class="bg-white text-blue-600 px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-gray-100 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold">
-            Find a Library Near You
+            Get Started Now
         </a>
     </div>
 </div>

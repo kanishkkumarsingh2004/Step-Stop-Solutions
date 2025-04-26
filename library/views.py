@@ -282,6 +282,8 @@ def confirm_payment(request, plan_id):
             
             # Get user-provided transaction ID
             transaction_id = request.POST.get('transaction_id')
+
+           
             
             # Validate transaction ID
             if not transaction_id:
@@ -301,7 +303,7 @@ def confirm_payment(request, plan_id):
                 user=request.user,
                 subscription=subscription_plan,
                 transaction_id=transaction_id,
-                amount=final_price,  # Use the final price after coupon
+                amount=final_price, 
                 status='pending'
             )
             
@@ -316,6 +318,8 @@ def confirm_payment(request, plan_id):
             # Clear the session data
             if 'final_price' in request.session:
                 del request.session['final_price']
+
+            
             
             # Redirect to payment confirmation page
             return redirect('payment_confirmation', transaction_id=transaction.transaction_id)
@@ -530,26 +534,39 @@ def library_dashboard(request, library_id):
     
     library = get_object_or_404(Library, id=library_id)
     
-    # Check if the user is the owner of this library
-    if request.user != library.owner:
-        raise PermissionDenied("You don't have permission to access this dashboard")
+    # Get all subscription plans
+    plans = SubscriptionPlan.objects.all()
     
-    # Get the count of users enrolled in this library
-    user_count = UserSubscription.objects.filter(
-        subscription__library=library
-    ).values('user').distinct().count()
+    # Prepare plans data with library-specific UPI details
+    plans_data = []
+    for plan in plans:
+        plans_data.append({
+            'id': plan.id,
+            'name': plan.name,
+            'normal_price': plan.normal_price,
+            'discount_price': plan.discount_price,
+            'has_discount': plan.has_discount,
+            'upi_id': library.upi_id,
+            'recipient_name': library.recipient_name,
+            'thank_you_message': library.thank_you_message
+        })
     
-    active_subscriptions_count = UserSubscription.objects.filter(
-        subscription__library=library,
-        end_date__gte=timezone.now().date()
-    ).distinct().count()
     
-    context = {
-        'library': library,
-        'user_count': user_count,
-        'active_subscriptions_count': active_subscriptions_count
+    upi_id = library.upi_id
+    recipient_name = library.recipient_name
+    thank_you_message = library.thank_you_message
+
+    upidata = {
+        "upi_id" : upi_id,
+        "recipient_name" : recipient_name,
+        "thank_you_message" : thank_you_message,
     }
-    return render(request, 'library/library_dashboard.html', context)
+
+    return render(request, 'library/library_dashboard.html', {
+        'library': library,
+        'plans': plans_data,
+        'upidata': upidata
+    })
 
 @login_required
 def subscription_page(request, library_id):
@@ -695,27 +712,47 @@ def create_subscription(request, library_id):
 @login_required
 def payment_page(request, plan_id):
     plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+    library = request.user.owned_libraries.first()  # or get the library in another way
     coupon_code = request.GET.get('coupon')
+    
+    # Clean the coupon code if it contains multiple parameters
+    if coupon_code and '?coupon=' in coupon_code:
+        coupon_code = coupon_code.split('?coupon=')[0]
+    
+    print(f"Cleaned coupon code: {coupon_code}")  # Debug logging
+    
+    coupon = None
+    discount_applied = False
     
     # Start with the base price (discounted or normal)
     final_price = plan.discount_price if plan.has_discount else plan.normal_price
-
+    original_price = final_price
+    
     # Apply coupon discount if valid
     if coupon_code:
         try:
             coupon = Coupon.objects.get(code=coupon_code, is_active=True)
             if coupon.is_valid() and plan in coupon.applicable_plans.all():
                 final_price = coupon.apply_discount(final_price)
+                discount_applied = True
+                print(f"Coupon applied successfully: {coupon_code}")  # Debug logging
         except Coupon.DoesNotExist:
+            print(f"Coupon not found: {coupon_code}")  # Debug logging
             pass
+    
+    # Calculate discount amount for display
+    if discount_applied:
+        discount_amount = float(original_price) - float(final_price)
+    else:
+        discount_amount = 0
 
     # Store the final price in the session
     request.session['final_price'] = str(final_price)
     
-    # UPI ID and payment details
-    upi_id = "9625694673@ptyes"
-    recipient_name = "Kanishk Kumar Singh"
-    thank_you_message = "Thank you"
+    # Use library-specific UPI details
+    upi_id = library.upi_id
+    recipient_name = library.recipient_name
+    thank_you_message = library.thank_you_message
     
     # Create UPI payment link with final price
     upi_link = f"upi://pay?pa={upi_id}&pn={recipient_name}&mc=1234&tid=transaction123&tr=ref12345&tn={thank_you_message}&am={final_price}&cu=INR"
@@ -723,27 +760,27 @@ def payment_page(request, plan_id):
     # Generate QR code
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
     qr.add_data(upi_link)
     qr.make(fit=True)
-    
     img = qr.make_image(fill_color="black", back_color="white")
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    qr_code = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    
-    context = {
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    qr_code = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    return render(request, 'users_pages/payment.html', {
         'plan': plan,
-        'library': plan.library,
-        'qr_code': qr_code,
-        'upi_link': upi_link,
         'final_price': final_price,
-        'coupon_code': coupon_code
-    }
-    return render(request, 'users_pages/payment.html', context)
+        'qr_code': qr_code,
+        'coupon': coupon,
+        'discount_applied': discount_applied,
+        'upi_id': upi_id,
+        'recipient_name': recipient_name,
+        'discount_amount': discount_amount
+    })
 
 @login_required
 def user_subscriptions(request):
@@ -766,7 +803,7 @@ def user_subscriptions(request):
                     'yellow' if latest_transaction and latest_transaction.status == 'pending' else 
                     'red'
         }
-    
+        subscription.cost = latest_transaction.amount if latest_transaction else subscription.subscription.normal_price
     context = {
         'subscriptions': subscriptions
     }
@@ -1547,6 +1584,7 @@ def handle_payment_success(request):
         coupon_id = data.get('coupon_id')
         
         if not coupon_id:
+            logger.error("No coupon ID provided in payment success")
             return JsonResponse({
                 'success': False,
                 'message': 'Coupon ID is required'
@@ -1555,8 +1593,12 @@ def handle_payment_success(request):
         coupon = Coupon.objects.get(id=coupon_id)
         
         # Only increment usage if payment was successful
-        coupon.times_used += 1
-        coupon.save()
+        if coupon.times_used < coupon.max_usage:
+            coupon.times_used += 1
+            coupon.save()
+            logger.info(f"Successfully updated coupon {coupon_id} usage count")
+        else:
+            logger.warning(f"Coupon {coupon_id} has reached max usage")
 
         return JsonResponse({
             'success': True,
@@ -1564,11 +1606,13 @@ def handle_payment_success(request):
         })
 
     except Coupon.DoesNotExist:
+        logger.error(f"Coupon {coupon_id} not found")
         return JsonResponse({
             'success': False,
             'message': 'Invalid coupon ID'
         }, status=404)
     except Exception as e:
+        logger.error(f"Error processing payment success: {str(e)}")
         return JsonResponse({
             'success': False,
             'message': f'An error occurred while processing payment: {str(e)}'
@@ -1640,3 +1684,47 @@ def appoint_staff(request, library_id, user_id):
             return JsonResponse({'success': False, 'message': 'User not found'}, status=404)
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+
+@login_required
+def update_upi_data(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    
+    if request.user != library.owner:
+        raise PermissionDenied("You don't have permission to update UPI data for this library")
+    
+    if request.method == 'POST':
+        library.upi_id = request.POST.get('upi_id')
+        library.recipient_name = request.POST.get('recipient_name')
+        library.thank_you_message = request.POST.get('thank_you_message')
+        library.save()
+        messages.success(request, 'UPI data updated successfully!')
+        return redirect('library_dashboard', library_id=library.id)
+    
+    return redirect('library_dashboard', library_id=library.id)
+
+@login_required
+@require_POST
+def remove_staff(request, library_id, user_id):
+    library = get_object_or_404(Library, id=library_id)
+    user = get_object_or_404(User, id=user_id)
+    
+    # Check if the current user is the library owner
+    if request.user != library.owner:
+        raise PermissionDenied("You don't have permission to remove staff from this library")
+    
+    # Remove the user from staff
+    library.staff.remove(user)
+    messages.success(request, f'{user.get_full_name()} has been removed from staff')
+    
+    return redirect('library_dashboard', library_id=library.id)
+
+@login_required
+def staff_dashboard(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    
+    # Check if the user is staff of this library
+    if request.user not in library.staff.all():
+        raise PermissionDenied("You don't have permission to access this dashboard")
+    
+    context = {'library': library}
+    return render(request, 'library/staff_dashboard.html', context)

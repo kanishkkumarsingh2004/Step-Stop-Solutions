@@ -24,20 +24,26 @@
     <div class="bg-white p-6 rounded-lg shadow-md">
         <h2 class="text-xl font-semibold mb-4">Current Staff</h2>
         <div id="staffList" class="space-y-4">
-            {% for staff in staff_members %}
-                <div class="flex items-center justify-between p-4 border rounded-lg">
+            {% for staff_member in library.staff.all %}
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-md mb-2">
                     <div>
-                        <p class="font-medium">{{ staff.get_full_name }}</p>
-                        <p class="text-sm text-gray-600">{{ staff.email }}</p>
+                        <p class="font-medium"><span class="text-gray-600">Name:</span> {{ staff_member.get_full_name }}</p>
+                        <p class="font-medium"><span class="text-gray-600">Mobile:</span> {{ staff_member.mobile_number }}</p>
+                        <p class="text-sm text-gray-600"><span class="text-gray-600">Email:</span> {{ staff_member.email }}</p>
                     </div>
-                    <!-- <button onclick="removeStaff({{ staff.id }}, {{ library.id }})" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Remove</button> -->
+                    <form method="POST" action="{% url 'remove_staff' library.id staff_member.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-500 hover:text-red-700">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </form>
                 </div>
             {% empty %}
                 <p class="text-gray-500">No staff members found.</p>
             {% endfor %}
         </div>
     </div>
-</div>c vfd                                                                                                                                                                                                                                           
+</div>                                                                                                                                                                                                                                      
 <div id="libid" class="hidden" data-library-id="{{ library.id }}"></div>
 
 <script>
@@ -109,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 searchResults.innerHTML = `
                     <div class="bg-white p-4 rounded-lg shadow">
-                        <p class="font-semibold">Name: ${data.user.name}</p>
+                        <p class="font-semibold">Name: ${data.user.full_name}</p>
                         <p>Email: ${data.user.email}</p>
                         <p>Mobile: ${data.user.mobile_number}</p>
                         <button onclick="appointUser(${data.user.id}, ${libraryId})" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
