@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Local imports
-from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm
+from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm, BannerForm, LibraryImageForm
 from .models import (
     CustomUser,
     SubscriptionPlan,
@@ -27,6 +27,8 @@ from .models import (
     UserSubscription,
     Expense,
     Coupon,
+    Banner,
+    LibraryImage,
 )
 
 # Python standard library imports
@@ -509,8 +511,10 @@ def public_library_details(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     if not library.is_approved:
         raise Http404("Library not found")
+    banners = library.banners.order_by('-created_at')
     return render(request, 'library/library_details.html', {
         'library': library,
+        'banners': banners,
     })
 
 @login_required
@@ -1728,3 +1732,76 @@ def staff_dashboard(request, library_id):
     
     context = {'library': library}
     return render(request, 'library/staff_dashboard.html', context)
+
+@login_required
+def manage_banner(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    
+    # Check if user has permission to manage banners
+    if request.user != library.owner and request.user not in library.staff.all():
+        raise PermissionDenied("You don't have permission to manage banners for this library")
+    
+    banners = library.banners.order_by('-created_at')
+    
+    if request.method == 'POST':
+        form = BannerForm(request.POST)
+        if form.is_valid():
+            # Check max banner limit
+            if banners.count() >= library.max_banners:
+                messages.error(request, f'You can only have {library.max_banners} banners')
+                return redirect('manage_banner', library_id=library.id)
+                
+            banner = form.save(commit=False)
+            banner.library = library
+            banner.save()
+            messages.success(request, 'Banner added successfully!')
+            return redirect('manage_banner', library_id=library.id)
+        else:
+            messages.error(request, 'Invalid banner data. Please check the form.')
+    else:
+        form = BannerForm()
+    
+    context = {
+        'library': library,
+        'banners': banners,
+        'form': form,
+    }
+    
+    return render(request, 'library/manage_banner.html', context)
+    
+@login_required
+def delete_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id)
+    library_id = banner.library.id
+    banner.delete()
+    messages.success(request, 'Banner deleted successfully!')
+    return redirect('manage_banner', library_id=library_id)
+
+@login_required
+def update_library_image(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    
+    if request.method == 'POST':
+        form = LibraryImageForm(request.POST)
+        if form.is_valid():
+            # Get or create the LibraryImage instance
+            image, created = LibraryImage.objects.get_or_create(library=library)
+            # Update the fields
+            image.google_drive_link = form.cleaned_data['google_drive_link']
+            image.save()
+            messages.success(request, 'Library image updated successfully!')
+        else:
+            # If form is invalid, show error messages
+            for error in form.errors.values():
+                messages.error(request, error)
+    return redirect('library_dashboard', library_id=library_id)
+
+def remove_library_image(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    try:
+        library.image.delete()
+        return JsonResponse({'status': 'success', 'message': 'Image removed successfully'})
+    except LibraryImage.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'No image to remove'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

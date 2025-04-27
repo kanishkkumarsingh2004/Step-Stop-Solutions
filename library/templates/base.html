@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="My Library - Your digital gateway to a world of books and personalized reading experiences">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>My Library | Digital Book Platform</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -135,7 +136,7 @@
                     {% if library.is_approved %}
                         <a href="{% url 'library_dashboard' library.id %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
                             <i class="bi bi-shop text-xl mr-3"></i>
-                            <span>Library Dashboard</span>
+                            <span>Library Dashboard ({{ library.venue_name }})</span>
                         </a>
                     {% endif %}
                 {% endfor %}

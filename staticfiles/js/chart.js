@@ -153,8 +153,11 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: JSON.parse(document.getElementById('dateLabels').textContent),
                 datasets: [{
-                    label: 'Expenses (₹)',
-                    data: JSON.parse(document.getElementById('dateAmounts').textContent),
+                    label: 'Cumulative Expenses (₹)',
+                    data: JSON.parse(document.getElementById('dateAmounts').textContent).reduce((acc, curr, i) => {
+                        acc.push((acc[i-1] || 0) + curr);
+                        return acc;
+                    }, []),
                     borderColor: '#f59e0b',
                     borderWidth: 2,
                     pointBackgroundColor: '#ffffff',
@@ -165,7 +168,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     tension: 0.3
                 }]
             },
-            options: commonOptions
+            options: {
+                ...commonOptions,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time Period'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Cumulative Expenses'
+                        }
+                    }
+                }
+            }
         },
         profitOverTimeLineChart: {
             type: 'line',

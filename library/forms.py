@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon
+from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -123,3 +123,31 @@ class CouponForm(forms.ModelForm):
             if Coupon.objects.filter(code=value, library_id=library_id).exists():
                 raise ValidationError('This coupon code already exists for this library.')
         return validator
+    
+class BannerForm(forms.ModelForm):
+    class Meta:
+        model = Banner
+        fields = ['google_drive_link']
+        widgets = {
+            'google_drive_link': forms.URLInput(attrs={
+                'pattern': 'https://drive\.google\.com/.*',
+                'placeholder': 'Enter Google Drive link',
+                'required': True
+            })
+        }
+
+    def clean_google_drive_link(self):
+        link = self.cleaned_data.get('google_drive_link')
+        if not link.startswith('https://drive.google.com/'):
+            raise forms.ValidationError("Please provide a valid Google Drive link")
+        
+        # Check if we can extract a file ID
+        if not Banner.extract_file_id(link):
+            raise forms.ValidationError("Could not extract file ID from the provided link")
+            
+        return link
+
+class LibraryImageForm(forms.ModelForm):
+    class Meta:
+        model = LibraryImage
+        fields = ['google_drive_link']

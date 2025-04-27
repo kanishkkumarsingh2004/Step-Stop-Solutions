@@ -11,22 +11,64 @@
 
     <!-- Header Section -->
     <div class="mb-4 md:mb-8 bg-gradient-to-r from-blue-50 to-green-50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 text-left">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 animate-fade-in">
-            <div class="text-blue-600 block mb-2">
-                <span class="font-medium text-gray-500">Library's Name:</span> 
-                {{ library.venue_name }}
+        <div class="flex flex-col md:flex-row items-center justify-between">
+            <!-- Image at top on mobile, right on desktop -->
+            <div class="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-lg shadow-md flex items-center justify-center mb-4 md:mb-0 md:ml-4 overflow-hidden border-4 border-white/20 ring-2 ring-blue-200/50 relative group order-first md:order-last">
+                {% if library.image %}
+                <img src="https://drive.google.com/thumbnail?id={{ library.image.google_drive_id }}&sz=s800" 
+                     alt="{{ library.venue_name }} logo" 
+                     class="w-full h-full object-cover">
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full text-gray-400">
+                    <path d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {% endif %}
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex flex-col items-center justify-center space-y-2">
+                    <button onclick="openImageForm()" class="bg-transparent hover:bg-transparent text-green-500 hover:text-green-600 text-sm px-2 py-1 rounded-md transition-colors mr-2">Edit</button>
+                    <button onclick="removeImage()" class="bg-transparent hover:bg-transparent text-red-500 hover:text-red-600 text-sm px-2 py-1 rounded-md transition-colors">Remove</button>
+                </div>
             </div>
-            <div class="text-green-600 block">
-                <span class="font-medium text-gray-500">Owner's Name:</span> 
-                {{ library.first_name }}
+
+            <!-- Image Edit Form (hidden by default) -->
+            <div id="imageForm" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg p-6 max-w-md w-full">
+                    <h3 class="text-lg font-semibold mb-4">Edit Library Image</h3>
+                    <form id="imageUploadForm" method="POST" action="{% url 'update_library_image' library.id %}">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload New Company Image</label>
+                            <input type="url" name="google_drive_link" class="w-full px-3 py-2 border rounded-lg" placeholder="Enter Google Drive link" pattern="https://drive\.google\.com/.*" required>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" onclick="closeImageForm()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+                            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </h1>
-        <p class="text-sm sm:text-base text-gray-600 leading-relaxed flex items-center">
-            <i class="bi bi-gear-fill text-blue-500 mr-2 animate-spin-slow"></i>
-            <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600">
-                Manage your library operations efficiently
-            </span>
-        </p>
+
+            
+            
+            <!-- Text content -->
+            <div class="text-center md:text-left">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 animate-fade-in">
+                    <div class="text-blue-600 block mb-2">
+                        <span class="font-medium text-gray-500">Library's Name:</span> 
+                        {{ library.venue_name }}
+                    </div>
+                    <div class="text-green-600 block">
+                        <span class="font-medium text-gray-500">Owner's Name:</span> 
+                        {{ library.first_name }}
+                    </div>
+                </h1>
+                <p class="text-sm sm:text-base text-gray-600 leading-relaxed flex items-center justify-center md:justify-start">
+                    <i class="bi bi-gear-fill text-blue-500 mr-2 animate-spin-slow"></i>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600">
+                        Manage your library operations efficiently
+                    </span>
+                </p>
+            </div>
+        </div>
     </div>
     <!-- Navigation Buttons -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-4 md:mb-8">
@@ -131,6 +173,10 @@
                 <a href="{% url 'library_staff_management' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                     <span>Staff management</span>
                     <i class="bi bi-check-circle text-gray-500 text-sm sm:text-base"></i>
+                </a>
+                <a href="{% url 'manage_banner' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Manage Banners</span>
+                    <i class="bi bi-images text-gray-500 text-sm sm:text-base"></i>
                 </a>
             </div>
         </div>
@@ -243,6 +289,41 @@
     function toggleEditForm() {
         const form = document.getElementById('editForm');
         form.classList.toggle('hidden');
+    }
+</script>
+<script>
+    function openImageForm() {
+        document.getElementById('imageForm').classList.remove('hidden');
+    }
+
+    function closeImageForm() {
+        document.getElementById('imageForm').classList.add('hidden');
+    }
+</script>
+<script>
+    function removeImage() {
+        if (confirm('Are you sure you want to remove this image?')) {
+            fetch("{% url 'remove_library_image' library.id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Reload the page to reflect changes
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while removing the image');
+            });
+        }
     }
 </script>
 {% endblock %}

@@ -150,4 +150,8 @@ urlpatterns = [
     path('library/<int:library_id>/update-upi-data/', views.update_upi_data, name='update_upi_data'),
     path('remove-staff/<int:library_id>/<int:user_id>/', views.remove_staff, name='remove_staff'),
     path('library/<int:library_id>/staff-dashboard/', views.staff_dashboard, name='staff_dashboard'),
+    path('library/<int:library_id>/manage-banner/', views.manage_banner, name='manage_banner'),
+    path('banner/<int:banner_id>/delete/', views.delete_banner, name='delete_banner'),
+    path('<int:library_id>/update_image/', views.update_library_image, name='update_library_image'),
+    path('<int:library_id>/remove_image/', views.remove_library_image, name='remove_library_image'),
 ]
