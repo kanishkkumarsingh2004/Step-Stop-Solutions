@@ -7,7 +7,7 @@
         <p class="text-center text-gray-600 mb-8">For {{ library.venue_name }}</p>
         
         <!-- Error Messages -->
-        {% if messages %}
+        <!-- {% if messages %}
             <div class="mb-6">
                 {% for message in messages %}
                         <div class="p-4 rounded-lg bg-red-50 border border-red-200 text-red-600">
@@ -15,7 +15,7 @@
                         </div>
                 {% endfor %}
             </div>
-        {% endif %}
+        {% endif %} -->
 
         <form method="post" action="{% url 'create_subscription' library.id %}">
             {% csrf_token %}

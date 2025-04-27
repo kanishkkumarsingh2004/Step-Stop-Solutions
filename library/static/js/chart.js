@@ -192,7 +192,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: JSON.parse(document.getElementById('profitLabels').textContent),
                 datasets: [{
                     label: 'Profit (₹)',
-                    data: JSON.parse(document.getElementById('profitValues').textContent),
+                    data: JSON.parse(document.getElementById('profitValues').textContent).reduce((acc, curr, i) => {
+                        acc.push((acc[i-1] || 0) + curr + curr);
+                        return acc;
+                    }, []),
                     borderColor: '#3b82f6',
                     borderWidth: 2,
                     pointBackgroundColor: '#ffffff',
@@ -203,7 +206,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     tension: 0.3
                 }]
             },
-            options: commonOptions
+            options: {
+                ...commonOptions,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time Period'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Profit'
+                        }
+                    }
+                }
+            }
         }
     };
 

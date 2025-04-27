@@ -8,8 +8,8 @@
         <p class="text-sm xs:text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">Your trusted partner in innovative business solutions. We help businesses grow through technology and strategy.</p>
         <div class="mt-4 sm:mt-6 lg:mt-8 flex flex-col space-y-3 sm:space-y-0 sm:flex-row justify-center sm:space-x-4 px-2 sm:px-0">
             <a href="{% url 'register_venders_shop' %}" class="bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
-                <i class="bi bi-gear"></i>
-                <span>Our Services</span>
+                <i class="bi bi-book"></i>
+                <span>Browse Library</span>
             </a>
             {% if not user.is_authenticated %}
             <a href="{% url 'signup' %}" class="bg-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">

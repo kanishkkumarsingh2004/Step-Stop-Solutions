@@ -56,11 +56,17 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <p class="text-xs text-gray-500">Start Date</p>
-                            <p class="text-sm font-medium text-gray-800">{{ subscription.start_date|date:"F d, Y" }}</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ subscription.start_date|date:"F d, Y" }} 
+                                {% if subscription.start_time %}{{ subscription.start_time|time:"H:i" }}{% endif %}
+                            </p>
                         </div>
                         <div>
                             <p class="text-xs text-gray-500">End Date</p>
-                            <p class="text-sm font-medium text-gray-800">{{ subscription.end_date|date:"F d, Y" }}</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ subscription.end_date|date:"F d, Y" }} 
+                                {% if subscription.end_time %}{{ subscription.end_time|time:"H:i" }}{% endif %}
+                            </p>
                         </div>
                         <div class="col-span-2">
                             <p class="text-xs text-gray-500">Price</p>

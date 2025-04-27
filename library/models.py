@@ -184,6 +184,8 @@ class UserSubscription(models.Model):
     subscription = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.email} - {self.subscription.name}"

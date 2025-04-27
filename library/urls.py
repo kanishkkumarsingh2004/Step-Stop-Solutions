@@ -72,26 +72,26 @@ urlpatterns = [
     # Password Reset
     path('password-reset/', 
          auth_views.PasswordResetView.as_view(
-             template_name='registration/password_reset_form.html',
-             email_template_name='registration/password_reset_email.html',
-             subject_template_name='registration/password_reset_subject.txt',
-             success_url=reverse_lazy('password_reset_done')
+            template_name='registration/password_reset_form.html',
+            email_template_name='registration/password_reset_email.html',
+            subject_template_name='registration/password_reset_subject.txt',
+            success_url=reverse_lazy('password_reset_done')
          ), 
          name='password_reset'),
     path('password-reset/done/', 
          auth_views.PasswordResetDoneView.as_view(
-             template_name='registration/password_reset_done.html'
+            template_name='registration/password_reset_done.html'
          ), 
          name='password_reset_done'),
     path('password-reset-confirm/<uidb64>/<token>/', 
          auth_views.PasswordResetConfirmView.as_view(
-             template_name='registration/password_reset_confirm.html',
-             success_url=reverse_lazy('password_reset_complete')
+            template_name='registration/password_reset_confirm.html',
+            success_url=reverse_lazy('password_reset_complete')
          ), 
          name='password_reset_confirm'),
     path('password-reset-complete/', 
          auth_views.PasswordResetCompleteView.as_view(
-             template_name='registration/password_reset_complete.html'
+            template_name='registration/password_reset_complete.html'
          ), 
          name='password_reset_complete'),
     
@@ -129,15 +129,10 @@ urlpatterns = [
     path('password-change/', auth_views.PasswordChangeView.as_view(template_name='authentication/password_change.html'), name='password_change'),
     path('password-change/done/', auth_views.PasswordChangeDoneView.as_view(template_name='authentication/password_change_done.html'), name='password_change_done'),
     path('apply-coupon/', views.apply_coupon, name='apply_coupon'),
-
     path('edit-subscription/', views.edit_subscription, name='edit_subscription'),
-
     path('library/<int:library_id>/create-coupon/', views.create_coupon, name='create_coupon'),
-
     path('<int:library_id>/manage-coupons/', views.manage_coupons, name='manage_coupons'),
-
     path('coupons/<int:coupon_id>/toggle-status/', views.toggle_coupon_status, name='toggle_coupon_status'),
-
     path('handle-payment-success/', views.handle_payment_success, name='handle_payment_success'),
     path('coupons/<int:coupon_id>/edit/', views.edit_coupon, name='edit_coupon'),
     path('coupons/<int:coupon_id>/delete/', views.delete_coupon, name='delete_coupon'),

@@ -35,7 +35,7 @@ from .models import (
 import json
 import base64
 from io import BytesIO
-from datetime import timedelta
+from datetime import timedelta, datetime
 import re
 
 # Third-party imports
@@ -282,14 +282,13 @@ def confirm_payment(request, plan_id):
             # Get the subscription plan
             subscription_plan = SubscriptionPlan.objects.get(id=plan_id)
             
-            # Get user-provided transaction ID
+            # Get user-provided transaction ID and start time
             transaction_id = request.POST.get('transaction_id')
-
-           
+            start_time = request.POST.get('start_time')
             
-            # Validate transaction ID
-            if not transaction_id:
-                messages.error(request, "Transaction ID is required")
+            # Validate inputs
+            if not transaction_id or not start_time:
+                messages.error(request, "Transaction ID and Start Time are required")
                 return redirect('payment', plan_id=plan_id)
             
             # Check if transaction ID already exists
@@ -300,30 +299,34 @@ def confirm_payment(request, plan_id):
             # Get the final price from the session
             final_price = Decimal(request.session.get('final_price', subscription_plan.normal_price))
             
-            # Create transaction record with the final amount
+            # Create transaction record
             transaction = Transaction.objects.create(
                 user=request.user,
                 subscription=subscription_plan,
                 transaction_id=transaction_id,
-                amount=final_price, 
+                amount=final_price,
                 status='pending'
             )
             
-            # Create UserSubscription record
+            # Calculate end time based on duration in hours
+            start_datetime = datetime.combine(timezone.now().date(), 
+                                            datetime.strptime(start_time, '%H:%M').time())
+            end_datetime = start_datetime + timedelta(hours=subscription_plan.duration_in_hours)
+            
+            # Create UserSubscription record with time
             UserSubscription.objects.create(
                 user=request.user,
                 subscription=subscription_plan,
                 start_date=timezone.now().date(),
-                end_date=timezone.now().date() + timedelta(days=subscription_plan.duration_in_months * 30)
+                end_date=timezone.now().date() + timedelta(days=subscription_plan.duration_in_months * 30),
+                start_time=start_time,
+                end_time=end_datetime.time()
             )
             
             # Clear the session data
             if 'final_price' in request.session:
                 del request.session['final_price']
 
-            
-            
-            # Redirect to payment confirmation page
             return redirect('payment_confirmation', transaction_id=transaction.transaction_id)
             
         except SubscriptionPlan.DoesNotExist:
@@ -376,6 +379,18 @@ def all_attendance(request, vendor_id):
             Q(user__last_name__icontains=search_query)
         )
     
+    # Calculate duration for each attendance
+    for attendance in attendances:
+        if attendance.check_in_time and attendance.check_out_time:
+            duration = attendance.check_out_time - attendance.check_in_time
+            total_seconds = duration.total_seconds()
+            hours = int(total_seconds // 3600)
+            minutes = int((total_seconds % 3600) // 60)
+            seconds = int(total_seconds % 60)
+            attendance.duration = f"{hours}h {minutes}m {seconds}s"
+        else:
+            attendance.duration = "0h 0m 0s"
+    
     return render(request, 'library/all_attendence.html', {
         'attendances': attendances,
         'library': library
@@ -399,10 +414,7 @@ def expense_dashboard(request, library_id):
     transactions = Transaction.objects.filter(subscription__library=library)
     expenses = Expense.objects.filter(library=library)
     
-    # Apply date filters if provided
-    if from_date and to_date:
-        transactions = transactions.filter(created_at__range=[from_date, to_date])
-        expenses = expenses.filter(date__range=[from_date, to_date])
+    
     
     # Calculate totals
     total_earnings = transactions.aggregate(total=Sum('amount'))['total'] or 0
@@ -410,6 +422,18 @@ def expense_dashboard(request, library_id):
     invalid_amount = transactions.filter(status='invalid').aggregate(total=Sum('amount'))['total'] or 0
     total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
     total_profit = float(valid_amount) - float(total_expenses)
+    valid_transection = transactions.filter(status='valid').select_related('user', 'subscription').order_by('-created_at')
+
+    # Apply date filters if provided
+    if from_date and to_date:
+        adjusted_from_date = (timezone.datetime.strptime(from_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
+        adjusted_to_date = (timezone.datetime.strptime(to_date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+        transactions = transactions.filter(created_at__range=[from_date, to_date])
+        expenses = expenses.filter(date__range=[from_date, to_date])
+        valid_transection = valid_transection.filter(created_at__range=[adjusted_from_date, adjusted_to_date])
+        
+        
+
     
     context = {
         'library': library,
@@ -419,7 +443,7 @@ def expense_dashboard(request, library_id):
         'expenses': expenses.order_by('-date')[:10],
         'total_expenses': total_expenses,
         'total_profit': total_profit,
-        'valid_transactions': transactions.filter(status='valid').select_related('user', 'subscription').order_by('-created_at'),
+        'valid_transactions': valid_transection,
         'from_date': from_date,
         'to_date': to_date
     }
@@ -538,8 +562,20 @@ def library_dashboard(request, library_id):
     
     library = get_object_or_404(Library, id=library_id)
     
+    # Get unique users who have active subscriptions
+    active_users = UserSubscription.objects.filter(
+        subscription__library=library,
+        end_date__gte=timezone.now().date()
+    ).values('user').distinct().count()
+    
+    # Get total active subscriptions
+    active_subscriptions_count = UserSubscription.objects.filter(
+        subscription__library=library,
+        end_date__gte=timezone.now().date()
+    ).count()
+    
     # Get all subscription plans
-    plans = SubscriptionPlan.objects.all()
+    plans = SubscriptionPlan.objects.filter(library=library)
     
     # Prepare plans data with library-specific UPI details
     plans_data = []
@@ -555,20 +591,18 @@ def library_dashboard(request, library_id):
             'thank_you_message': library.thank_you_message
         })
     
-    
-    upi_id = library.upi_id
-    recipient_name = library.recipient_name
-    thank_you_message = library.thank_you_message
-
     upidata = {
-        "upi_id" : upi_id,
-        "recipient_name" : recipient_name,
-        "thank_you_message" : thank_you_message,
+        "upi_id": library.upi_id,
+        "recipient_name": library.recipient_name,
+        "thank_you_message": library.thank_you_message,
     }
+    
 
     return render(request, 'library/library_dashboard.html', {
         'library': library,
         'plans': plans_data,
+        'user_count': active_users,
+        'active_subscriptions_count': active_subscriptions_count,
         'upidata': upidata
     })
 
@@ -1436,6 +1470,10 @@ def create_coupon(request, library_id):
             
             messages.success(request, "Coupon created successfully!")
             return redirect('library_dashboard', library_id=library.id)
+        else:
+            # If form is invalid, show error messages
+            for error in form.errors.values():
+                messages.error(request, error)
     else:
         form = CouponForm(library_id=library_id)
     
