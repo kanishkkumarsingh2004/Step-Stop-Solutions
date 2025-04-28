@@ -1,52 +1,74 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Home Page Banners</h1>
-    
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <!-- Add Banner Form -->
-        <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Banner</h2>
-            <form method="post">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <!-- Page Header -->
+    <div class="text-center mb-8 sm:mb-12">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Home Page Banner Management</h1>
+        <p class="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto">
+            Manage and configure the banners displayed on your platform's homepage
+        </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <!-- Add Banner Section -->
+        <div class="bg-gray-50 px-6 sm:px-8 py-6 sm:py-8 border-b border-gray-200">
+            <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-5">Add New Banner</h2>
+            <form method="post" class="space-y-6">
                 {% csrf_token %}
-                <div class="space-y-4">
-                    {{ form.as_p }}
+                <div class="grid grid-cols-1 gap-6">
+                    {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
-                <div class="mt-6">
+                <div class="pt-4">
                     <button type="submit" 
-                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                            class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i class="bi bi-plus-lg mr-2"></i>
                         Add Banner
                     </button>
                 </div>
             </form>
         </div>
 
-        <!-- Existing Banners -->
-        <div>
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Current Banners</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <!-- Existing Banners Section -->
+        <div class="px-6 sm:px-8 py-6 sm:py-8">
+            <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">Current Banners</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {% for banner in banners %}
                 <div class="relative group">
-                    <div class="w-full h-48 bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="w-full aspect-[16/9] bg-gray-100 rounded-xl shadow-sm overflow-hidden">
                         <img src="https://drive.google.com/thumbnail?id={{ banner.google_drive_id }}&sz=s800" 
                              alt="Home Page Banner" 
-                             class="w-full h-full object-cover">
+                             class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300">
                     </div>
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center space-x-2">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl flex items-center justify-center">
                         <form method="post" action="{% url 'delete_home_banner' banner.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="bg-transparent hover:bg-transparent text-red-500 hover:text-red-600 px-2 py-1 rounded-md">
-                                <i class="bi bi-trash"></i> Remove
+                            <button type="submit" 
+                                    class="bg-white/90 hover:bg-white text-red-600 hover:text-red-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-200">
+                                <i class="bi bi-trash"></i>
+                                <span>Remove</span>
                             </button>
                         </form>
                     </div>
                 </div>
                 {% empty %}
-                <p class="text-gray-500">No banners found.</p>
+                <div class="col-span-full text-center py-8">
+                    <i class="bi bi-image text-3xl text-gray-400 mb-3"></i>
+                    <p class="text-gray-500 text-sm">No banners have been added yet</p>
+                </div>
                 {% endfor %}
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

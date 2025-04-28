@@ -1,61 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Text Banners</h1>
-    
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <!-- Add Banner Form -->
-        <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Banner</h2>
-            <form method="post">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <!-- Page Header -->
+    <div class="text-center mb-10">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Text Banner Management</h1>
+        <p class="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto">
+            Manage and configure text banners for your platform's homepage
+        </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <!-- Add Banner Section -->
+        <div class="bg-gray-50 px-6 sm:px-8 py-6 sm:py-8 border-b border-gray-200">
+            <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-5">Create New Banner</h2>
+            <form method="post" class="space-y-6">
                 {% csrf_token %}
-                <div class="space-y-4">
-                    <div>
-                        <label for="banner_text" class="block text-sm font-medium text-gray-700">Banner Text</label>
-                        <textarea id="banner_text" name="banner_text" rows="3"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
-                    </div>
-                    
-                    <div class="flex items-center">
-                        <input id="is_active" name="is_active" type="checkbox"
-                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" checked>
-                        <label for="is_active" class="ml-2 block text-sm text-gray-900">
-                            Active
-                        </label>
-                    </div>
+                <div>
+                    <label for="banner_text" class="block text-sm font-medium text-gray-700 mb-2">Banner Content</label>
+                    <textarea id="banner_text" name="banner_text" rows="4"
+                        class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition duration-200"
+                        placeholder="Enter your banner text here..."></textarea>
                 </div>
                 
-                <div class="mt-6">
+                <div class="flex items-center">
+                    <input id="is_active" name="is_active" type="checkbox"
+                        class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition duration-200" checked>
+                    <label for="is_active" class="ml-3 block text-sm text-gray-700">
+                        Set as Active
+                    </label>
+                </div>
+                
+                <div class="pt-4">
                     <button type="submit" 
-                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
-                        Add Banner
+                        class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i class="bi bi-plus-lg mr-2"></i>
+                        Create Banner
                     </button>
                 </div>
             </form>
         </div>
 
-        <!-- Existing Banners -->
-        <div>
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Current Banners</h2>
+        <!-- Existing Banners Section -->
+        <div class="px-6 sm:px-8 py-6 sm:py-8">
+            <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-6">Active Banners</h2>
             <div class="space-y-4">
                 {% for banner in banners %}
-                <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
-                    <div>
-                        <p class="text-gray-800">{{ banner.text }}</p>
-                        <p class="text-sm text-gray-600 mt-1">
-                            Status: {% if banner.is_active %}Active{% else %}Inactive{% endif %}
-                        </p>
+                <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-gray-800 text-sm sm:text-base">{{ banner.text }}</p>
+                        <div class="mt-2 flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if banner.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {% if banner.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                            <span class="text-xs text-gray-500">Created: {{ banner.created_at|date:"M d, Y" }}</span>
+                        </div>
                     </div>
                     <form method="post" action="{% url 'delete_text_banner' banner.id %}">
                         {% csrf_token %}
-                        <button type="submit" class="text-red-500 hover:text-red-600">
-                            <i class="bi bi-trash"></i> Delete
+                        <button type="submit" 
+                            class="text-red-500 hover:text-red-600 transition duration-200 p-2 rounded-lg hover:bg-red-50">
+                            <i class="bi bi-trash text-lg"></i>
                         </button>
                     </form>
                 </div>
                 {% empty %}
-                <p class="text-gray-500">No banners found.</p>
+                <div class="text-center py-8">
+                    <i class="bi bi-info-circle text-3xl text-gray-400 mb-3"></i>
+                    <p class="text-gray-500 text-sm">No banners have been created yet</p>
+                </div>
                 {% endfor %}
             </div>
         </div>

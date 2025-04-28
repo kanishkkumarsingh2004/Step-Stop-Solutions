@@ -552,6 +552,7 @@ def admin_library_details(request, library_id):
 
 @login_required
 def public_library_details(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
     if not request.user.is_authenticated:
         return redirect('login')
     library = get_object_or_404(Library, id=library_id)
@@ -562,12 +563,28 @@ def public_library_details(request, library_id):
     
     # Calculate average rating with 2 decimal places
     average_rating = round(library.average_rating(), 2)
+    has_active_subscription = False
+    has_reviewed = False
+
+    if request.user.is_authenticated:
+        has_reviewed = Review.objects.filter(library=library, user=request.user).exists()
+        has_active_subscription = UserSubscription.objects.filter(
+            user=request.user,
+            subscription__library=library,
+            end_date__gte=timezone.now().date()
+        ).exists()
+
+    if request.user.is_authenticated:
+        has_reviewed = Review.objects.filter(library=library, user=request.user).exists()
     
     return render(request, 'library/library_details.html', {
         'library': library,
         'banners': banners,
         'recent_reviews': recent_reviews,
-        'average_rating': average_rating
+        'has_reviewed': has_reviewed,
+        'average_rating': average_rating,
+        'has_active_subscription': has_active_subscription
+
     })
 
 @login_required
@@ -1991,6 +2008,23 @@ def manage_banner_counts(request):
 def add_review(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     
+    # Check if user has already reviewed
+    existing_review = Review.objects.filter(library=library, user=request.user).first()
+    if existing_review:
+        messages.info(request, "Your review means a lot to us! Thank you for your feedback.")
+        return redirect('library_details', library_id=library_id)
+    
+    # Check if user has active subscription
+    has_active_subscription = UserSubscription.objects.filter(
+        user=request.user,
+        subscription__library=library,
+        end_date__gte=timezone.now().date()
+    ).exists()
+    
+    if not has_active_subscription:
+        messages.error(request, "You need an active subscription to review this library.")
+        return redirect('library_details', library_id=library_id)
+    
     if request.method == 'POST':
         form = ReviewForm(request.POST)
         if form.is_valid():
@@ -2003,15 +2037,11 @@ def add_review(request, library_id):
     else:
         form = ReviewForm()
     
-    return render(request, 'library/add_review.html', {'form': form, 'library': library})
-
-@login_required
-def delete_review(request, review_id):
-    review = get_object_or_404(Review, id=review_id, user=request.user)
-    library_id = review.library.id
-    review.delete()
-    messages.success(request, "Review deleted successfully!")
-    return redirect('library_details', library_id=library_id)
+    return render(request, 'library/add_review.html', {
+        'form': form,
+        'library': library,
+        'has_reviewed': existing_review is not None
+    })
 
 @login_required
 def manage_reviews(request, library_id):

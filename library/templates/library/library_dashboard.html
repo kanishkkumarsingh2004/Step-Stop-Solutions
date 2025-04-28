@@ -77,16 +77,19 @@
             <span>Manage Users</span>
         </a>
         <a href="{% url 'nfc_add_user_page' library.id %}" class="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-nfc text-sm sm:text-lg"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-credit-card text-sm sm:text-lg" viewBox="0 0 16 16">
+                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1z"/>
+                <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/>
+            </svg>
             <span>Add User via NFC</span>
         </a>
         <a href="{% url 'attendance_page' library.id %}" class="bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
             <i class="bi bi-clipboard-data text-sm sm:text-lg"></i>
             <span>Attendance</span>
         </a>
-        <a href="{% url 'manage_reviews' library.id %}" 
-           class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-            Manage Reviews
+        <a href="{% url 'manage_reviews' library.id %}" class="bg-orange-600 hover:bg-orange-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
+            <i class="bi bi-chat-square-text text-sm sm:text-lg"></i>
+            <span>Manage Reviews</span>
         </a>
     </div>
 

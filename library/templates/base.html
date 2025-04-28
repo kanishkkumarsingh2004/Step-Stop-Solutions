@@ -46,7 +46,6 @@
                 </div>
                 <!-- Mobile Menu Button -->
                 <div class="flex items-center md:hidden">
-                    
                     <button id="mobile-menu-button" class="text-gray-300 hover:text-white focus:outline-none">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -57,29 +56,41 @@
                 <div class="hidden md:flex items-center space-x-6">
                     <a href="/" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Home</a>
                     {% if user.is_authenticated %}
-                        {% if user.is_superuser %}
-                            <a href="{% url 'admin_dashboard' %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Admin Dashboard</a>
-                            <a href="/dashboard/" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Dashboard</a>
-                        {% else %}
-                            <a href="/dashboard/" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Dashboard</a>
-                        {% endif %}
+                        <!-- Dashboard Dropdown -->
+                        <div class="relative group">
+                            <button class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700 flex items-center">
+                                Dashboards
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="absolute hidden group-hover:block bg-gray-800 rounded-lg shadow-lg mt-1 w-64">
+                                <div class="py-2">
+                                    {% if user.is_superuser %}
+                                        <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Admin Dashboard</a>
+                                    {% endif %}
+                                    <a href="/dashboard/" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Dashboard</a>
+                                    {% if user.libraries_staffed.all %}
+                                        {% for library in user.libraries_staffed.all %}
+                                            <a href="{% url 'staff_dashboard' library.id %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                                Staff Dashboard ({{ library.venue_name }})
+                                            </a>
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% if user.owned_libraries.all %}
+                                        {% for library in user.owned_libraries.all %}
+                                            {% if library.is_approved %}
+                                                <a href="{% url 'library_dashboard' library.id %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                                    Library Dashboard ({{ library.venue_name }})
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                         <a href="{% url 'user_profile' user.id %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">My Profile</a>
                     {% endif %}
-                    <!-- In your navbar section -->
-                    {% if user.is_authenticated %}
-                        {% for library in user.libraries_staffed.all %}
-                        <a href="{% url 'staff_dashboard' library.id %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">
-                            Staff Dashboard ({{ library.venue_name }})
-                        </a>
-                        {% endfor %}
-                    {% endif %}
-                    {% for library in user.owned_libraries.all %}
-                        {% if library.is_approved %}
-                            <a href="{% url 'library_dashboard' library.id %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">
-                                Library Dashboard ({{ library.venue_name }})
-                            </a>
-                        {% endif %}
-                    {% endfor %}
                     {% if user.is_authenticated %}
                     <a href="{% url 'logout' %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Logout</a>
                     {% else %}

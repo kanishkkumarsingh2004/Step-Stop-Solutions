@@ -1,90 +1,107 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-8">
-    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6">Admin Dashboard</h1>
+<div class="max-w-[95rem] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8">
+    <!-- Dashboard Header -->
+    <div class="text-center px-4">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">Admin Dashboard</h1>
+        <p class="text-gray-600 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto">
+            Comprehensive platform management tools for efficient administration
+        </p>
+    </div>
 
-    <!-- Admin Stats Grid -->
-    <div class="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6 sm:mb-8">
+    <!-- Statistics Grid -->
+    <div class="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <!-- Total Users Card -->
-        <div class="bg-blue-50 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-100 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base sm:text-lg font-semibold text-blue-800">Total Users</h3>
-                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-1">{{ total_users }}</p>
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-800">Total Users</h3>
+                    <p class="text-3xl sm:text-4xl font-bold text-gray-900 mt-2">{{ total_users }}</p>
                 </div>
-                <i class="bi bi-people text-xl sm:text-2xl md:text-3xl text-blue-600"></i>
+                <div class="p-3 bg-blue-50 rounded-lg">
+                    <i class="bi bi-people text-2xl sm:text-3xl text-blue-600"></i>
+                </div>
             </div>
         </div>
 
         <!-- Libraries Card -->
-        <div class="bg-green-50 p-3 sm:p-4 rounded-lg shadow-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-100 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-base sm:text-lg font-semibold text-green-800">Libraries</h3>
-                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-1">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-800">Libraries</h3>
+                    <p class="text-3xl sm:text-4xl font-bold text-gray-900 mt-2">
                         {{ approved_libraries }}/{{ total_libraries }}
                     </p>
                 </div>
-                <i class="bi bi-book text-xl sm:text-2xl md:text-3xl text-green-600"></i>
+                <div class="p-3 bg-green-50 rounded-lg">
+                    <i class="bi bi-book text-2xl sm:text-3xl text-green-600"></i>
+                </div>
             </div>
         </div>
 
-        <!-- Total Institutions Card -->
-        <div class="bg-purple-50 p-3 sm:p-4 rounded-lg shadow-sm">
+        <!-- Institutions Card -->
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-100 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="极base sm:text-lg font-semibold text-purple-800">Institutions</h3>
-                    <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-1">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-800">Institutions</h3>
+                    <p class="text-3xl sm:text-4xl font-bold text-gray-900 mt-2">
                         {{ approved_institutions }}/{{ total_institutions }}
                     </p>
                 </div>
-                <i class="bi bi-building text-xl sm:text-2xl md:text-3xl text-purple-600"></i>
+                <div class="p-3 bg-purple-50 rounded-lg">
+                    <i class="bi bi-building text-2xl sm:text-3xl text-purple-600"></i>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="flex gap-4 sm:gap-8">
-        <a href="{% url 'all_users' %}" class="bg-blue-600 text-white px-6 py极 rounded-lg hover:bg-blue-700 transition duration-200 text-center font-medium flex-1">
-            View All Users
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <a href="{% url 'all_users' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3">
+            <i class="bi bi-people text-xl sm:text-2xl"></i>
+            <span class="text-lg sm:text-xl font-medium">View All Users</span>
         </a>
-        <a href="{% url 'all_libraries' %}" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200 text-center font-medium flex-1">
-            View All Libraries
+        <a href="{% url 'all_libraries' %}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3">
+            <i class="bi bi-book text-xl sm:text-2xl"></i>
+            <span class="text-lg sm:text-xl font-medium">View All Libraries</span>
         </a>
     </div>
 
-    <!-- Admin Actions Section -->
-    <div class="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
-        <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 text-center">Admin Actions</h2>
-        <div class="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2">
-            <a href="{% url 'manage_libraries' %}" class="bg-blue-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-sm sm:text-base font-semibold flex items-center justify-center">
-                Manage Libraries
-            </a>
-            <a href="{% url 'manage_institutions' %}" class="bg-purple-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg hover:bg-purple-700 transition duration-300 text-sm sm:text-base font-semibold flex items-center justify-center">
-                Manage Institutions
-            </a>
+    <!-- Management Sections -->
+    <div class="space-y-6 sm:space-y-8">
+        <!-- Admin Actions -->
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">Admin Actions</h2>
+            <div class="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <a href="{% url 'manage_libraries' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="bi bi-building-gear text-xl sm:text-2xl"></i>
+                    <span class="text-base sm:text-lg font-medium">Manage Libraries</span>
+                </a>
+                <a href="{% url 'manage_institutions' %}" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="bi bi-building-check text-xl sm:text-2xl"></i>
+                    <span class="text-base sm:text-lg font-medium">Manage Institutions</span>
+                </a>
+            </div>
         </div>
-    </div>
 
-    <!-- Add this section in the Admin Actions Section -->
-    <div class="bg-white p-3 sm:p-4 rounded-lg shadow-sm mt-6">
-        <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 text-center">Home Page Management</h2>
-        <div class="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2">
-            <a href="{% url 'manage_home_banners' %}" 
-               class="bg-blue-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-sm sm:text-base font-semibold flex items-center justify-center">
-                <i class="bi bi-images mr-2"></i>
-                Manage Home Banners
-            </a>
-            <a href="{% url 'manage_text_banner' %}" 
-            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-200">
-            <i class="bi bi-text-paragraph mr-2"></i>
-                Manage Text Banner
-            </a>
-            <a href="{% url 'manage_banner_counts' %}" 
-               class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200">
-                <i class="bi bi-image mr-2"></i>
-                Manage Banner Counts
-            </a>
+        <!-- Home Page Management -->
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">Home Page Management</h2>
+            <div class="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <a href="{% url 'manage_home_banners' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="bi bi-images text-xl sm:text-2xl"></i>
+                    <span class="text-base sm:text-lg font-medium">Manage Home Banners</span>
+                </a>
+                <a href="{% url 'manage_text_banner' %}" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="bi bi-text-paragraph text-xl sm:text-2xl"></i>
+                    <span class="text-base sm:text-lg font-medium">Manage Text Banner</span>
+                </a>
+                <a href="{% url 'manage_banner_counts' %}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="bi bi-image text-xl sm:text-2xl"></i>
+                    <span class="text-base sm:text-lg font-medium">Manage Banner Counts</span>
+                </a>
+            </div>
         </div>
     </div>
 </div>

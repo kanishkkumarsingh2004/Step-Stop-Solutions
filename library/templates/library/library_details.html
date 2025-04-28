@@ -6,14 +6,37 @@
         <!-- Header Section -->
         <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-200">
             <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <!-- Venue Name -->
                 <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
                     {{ library.venue_name }}
                 </h1>
+                
+                <!-- Business Type Badge -->
                 <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm
-                    {% if library.business_type == 'Library' %}bg-blue-100 text-blue-800
-                    {% else %}bg-green-100 text-green-800{% endif %}">
+                    {% if library.business_type == 'Library' %}
+                        bg-blue-100 text-blue-800
+                    {% else %}
+                        bg-green-100 text-green-800
+                    {% endif %}">
                     {{ library.business_type }}
                 </span>
+                
+                <!-- Library Image -->
+                <div class="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-lg shadow-md flex items-center justify-center overflow-hidden border-4 border-white/20 ring-2 ring-blue-200/50">
+                    {% if library.image %}
+                        <img src="https://drive.google.com/thumbnail?id={{ library.image.google_drive_id }}&sz=s800" 
+                             alt="{{ library.venue_name }} logo" 
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full text-gray-400">
+                            <path d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" 
+                                  stroke="currentColor" 
+                                  stroke-width="2" 
+                                  stroke-linecap="round" 
+                                  stroke-linejoin="round"/>
+                        </svg>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -103,28 +126,44 @@
             {% endif %}
 
             <!-- Reviews Card -->
-            <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
-                <div class="mb-4 sm:mb-5">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">🌟 Reviews</h2>
-                        <p class="text-gray-600 text-sm sm:text-base">{{ average_rating }} / 5</p>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-5 gap-3 sm:gap-0">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">🌟 Reviews</h2>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                        <div class="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-full">
+                            <div class="text-yellow-400 text-sm sm:text-base">
+                                {% for i in "12345" %}
+                                    {% if i|add:0 <= average_rating|floatformat:0|add:0 %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600">
+                                {{ average_rating }} ({{ library.reviews.count }})
+                            </span>
+                        </div>
+                        {% if user.is_authenticated %}
+                            {% if has_reviewed %}
+                                <div class="bg-green-50 p-2 rounded-lg w-full sm:w-auto">
+                                    <p class="text-xs sm:text-sm text-green-700">Your review means a lot to us! Thank you for your feedback.</p>
+                                </div>
+                            {% elif has_active_subscription %}
+                                <a href="{% url 'add_review' library.id %}" 
+                                   class="inline-flex items-center justify-center bg-blue-600 text-white px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg hover:bg-blue-700 transition-all duration-300 text-sm sm:text-base">
+                                    Add Review
+                                </a>
+                            {% endif %}
+                        {% endif %}
                     </div>
-                    {% if user.is_authenticated %}
-                    <div class="mt-3">
-                        <a href="{% url 'add_review' library.id %}" 
-                           class="inline-flex items-center justify-center bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-300 shadow-md hover:shadow-lg">
-                            <i class="bi bi-pencil-square mr-2"></i>
-                            Add Review
-                        </a>
-                    </div>
-                    {% endif %}
                 </div>
                 <div class="space-y-4">
                     {% for review in recent_reviews %}
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <div class="flex items-center justify-between">
+                    <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                             <div class="flex items-center space-x-2">
-                                <div class="text-yellow-400">
+                                <div class="text-yellow-400 text-sm sm:text-base">
                                     {% for i in "12345" %}
                                         {% if forloop.counter <= review.rating %}
                                             <i class="bi bi-star-fill"></i>
@@ -133,16 +172,16 @@
                                         {% endif %}
                                     {% endfor %}
                                 </div>
-                                <span class="text-sm text-gray-600">{{ review.user.get_full_name }}</span>
+                                <span class="text-xs sm:text-sm text-gray-600">{{ review.user.get_full_name }}</span>
                             </div>
-                            <span class="text-sm text-gray-500">{{ review.created_at|date:"M d, Y" }}</span>
+                            <span class="text-xs sm:text-sm text-gray-500">{{ review.created_at|date:"M d, Y" }}</span>
                         </div>
                         {% if review.comment %}
-                        <p class="mt-2 text-gray-700">{{ review.comment }}</p>
+                        <p class="mt-2 text-xs sm:text-sm text-gray-700">{{ review.comment }}</p>
                         {% endif %}
                     </div>
                     {% empty %}
-                    <p class="text-gray-600">No reviews yet. Be the first to review!</p>
+                    <p class="text-sm sm:text-base text-gray-600">No reviews yet. Be the first to review!</p>
                     {% endfor %}
                 </div>
                 

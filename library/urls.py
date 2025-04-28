@@ -159,6 +159,5 @@ urlpatterns = [
     path('manage-banner-counts/', views.manage_banner_counts, name='manage_banner_counts'),
     path('library/<int:library_id>/add-review/', views.add_review, name='add_review'),
     path('library/<int:library_id>/manage-reviews/', views.manage_reviews, name='manage_reviews'),
-    path('review/<int:review_id>/delete/', views.delete_review, name='delete_review'),
     path('library/<int:library_id>/reviews/', views.view_reviews, name='view_reviews'),
 ]
