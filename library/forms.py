@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage
+from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -22,10 +22,20 @@ class CustomUserCreationForm(UserCreationForm):
     state = forms.CharField(required=False)
     age = forms.IntegerField(required=False)
     education = forms.ChoiceField(choices=CustomUser.EDUCATION_CHOICES, required=True)
+    terms = forms.BooleanField(required=True)
+    privacy = forms.BooleanField(required=True)
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'first_name', 'last_name', 'mobile_number', 'emergency_number', 'gender', 'address', 'password1', 'password2', 'category', 'dob', 'pincode', 'district', 'city', 'state', 'age', 'education']
+        fields = ['email', 'first_name', 'last_name', 'mobile_number', 'emergency_number', 'gender', 'address', 'password1', 'password2', 'category', 'dob', 'pincode', 'district', 'city', 'state', 'age', 'education', 'terms', 'privacy']
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.accepted_terms = self.cleaned_data['terms']
+        user.accepted_privacy_policy = self.cleaned_data['privacy']
+        if commit:
+            user.save()
+        return user
 
 class LibraryRegistrationForm(forms.ModelForm):
     first_name = forms.CharField(max_length=100, required=True)
@@ -151,3 +161,21 @@ class LibraryImageForm(forms.ModelForm):
     class Meta:
         model = LibraryImage
         fields = ['google_drive_link']
+
+class HomePageBannerForm(forms.ModelForm):
+    class Meta:
+        model = HomePageImageBanner
+        fields = ['google_drive_link', 'is_active']
+        widgets = {
+            'google_drive_link': forms.TextInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'comment']
+        widgets = {
+            'rating': forms.NumberInput(attrs={'min': 1, 'max': 5}),
+            'comment': forms.Textarea(attrs={'rows': 3})
+        }

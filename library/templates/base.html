@@ -163,7 +163,7 @@
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
                 <!-- About Us Section -->
                 <div class="mb-6 sm:mb-0">
                     <h3 class="text-lg font-bold mb-3 sm:mb-4">About Us</h3>
@@ -176,8 +176,17 @@
                     <ul class="space-y-2">
                         <li><a href="/" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Home</a></li>
                         <li><a href="{% url 'register_venders_shop' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Libraries</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal Section -->
+                <div class="mb-6 sm:mb-0">
+                    <h3 class="text-lg font-bold mb-3 sm:mb-4">Legal</h3>
+                    <ul class="space-y-2">
                         <li><a href="{% url 'terms_conditions' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Terms & Conditions</a></li>
                         <li><a href="{% url 'privacy_policy' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Privacy Policy</a></li>
+                        <li><a href="{% url 'cookies_policy' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Cookies Policy</a></li>
+                        <li><a href="{% url 'disclaimer' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Disclaimer</a></li>
                     </ul>
                 </div>
 

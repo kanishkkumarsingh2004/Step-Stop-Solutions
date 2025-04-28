@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: commonOptions
         },
+        
         expenseOverTimeLineChart: {
             type: 'line',
             data: {
@@ -192,10 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: JSON.parse(document.getElementById('profitLabels').textContent),
                 datasets: [{
                     label: 'Profit (₹)',
-                    data: JSON.parse(document.getElementById('profitValues').textContent).reduce((acc, curr, i) => {
-                        acc.push((acc[i-1] || 0) + curr + curr);
-                        return acc;
-                    }, []),
+                    data: JSON.parse(document.getElementById('profitValues').textContent),
                     borderColor: '#3b82f6',
                     borderWidth: 2,
                     pointBackgroundColor: '#ffffff',
@@ -218,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     y: {
                         title: {
                             display: true,
-                            text: 'Profit'
+                            text: 'Valid Transection'
                         }
                     }
                 }

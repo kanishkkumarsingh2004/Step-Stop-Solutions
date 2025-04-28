@@ -66,6 +66,8 @@ urlpatterns = [
     
     # Legal Pages
     path('terms-and-conditions/', views.terms_conditions, name='terms_conditions'),
+    path('cookies-policy/', views.cookies_policy, name='cookies_policy'),
+    path('disclaimer/', views.disclaimer, name='disclaimer'),
     path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
     path('library/<int:library_id>/staff-management/', views.staff_management, name='library_staff_management'),
     
@@ -149,4 +151,14 @@ urlpatterns = [
     path('banner/<int:banner_id>/delete/', views.delete_banner, name='delete_banner'),
     path('<int:library_id>/update_image/', views.update_library_image, name='update_library_image'),
     path('<int:library_id>/remove_image/', views.remove_library_image, name='remove_library_image'),
+    path('update-banner/', views.update_banner, name='update_banner'),
+    path('manage-home-banners/', views.manage_home_banners, name='manage_home_banners'),
+    path('delete-home-banner/<int:banner_id>/', views.delete_home_banner, name='delete_home_banner'),
+    path('manage-text-banner/', views.manage_text_banner, name='manage_text_banner'),
+    path('delete-text-banner/<int:banner_id>/', views.delete_text_banner, name='delete_text_banner'),
+    path('manage-banner-counts/', views.manage_banner_counts, name='manage_banner_counts'),
+    path('library/<int:library_id>/add-review/', views.add_review, name='add_review'),
+    path('library/<int:library_id>/manage-reviews/', views.manage_reviews, name='manage_reviews'),
+    path('review/<int:review_id>/delete/', views.delete_review, name='delete_review'),
+    path('library/<int:library_id>/reviews/', views.view_reviews, name='view_reviews'),
 ]

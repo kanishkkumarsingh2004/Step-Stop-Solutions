@@ -44,7 +44,7 @@
                     <p class="text-2xl font-bold text-gray-900 mb-6" id="plan_{{ plan.id }}">
                         {% if plan.has_discount %}
                             <span class="line-through text-gray-400 mr-2" id="normal_price">₹{{ plan.normal_price }}</span>
-                            ₹<span class="price-display">{{ plan.discount_price }}</span>
+                            ₹<span class="price-display" id="discountedprice">{{ plan.discount_price }}</span>
                         {% else %}
                             ₹<span class="price-display">{{ plan.normal_price }}</span>
                         {% endif %}
@@ -161,7 +161,9 @@ function applyCoupon() {
                     const priceDisplay = priceContainer.querySelector('.price-display');
                     const couponDiscount = priceContainer.querySelector(`#coupon_discount_${plan.id}`);
                     const percentageElement = priceContainer.closest('.p-6').querySelector('.percentage-difference');
-                    
+                    const actualammount = parseFloat(document.getElementById('normal_price')?.textContent.replace('₹', '') || 0);
+                    const discountedammount = parseFloat(document.getElementById('discountedprice')?.textContent || 0);
+
                     if (priceDisplay) {
                         priceDisplay.textContent = plan.discounted_price;
                     }
@@ -170,9 +172,11 @@ function applyCoupon() {
                         const discountedPrice = parseFloat(plan.discounted_price);
                         const originalPrice = parseFloat(plan.original_price);
                         const discountAmount = originalPrice - discountedPrice;
-                        const previous = (discountAmount / originalPrice) * 100
+                        const previous = (discountAmount / originalPrice) * 100;
+                        const finalvalue = (actualammount - discountedammount)+ discountAmount;
+
                         
-                        couponDiscount.textContent = `(You save ₹${discountAmount.toFixed(2)})`;
+                        couponDiscount.textContent = `(You save ₹${finalvalue.toFixed(2)})`;
                         couponDiscount.classList.remove('hidden');
                         percentageElement.textContent = `${percentageElement.textContent}  + ${previous.toFixed(2)}% off`;
                     }

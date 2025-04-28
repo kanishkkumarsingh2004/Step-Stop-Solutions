@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Home Page Banners</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <!-- Add Banner Form -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Banner</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    {{ form.as_p }}
+                </div>
+                <div class="mt-6">
+                    <button type="submit" 
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                        Add Banner
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Existing Banners -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Current Banners</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {% for banner in banners %}
+                <div class="relative group">
+                    <div class="w-full h-48 bg-white rounded-lg shadow-md overflow-hidden">
+                        <img src="https://drive.google.com/thumbnail?id={{ banner.google_drive_id }}&sz=s800" 
+                             alt="Home Page Banner" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center space-x-2">
+                        <form method="post" action="{% url 'delete_home_banner' banner.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-transparent hover:bg-transparent text-red-500 hover:text-red-600 px-2 py-1 rounded-md">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500">No banners found.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

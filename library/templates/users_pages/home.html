@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12">
     <!-- Hero Section -->
-    <div class="text-center mb-6 sm:mb-10 lg:mb-12">
+    <section class="text-center mb-6 sm:mb-10 lg:mb-12">
         <h1 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-2 sm:mb-3 md:mb-4">Welcome to Step Stop Solutions</h1>
         <p class="text-sm xs:text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">Your trusted partner in innovative business solutions. We help businesses grow through technology and strategy.</p>
         <div class="mt-4 sm:mt-6 lg:mt-8 flex flex-col space-y-3 sm:space-y-0 sm:flex-row justify-center sm:space-x-4 px-2 sm:px-0">
@@ -18,40 +18,214 @@
             </a>
             {% endif %}
         </div>
-    </div>
+    </section>
 
     <!-- Features Section -->
-    <div class="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:gap-8 mb-6 sm:mb-10 lg:mb-12 px-2 sm:px-0">
-        <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 mb-6 sm:mb-10 lg:mb-12 px-2 sm:px-0">
+        <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 transition-transform duration-300">
             <div class="text-center">
                 <i class="bi bi-lightbulb text-2xl sm:text-3xl md:text-4xl text-blue-600 mb-2 sm:mb-3 md:mb-4"></i>
                 <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Strategic Consulting</h3>
                 <p class="text-xs sm:text-sm md:text-base text-gray-600">Tailored business strategies to drive growth and efficiency.</p>
             </div>
         </div>
-        <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+        <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 transition-transform duration-300">
             <div class="text-center">
                 <i class="bi bi-laptop text-2xl sm:text-3xl md:text-4xl text-purple-600 mb-2 sm:mb-3 md:mb-4"></i>
                 <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Technology Solutions</h3>
                 <p class="text-xs sm:text-sm md:text-base text-gray-600">Cutting-edge technology implementations for modern businesses.</p>
             </div>
         </div>
-        <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+        <div class="bg-white p-3 sm:p-5 md:p-6 lg:p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 transition-transform duration-300">
             <div class="text-center">
                 <i class="bi bi-graph-up text-2xl sm:text-3xl md:text-4xl text-green-600 mb-2 sm:mb-3 md:mb-4"></i>
                 <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Business Optimization</h3>
                 <p class="text-xs sm:text-sm md:text-base text-gray-600">Streamline operations and maximize your business potential.</p>
             </div>
         </div>
-    </div>
+    </section>
+
+    {% if text_banners %}
+    <section class="bg-white rounded-lg sm:rounded-2xl p-4 sm:p-6 shadow-md sm:shadow-lg overflow-hidden w-full mb-6 sm:mb-8">
+        <div class="relative w-full aspect-[4/3] sm:aspect-[16/5] overflow-hidden rounded-md sm:rounded-lg">
+            <!-- Navigation Arrows -->
+            <button class="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 sm:p-2.5 z-10 transition-all duration-200 shadow-sm sm:shadow-md" onclick="prevTextSlide()">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <button class="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 sm:p-2.5 z-10 transition-all duration-200 shadow-sm sm:shadow-md" onclick="nextTextSlide()">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+
+            <!-- Slides Container -->
+            <div class="absolute inset-0 flex transition-transform duration-500 ease-in-out" id="text-slides-container">
+                {% for text_banner in text_banners %}
+                    {% if text_banner.is_active %}
+                    <div class="w-full h-full flex-shrink-0 flex items-center justify-center bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <p class="text-blue-900 text-base sm:text-lg md:text-xl px-4 sm:px-8 text-center leading-normal sm:leading-relaxed">{{ text_banner.text }}</p>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Pagination Dots -->
+            <div class="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1 sm:space-x-2">
+                {% for text_banner in text_banners %}
+                    {% if text_banner.is_active %}
+                    <button class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-white/80 hover:bg-white transition-all duration-200 shadow-xs sm:shadow-sm" onclick="goToTextSlide('{{ forloop.counter0 }}')" id="text-dot-{{ forloop.counter0 }}"></button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
     <!-- Call to Action Section -->
-    <div class="bg-blue-600 text-white rounded-lg p-4 sm:p-6 md:p-8 text-center mx-2 sm:mx-0">
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-3 md:mb-4">Ready to Transform Your Business?</h2>
-        <p class="text-sm sm:text-base md:text-lg mb-3 sm:mb-4 md:mb-6">Let us help you take your business to the next level.</p>
-        <a href="{% url 'register_venders_shop' %}" class="bg-white text-blue-600 px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-gray-100 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold">
-            Get Started Now
-        </a>
-    </div>
-</div>
+    <section class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-6 sm:p-8 md:p-10 text-center mx-2 sm:mx-0 mb-8">
+        <div class="max-w-2xl mx-auto">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Business?</h2>
+            <p class="text-base sm:text-lg md:text-xl mb-6">Let us help you take your business to the next level.</p>
+            <a href="{% url 'register_venders_shop' %}" class="inline-block bg-white text-blue-600 px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-gray-50 transition duration-300 text-lg font-semibold shadow-lg hover:shadow-xl">
+                Get Started Now
+            </a>
+        </div>
+    </section>
+
+    {% if image_banners %}
+    <section class="bg-white rounded-2xl p-6 shadow-lg overflow-hidden w-full mb-8">
+        <div class="relative w-full aspect-[16/9] overflow-hidden rounded-lg">
+            <!-- Navigation Arrows -->
+            <button class="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 sm:p-2.5 z-10 transition-all duration-200 shadow-sm sm:shadow-md" onclick="prevSlide()">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <button class="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 sm:p-2.5 z-10 transition-all duration-200 shadow-sm sm:shadow-md" onclick="nextSlide()">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+
+            <!-- Slides Container -->
+            <div class="absolute inset-0 flex transition-transform duration-500 ease-in-out" id="slides-container">
+                {% for banner in image_banners %}
+                <div class="w-full h-full flex-shrink-0">
+                    <img src="https://drive.google.com/thumbnail?id={{ banner.google_drive_id }}&sz=s800" 
+                         alt="Library Banner" 
+                         class="w-full h-full object-cover">
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination Dots -->
+            <div class="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1 sm:space-x-2">
+                {% for banner in image_banners %}
+                <button class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-white/80 hover:bg-white transition-all duration-200 shadow-xs sm:shadow-sm" onclick="goToSlide('{{ forloop.counter0 }}')" id="dot-{{ forloop.counter0 }}"></button>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <script>
+        // Text Banner Slider
+        let currentTextSlide = 0;
+        const totalTextSlides = '{{ text_banners|length }}';
+        let autoTextSlideInterval;
+
+        function showTextSlide(index) {
+            const slidesContainer = document.getElementById('text-slides-container');
+            const offset = -index * 100;
+            slidesContainer.style.transform = `translateX(${offset}%)`;
+            
+            // Update active dot
+            document.querySelectorAll('[id^="text-dot-"]').forEach(dot => {
+                dot.classList.remove('bg-white');
+                dot.classList.add('bg-white/50');
+            });
+            document.getElementById(`text-dot-${index}`)?.classList.remove('bg-white/50');
+            document.getElementById(`text-dot-${index}`)?.classList.add('bg-white');
+        }
+
+        function nextTextSlide() {
+            currentTextSlide = (currentTextSlide + 1) % totalTextSlides;
+            showTextSlide(currentTextSlide);
+            resetAutoTextSlide();
+        }
+
+        function prevTextSlide() {
+            currentTextSlide = (currentTextSlide - 1 + totalTextSlides) % totalTextSlides;
+            showTextSlide(currentTextSlide);
+            resetAutoTextSlide();
+        }
+
+        function goToTextSlide(index) {
+            currentTextSlide = index;
+            showTextSlide(currentTextSlide);
+            resetAutoTextSlide();
+        }
+
+        function startAutoTextSlide() {
+            autoTextSlideInterval = setInterval(nextTextSlide, 3000);
+        }
+
+        function resetAutoTextSlide() {
+            clearInterval(autoTextSlideInterval);
+            startAutoTextSlide();
+        }
+
+        // Image Banner Slider
+        let currentSlide = 0;
+        const totalSlides = '{{ image_banners|length }}';
+        let autoSlideInterval;
+
+        function showSlide(index) {
+            const slidesContainer = document.getElementById('slides-container');
+            const offset = -index * 100;
+            slidesContainer.style.transform = `translateX(${offset}%)`;
+            
+            // Update active dot
+            document.querySelectorAll('[id^="dot-"]').forEach(dot => {
+                dot.classList.remove('bg-white');
+                dot.classList.add('bg-white/50');
+            });
+            document.getElementById(`dot-${index}`).classList.remove('bg-white/50');
+            document.getElementById(`dot-${index}`).classList.add('bg-white');
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            showSlide(currentSlide);
+            resetAutoSlide();
+        }
+
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            showSlide(currentSlide);
+            resetAutoSlide();
+        }
+    
+        function goToSlide(index) {
+            currentSlide = index;
+            showSlide(currentSlide);
+            resetAutoSlide();
+        }
+    
+        function startAutoSlide() {
+            autoSlideInterval = setInterval(nextSlide, 3000);
+        }
+    
+        function resetAutoSlide() {
+            clearInterval(autoSlideInterval);
+            startAutoSlide();
+        }
+    
+        // Initialize
+        showSlide(0);
+        startAutoSlide();
+    </script>
+
 {% endblock %}

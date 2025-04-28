@@ -101,6 +101,61 @@
                 <p class="text-gray-600 text-base sm:text-lg">{{ library.additional_services }}</p>
             </div>
             {% endif %}
+
+            <!-- Reviews Card -->
+            <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+                <div class="mb-4 sm:mb-5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">🌟 Reviews</h2>
+                        <p class="text-gray-600 text-sm sm:text-base">{{ average_rating }} / 5</p>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <div class="mt-3">
+                        <a href="{% url 'add_review' library.id %}" 
+                           class="inline-flex items-center justify-center bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-300 shadow-md hover:shadow-lg">
+                            <i class="bi bi-pencil-square mr-2"></i>
+                            Add Review
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="space-y-4">
+                    {% for review in recent_reviews %}
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="text-yellow-400">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="text-sm text-gray-600">{{ review.user.get_full_name }}</span>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ review.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        {% if review.comment %}
+                        <p class="mt-2 text-gray-700">{{ review.comment }}</p>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-600">No reviews yet. Be the first to review!</p>
+                    {% endfor %}
+                </div>
+                
+                <!-- See All Reviews Link -->
+                {% if library.reviews.count > 2 %}
+                <div class="mt-4 text-center">
+                    <a href="{% url 'view_reviews' library.id %}" 
+                       class="text-blue-600 hover:text-blue-800 font-medium">
+                        See All Reviews →
+                    </a>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
         <!-- Contact Info Footer -->

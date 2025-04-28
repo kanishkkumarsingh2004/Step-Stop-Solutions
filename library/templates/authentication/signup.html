@@ -133,7 +133,29 @@
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-300 font-medium text-base focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="terms" name="terms" type="checkbox" class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" required>
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="terms" class="font-medium text-gray-700">
+                                I agree to the <a href="{% url 'terms_conditions' %}" class="text-green-600 hover:text-green-500">Terms & Conditions</a>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="privacy" name="privacy" type="checkbox" class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" required>
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="privacy" class="font-medium text-gray-700">
+                                I agree to the <a href="{% url 'privacy_policy' %}" class="text-green-600 hover:text-green-500">Privacy Policy</a>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" id="submitBtn" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-300 font-medium text-base focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                     Create Account
                 </button>
             </form>
@@ -177,4 +199,22 @@
         }
     });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const termsCheckbox = document.getElementById('terms');
+        const privacyCheckbox = document.getElementById('privacy');
+        const submitBtn = document.getElementById('submitBtn');
+    
+        function validateCheckboxes() {
+            if (termsCheckbox.checked && privacyCheckbox.checked) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+    
+        termsCheckbox.addEventListener('change', validateCheckboxes);
+        privacyCheckbox.addEventListener('change', validateCheckboxes);
+    });
+    </script>
 {% endblock %}

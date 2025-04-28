@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: commonOptions
         },
+        
         expenseOverTimeLineChart: {
             type: 'line',
             data: {
@@ -203,7 +204,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     tension: 0.3
                 }]
             },
-            options: commonOptions
+            options: {
+                ...commonOptions,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time Period'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Valid Transection'
+                        }
+                    }
+                }
+            }
         }
     };
 

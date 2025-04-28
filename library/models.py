@@ -5,6 +5,7 @@ from django.conf import settings
 from shortuuid.django_fields import ShortUUIDField 
 from django.core.exceptions import ValidationError
 import re
+from django.db.models import Avg
 
 class Library(models.Model):
     first_name = models.CharField(max_length=100, blank=True, null=True)
@@ -18,7 +19,7 @@ class Library(models.Model):
         ('Library', 'Library'),
         ('Coaching', 'Coaching')
     ])
-    max_banners = models.PositiveIntegerField(default=4, help_text="Maximum number of banners allowed")
+    max_banners = models.PositiveIntegerField(default=2, help_text="Maximum number of banners allowed")
     social_media_links = models.TextField(blank=True, null=True, help_text="Comma separated list of social media links")
     business_hours = models.CharField(max_length=100, help_text="Operating hours of the business")
     capacity = models.PositiveIntegerField(help_text="Maximum capacity of the venue")
@@ -41,6 +42,12 @@ class Library(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def get_reviews(self):
+        return self.reviews.all().order_by('-created_at')
+
+    def average_rating(self):
+        return self.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
 
 class CustomUser(AbstractUser):
     GENDER_CHOICES = [
@@ -99,6 +106,8 @@ class CustomUser(AbstractUser):
         help_text="Select your category"
     )
     ssid = ShortUUIDField(length=5, max_length=5, unique=True, blank=True, null=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZ')
+    accepted_terms = models.BooleanField(default=False)
+    accepted_privacy_policy = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -242,6 +251,9 @@ class Coupon(models.Model):
             self.times_used < self.max_usage and
             self.valid_from <= now <= self.valid_to
         )
+    def increment_usage(self):
+        self.times_used = models.F('times_used') + 1
+        self.save(update_fields=['times_used'])
 
     def apply_discount(self, price):
         if self.discount_type == 'percentage':
@@ -306,3 +318,41 @@ class LibraryImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.library.venue_name}"
+    
+class HomePageTextBanner(models.Model):
+    text = models.TextField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.text[:50] + "..." if len(self.text) > 50 else self.text
+    
+class HomePageImageBanner(models.Model):
+    google_drive_link = models.CharField(max_length=1000)
+    google_drive_id = models.CharField(max_length=100, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.google_drive_link:
+            self.google_drive_id = Banner.extract_file_id(self.google_drive_link)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Home Page Banner ({'Active' if self.is_active else 'Inactive'})"
+
+class Review(models.Model):
+    library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.rating} stars"

@@ -11,12 +11,13 @@ from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.contrib.admin.models import LogEntry
 import logging
+from django.core.paginator import Paginator
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Local imports
-from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm, BannerForm, LibraryImageForm
+from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm
 from .models import (
     CustomUser,
     SubscriptionPlan,
@@ -29,6 +30,9 @@ from .models import (
     Coupon,
     Banner,
     LibraryImage,
+    HomePageImageBanner,
+    HomePageTextBanner,
+    Review,
 )
 
 # Python standard library imports
@@ -46,7 +50,12 @@ from decimal import Decimal
 User = get_user_model()
 
 def home(request):
-    return render(request, 'users_pages/home.html')
+    text_banners = HomePageTextBanner.objects.filter(is_active=True)
+    image_banners = HomePageImageBanner.objects.filter(is_active=True)
+    return render(request, 'users_pages/home.html', {
+        'text_banners': text_banners,
+        'image_banners': image_banners
+    })
 
 @login_required
 def dashboard(request):
@@ -61,7 +70,8 @@ def dashboard(request):
         end_date__gte=today
     ).select_related('subscription')
     
-    # Add transaction details to each subscription
+    # Add transaction details to each subscription and sort by subscription time
+    subscriptions_with_details = []
     for subscription in active_subscriptions:
         latest_transaction = Transaction.objects.filter(
             user=request.user,
@@ -77,6 +87,16 @@ def dashboard(request):
         }
         # Add subscription cost to each subscription
         subscription.cost = latest_transaction.amount if latest_transaction else subscription.subscription.normal_price
+        
+        # Add subscription to list with its start date for sorting
+        subscriptions_with_details.append({
+            'subscription': subscription,
+            'start_date': subscription.start_date
+        })
+    
+    # Sort subscriptions by start date (most recent first)
+    sorted_subscriptions = sorted(subscriptions_with_details, key=lambda x: x['start_date'], reverse=True)
+    active_subscriptions = [item['subscription'] for item in sorted_subscriptions]
     
     attendances = Attendance.objects.filter(
         user=request.user
@@ -141,8 +161,10 @@ def user_signup(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.username = form.cleaned_data['email']  # Set username as email
-            user.dob = form.cleaned_data['dob']  # Ensure dob is set
+            user.username = form.cleaned_data['email']
+            user.dob = form.cleaned_data['dob']
+            user.accepted_terms = form.cleaned_data['terms']
+            user.accepted_privacy_policy = form.cleaned_data['privacy']
             user.save()
             login(request, user)
             return redirect('home')
@@ -536,9 +558,16 @@ def public_library_details(request, library_id):
     if not library.is_approved:
         raise Http404("Library not found")
     banners = library.banners.order_by('-created_at')
+    recent_reviews = library.reviews.all().order_by('-created_at')[:2]
+    
+    # Calculate average rating with 2 decimal places
+    average_rating = round(library.average_rating(), 2)
+    
     return render(request, 'library/library_details.html', {
         'library': library,
         'banners': banners,
+        'recent_reviews': recent_reviews,
+        'average_rating': average_rating
     })
 
 @login_required
@@ -749,53 +778,49 @@ def create_subscription(request, library_id):
 
 @login_required
 def payment_page(request, plan_id):
+    # Get the subscription plan and user's library
     plan = get_object_or_404(SubscriptionPlan, id=plan_id)
-    library = request.user.owned_libraries.first()  # or get the library in another way
-    coupon_code = request.GET.get('coupon')
+    library = request.user.owned_libraries.first()
     
-    # Clean the coupon code if it contains multiple parameters
+    # Process coupon code from request
+    coupon_code = request.GET.get('coupon')
     if coupon_code and '?coupon=' in coupon_code:
         coupon_code = coupon_code.split('?coupon=')[0]
     
-    print(f"Cleaned coupon code: {coupon_code}")  # Debug logging
-    
+    # Initialize coupon and pricing variables
     coupon = None
     discount_applied = False
-    
-    # Start with the base price (discounted or normal)
     final_price = plan.discount_price if plan.has_discount else plan.normal_price
     original_price = final_price
     
-    # Apply coupon discount if valid
+    # Validate and apply coupon if provided
     if coupon_code:
         try:
             coupon = Coupon.objects.get(code=coupon_code, is_active=True)
             if coupon.is_valid() and plan in coupon.applicable_plans.all():
                 final_price = coupon.apply_discount(final_price)
                 discount_applied = True
-                print(f"Coupon applied successfully: {coupon_code}")  # Debug logging
         except Coupon.DoesNotExist:
-            print(f"Coupon not found: {coupon_code}")  # Debug logging
             pass
-    
-    # Calculate discount amount for display
-    if discount_applied:
-        discount_amount = float(original_price) - float(final_price)
-    else:
-        discount_amount = 0
 
-    # Store the final price in the session
+    if discount_applied:
+        coupon.increment_usage()
+    
+    # Calculate discount amount
+    discount_amount = float(original_price) - float(final_price) if discount_applied else 0
+    
+    # Store final price in session
     request.session['final_price'] = str(final_price)
     
-    # Use library-specific UPI details
+    # Prepare UPI payment details
     upi_id = library.upi_id
     recipient_name = library.recipient_name
     thank_you_message = library.thank_you_message
     
-    # Create UPI payment link with final price
+    # Generate UPI payment link
     upi_link = f"upi://pay?pa={upi_id}&pn={recipient_name}&mc=1234&tid=transaction123&tr=ref12345&tn={thank_you_message}&am={final_price}&cu=INR"
     
-    # Generate QR code
+    # Create QR code for UPI payment
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -809,7 +834,8 @@ def payment_page(request, plan_id):
     img.save(buffer, format="PNG")
     qr_code = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    return render(request, 'users_pages/payment.html', {
+    # Prepare context for template
+    context = {
         'plan': plan,
         'final_price': final_price,
         'qr_code': qr_code,
@@ -818,7 +844,9 @@ def payment_page(request, plan_id):
         'upi_id': upi_id,
         'recipient_name': recipient_name,
         'discount_amount': discount_amount
-    })
+    }
+
+    return render(request, 'users_pages/payment.html', context)
 
 @login_required
 def user_subscriptions(request):
@@ -1092,6 +1120,12 @@ def terms_conditions(request):
 
 def privacy_policy(request):
     return render(request, 'conditions_and_policy/privacy_policy.html')
+
+def cookies_policy(request):
+    return render(request, 'conditions_and_policy/cookies_policy.html')
+
+def disclaimer(request):
+    return render(request, 'conditions_and_policy/disclaimer.html')
 
 @login_required
 def staff_management(request, library_id):
@@ -1843,3 +1877,187 @@ def remove_library_image(request, library_id):
         return JsonResponse({'status': 'error', 'message': 'No image to remove'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+@login_required
+def update_banner(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
+    if request.method == 'POST':
+        text = request.POST.get('banner_text', '').strip()
+        if text:
+            # Get or create banner
+            banner = HomePageTextBanner.objects.first()
+            if not banner:
+                banner = HomePageTextBanner()
+            banner.text = text
+            banner.is_active = True
+            banner.save()
+            messages.success(request, 'Banner updated successfully!')
+        else:
+            messages.error(request, 'Banner text cannot be empty')
+    
+    return redirect('admin_dashboard')
+
+@login_required
+def manage_home_banners(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
+    banners_image = HomePageImageBanner.objects.all()
+    
+    if request.method == 'POST':
+        form = HomePageBannerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Banner added successfully!')
+            return redirect('manage_home_banners')
+    else:
+        form = HomePageBannerForm()
+    
+    return render(request, 'admin_page/manage_home_banners.html', {
+        'banners': banners_image,
+        'form': form
+    })
+
+@login_required
+def delete_home_banner(request, banner_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
+    banner_image = get_object_or_404(HomePageImageBanner, id=banner_id)
+    banner_image.delete()
+    messages.success(request, 'Banner deleted successfully!')
+    return redirect('manage_home_banners')
+
+@login_required
+def manage_text_banner(request):
+    if request.method == 'POST':
+        text = request.POST.get('banner_text', '').strip()
+        is_active = request.POST.get('is_active', False) == 'on'
+        
+        if text:  # Only create if there's text
+            banner = HomePageTextBanner(text=text, is_active=is_active)
+            banner.save()
+            messages.success(request, 'Text banner added successfully!')
+        else:
+            messages.error(request, 'Banner text cannot be empty')
+    
+    banners = HomePageTextBanner.objects.all()
+    return render(request, 'admin_page/manage_text_banner.html', {
+        'banners': banners
+    })
+
+@login_required
+def delete_text_banner(request, banner_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
+    banner = get_object_or_404(HomePageTextBanner, id=banner_id)
+    banner.delete()
+    messages.success(request, 'Banner deleted successfully!')
+    return redirect('manage_text_banner')
+
+@login_required
+def manage_banner_counts(request):
+    if not request.user.is_staff:
+        raise PermissionDenied
+    
+    if request.method == 'POST':
+        library_id = request.POST.get('library_id')
+        max_banners = request.POST.get('max_banners')
+        library = get_object_or_404(Library, id=library_id)
+        library.max_banners = max_banners
+        library.save()
+        messages.success(request, 'Banner count updated successfully!')
+        return redirect('manage_banner_counts')
+    
+    search_query = request.GET.get('search', '')
+    libraries = Library.objects.all()
+    
+    if search_query:
+        libraries = libraries.filter(
+            Q(owner__first_name__icontains=search_query) |
+            Q(owner__last_name__icontains=search_query) |
+            Q(venue_name__icontains=search_query)
+        )
+    
+    return render(request, 'admin_page/manage_banner_counts.html', {
+        'libraries': libraries,
+        'search_query': search_query
+    })
+
+@login_required
+def add_review(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.library = library
+            review.user = request.user
+            review.save()
+            messages.success(request, "Review added successfully!")
+            return redirect('library_details', library_id=library_id)
+    else:
+        form = ReviewForm()
+    
+    return render(request, 'library/add_review.html', {'form': form, 'library': library})
+
+@login_required
+def delete_review(request, review_id):
+    review = get_object_or_404(Review, id=review_id, user=request.user)
+    library_id = review.library.id
+    review.delete()
+    messages.success(request, "Review deleted successfully!")
+    return redirect('library_details', library_id=library_id)
+
+@login_required
+def manage_reviews(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    
+    # Check if user is owner or staff
+    if request.user != library.owner and request.user not in library.staff.all():
+        raise PermissionDenied("You don't have permission to manage reviews")
+    
+    reviews = library.get_reviews()
+    
+    # Pagination
+    paginator = Paginator(reviews, 10)  # Show 10 reviews per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'library/manage_reviews.html', {
+        'library': library,
+        'page_obj': page_obj
+    })
+
+@login_required
+@require_POST
+def delete_review(request, review_id):
+    review = get_object_or_404(Review, id=review_id)
+    library = review.library
+    
+    # Check if user is owner or staff
+    if request.user != library.owner and request.user not in library.staff.all():
+        raise PermissionDenied("You don't have permission to delete this review")
+    
+    review.delete()
+    messages.success(request, "Review deleted successfully!")
+    return redirect('manage_reviews', library_id=library.id)
+
+@login_required
+def view_reviews(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    reviews = library.reviews.all().order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(reviews, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'library/view_reviews.html', {
+        'library': library,
+        'page_obj': page_obj
+    })
