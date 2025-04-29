@@ -296,13 +296,13 @@ def mark_attendance(request):
             # Check if current time is within allowed period
             is_within_time = (start_datetime <= current_datetime <= end_datetime)
             check_out_color = 0 if is_within_time else 1
-            
+            current_time = timezone.now()
             if not latest_attendance or latest_attendance.check_out_time:
                 # New check-in
                 attendance = Attendance.objects.create(
                     user=user,
                     library=library,
-                    check_in_time=current_time - timedelta(hours=5, minutes=30),
+                    check_in_time=current_time,
                     check_in_color=check_out_color,
                     check_out_color=0,
                     nfc_id=nfc_serial
@@ -315,7 +315,7 @@ def mark_attendance(request):
                 })
             else:
                 # Check-out
-                latest_attendance.check_out_time = current_time - timedelta(hours=5, minutes=30)
+                latest_attendance.check_out_time = current_time
                 latest_attendance.check_out_color = check_out_color
                 latest_attendance.save()
                 return JsonResponse({
