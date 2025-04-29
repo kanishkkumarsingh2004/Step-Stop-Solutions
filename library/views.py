@@ -257,7 +257,7 @@ def mark_attendance(request):
                 start_date__lte=current_time.date(),
                 end_date__gte=current_time.date()
             ).first()
-            
+
             if not active_subscription:
                 return JsonResponse({"error": "User does not have an active subscription"}, status=403)
             
@@ -268,7 +268,13 @@ def mark_attendance(request):
             
             if not latest_attendance or latest_attendance.check_out_time:
                 # New check-in
-                check_in_color = 0 if (active_subscription.start_time <= current_time.time() <= active_subscription.end_time) else 1
+                current_time_only = current_time.time()
+                # Convert times to datetime for proper comparison
+                start_time = datetime.combine(current_time.date(), active_subscription.start_time)
+                end_time = datetime.combine(current_time.date(), active_subscription.end_time)
+                current_datetime = datetime.combine(current_time.date(), current_time_only)
+                
+                check_in_color = 0 if (start_time <= current_datetime <= end_time) else 1
                 attendance = Attendance.objects.create(
                     user=user,
                     library=library,
@@ -285,7 +291,13 @@ def mark_attendance(request):
                 })
             else:
                 # Check-out
-                check_out_color = 0 if (active_subscription.start_time <= current_time.time() <= active_subscription.end_time) else 1
+                current_time_only = current_time.time()
+                # Convert times to datetime for proper comparison
+                start_time = datetime.combine(current_time.date(), active_subscription.start_time)
+                end_time = datetime.combine(current_time.date(), active_subscription.end_time)
+                current_datetime = datetime.combine(current_time.date(), current_time_only)
+                
+                check_out_color = 0 if (start_time <= current_datetime <= end_time) else 1
                 latest_attendance.check_out_time = current_time
                 latest_attendance.check_out_color = check_out_color
                 latest_attendance.save()
