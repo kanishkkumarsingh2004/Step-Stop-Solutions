@@ -57,14 +57,14 @@
                     <a href="/" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Home</a>
                     {% if user.is_authenticated %}
                         <!-- Dashboard Dropdown -->
-                        <div class="relative group">
-                            <button class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700 flex items-center">
+                        <div class="relative">
+                            <button onclick="toggleDashboardMenu()" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700 flex items-center">
                                 Dashboards
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            <div class="absolute hidden group-hover:block bg-gray-800 rounded-lg shadow-lg mt-1 w-64">
+                            <div id="dashboardMenu" class="absolute hidden bg-gray-800 rounded-lg shadow-lg mt-1 w-64">
                                 <div class="py-2">
                                     {% if user.is_superuser %}
                                         <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Admin Dashboard</a>
@@ -90,6 +90,7 @@
                             </div>
                         </div>
                         <a href="{% url 'user_profile' user.id %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">My Profile</a>
+                        <a href="{% url 'about_us' %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">About Us</a>
                     {% endif %}
                     {% if user.is_authenticated %}
                     <a href="{% url 'logout' %}" class="text-gray-300 hover:text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-gray-700">Logout</a>
@@ -99,6 +100,7 @@
                 </div>
             </div>
         </div>
+        
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden bg-gray-900 fixed inset-0 z-40 mt-20 overflow-y-auto">
             <div class="px-6 py-8 space-y-4">
@@ -207,7 +209,7 @@
                     <p class="text-sm text-gray-300 mb-3 sm:mb-4">Want to register your library with us?</p>
                     <div class="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:space-x-4">
                         {% if user.is_authenticated and not user.is_vendor %}
-                        <a href="{% url 'apply_for_vendor' %}" class="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200 text-center">
+                        <a href="{% url 'apply_vendor' %}" class="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200 text-center">
                             Apply for Vendor
                         </a>
                         {% elif not user.is_authenticated %}
@@ -226,4 +228,19 @@
         </div>
     </footer>
 </body>
+<script>
+    function toggleDashboardMenu() {
+        const menu = document.getElementById('dashboardMenu');
+        menu.classList.toggle('hidden');
+    }
+    
+    // Close the dropdown if clicked outside
+    document.addEventListener('click', function(event) {
+        const dashboardMenu = document.getElementById('dashboardMenu');
+        const button = document.querySelector('button[onclick="toggleDashboardMenu()"]');
+        if (!button.contains(event.target) && !dashboardMenu.contains(event.target)) {
+            dashboardMenu.classList.add('hidden');
+        }
+    });
+</script>
 </html>

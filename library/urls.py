@@ -111,10 +111,7 @@ urlpatterns = [
     # Vendor Type Selection
     path('vendor-type/', views.vender_type, name='vender_type'),
     
-    # Registration Views
-    path('apply-for-vendor/library/', views.register_library, name='register_library'),
-    path('apply-for-vendor/coaching/', views.register_coaching, name='register_coaching'),
-    path('apply-for-vendor/', views.apply_for_vendor, name='apply_for_vendor'),
+   
     
     # Subscriptions
     path('library/<int:library_id>/manage-subscriptions/', views.manage_subscriptions, name='manage_subscriptions'),
@@ -160,4 +157,10 @@ urlpatterns = [
     path('library/<int:library_id>/add-review/', views.add_review, name='add_review'),
     path('library/<int:library_id>/manage-reviews/', views.manage_reviews, name='manage_reviews'),
     path('library/<int:library_id>/reviews/', views.view_reviews, name='view_reviews'),
+    path('apply-vendor/', views.apply_vendor, name='apply_vendor'),
+     # Registration Views
+    path('apply-vendor/apply-for-vendor/library/', views.register_library, name='register_library'),
+    path('apply-vendor/apply-for-vendor/coaching/', views.register_coaching, name='register_coaching'),
+    path('apply-vendor/apply-for-vendor/', views.apply_for_vendor, name='apply_for_vendor'),
+    path('about-us/', views.about_us, name='about_us'),
 ]

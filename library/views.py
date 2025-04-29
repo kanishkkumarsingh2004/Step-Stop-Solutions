@@ -410,8 +410,25 @@ def all_attendance(request, vendor_id):
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
             attendance.duration = f"{hours}h {minutes}m {seconds}s"
+            
+            # Check if duration exceeds the user's subscription plan duration
+            try:
+                subscription = UserSubscription.objects.filter(
+                    user=attendance.user,
+                    subscription__library=library,
+                    start_date__lte=attendance.check_in_time.date(),
+                    end_date__gte=attendance.check_in_time.date()
+                ).first()
+                
+                if subscription:
+                    attendance.exceeded_duration = total_seconds > (subscription.subscription.duration_in_hours * 3600)
+                else:
+                    attendance.exceeded_duration = False
+            except UserSubscription.DoesNotExist:
+                attendance.exceeded_duration = False
         else:
             attendance.duration = "0h 0m 0s"
+            attendance.exceeded_duration = False
     
     return render(request, 'library/all_attendence.html', {
         'attendances': attendances,
@@ -2091,3 +2108,9 @@ def view_reviews(request, library_id):
         'library': library,
         'page_obj': page_obj
     })
+
+def apply_vendor(request):
+    return render(request, 'library/apply_vendor.html')
+
+def about_us(request):
+    return render(request, 'users_pages/about_us.html')
