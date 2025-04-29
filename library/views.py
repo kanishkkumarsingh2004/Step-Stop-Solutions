@@ -251,7 +251,6 @@ def mark_attendance(request):
             library = Library.objects.get(id=library_id)
             
             current_time = timezone.now()
-            
             active_subscription = UserSubscription.objects.filter(
                 user=user,
                 subscription__library=library,
@@ -270,14 +269,17 @@ def mark_attendance(request):
             if not latest_attendance or latest_attendance.check_out_time:
                 # New check-in
                 check_in_color = 0 if (active_subscription.start_time <= current_time.time() <= active_subscription.end_time) else 1
-                Attendance.objects.create(
+                attendance = Attendance.objects.create(
                     user=user,
                     library=library,
                     check_in_time=current_time,
                     check_in_color=check_in_color,
-                    check_out_color=0
+                    check_out_color=0  # Default for check-out color
                 )
-                return JsonResponse({"message": "Check-in recorded successfully"})
+                return JsonResponse({
+                    "message": "Check-in recorded successfully",
+                    "time": attendance.check_in_time.strftime("%H:%M:%S")
+                })
             else:
                 # Check-out
                 check_out_color = 0 if (active_subscription.start_time <= current_time.time() <= active_subscription.end_time) else 1
