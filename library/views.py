@@ -269,18 +269,18 @@ def mark_attendance(request):
             
             if not latest_attendance or latest_attendance.check_out_time:
                 # New check-in
-                check_in_color = 0 if (active_subscription.subscription.start_time <= current_time.time() <= active_subscription.subscription.end_time) else 1
+                check_in_color = 0 if (active_subscription.start_time <= current_time.time() <= active_subscription.end_time) else 1
                 Attendance.objects.create(
                     user=user,
                     library=library,
                     check_in_time=current_time,
                     check_in_color=check_in_color,
-                    check_out_color=0  # Default for check-out color
+                    check_out_color=0
                 )
                 return JsonResponse({"message": "Check-in recorded successfully"})
             else:
                 # Check-out
-                check_out_color = 0 if (active_subscription.subscription.start_time <= current_time.time() <= active_subscription.subscription.end_time) else 1
+                check_out_color = 0 if (active_subscription.start_time <= current_time.time() <= active_subscription.end_time) else 1
                 latest_attendance.check_out_time = current_time
                 latest_attendance.check_out_color = check_out_color
                 latest_attendance.save()
