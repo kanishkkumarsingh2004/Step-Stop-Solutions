@@ -401,7 +401,7 @@ def all_attendance(request, vendor_id):
             Q(user__last_name__icontains=search_query)
         )
     
-    # Calculate duration for each attendance
+    # Calculate duration and check time validity for each attendance
     for attendance in attendances:
         if attendance.check_in_time and attendance.check_out_time:
             duration = attendance.check_out_time - attendance.check_in_time
@@ -411,7 +411,7 @@ def all_attendance(request, vendor_id):
             seconds = int(total_seconds % 60)
             attendance.duration = f"{hours}h {minutes}m {seconds}s"
             
-            # Check if duration exceeds the user's subscription plan duration
+            # Get the user's active subscription
             try:
                 subscription = UserSubscription.objects.filter(
                     user=attendance.user,
@@ -421,19 +421,42 @@ def all_attendance(request, vendor_id):
                 ).first()
                 
                 if subscription:
+                    # Use default times (9 AM to 9 PM) since SubscriptionPlan doesn't have time fields
+                    allowed_start_time = datetime.strptime('09:00:00', '%H:%M:%S').time()
+                    allowed_end_time = datetime.strptime('21:00:00', '%H:%M:%S').time()
+                    
+                    # Convert check-in and check-out times to time objects
+                    check_in_time = attendance.check_in_time.time()
+                    check_out_time = attendance.check_out_time.time()
+                    
+                    # Check if times are within allowed range
+                    attendance.check_in_within_allowed_time = (
+                        allowed_start_time <= check_in_time <= allowed_end_time
+                    )
+                    attendance.check_out_within_allowed_time = (
+                        allowed_start_time <= check_out_time <= allowed_end_time
+                    )
+                    
+                    # Check if duration exceeds the plan's allowed duration
                     attendance.exceeded_duration = total_seconds > (subscription.subscription.duration_in_hours * 3600)
                 else:
+                    attendance.check_in_within_allowed_time = False
+                    attendance.check_out_within_allowed_time = False
                     attendance.exceeded_duration = False
             except UserSubscription.DoesNotExist:
+                attendance.check_in_within_allowed_time = False
+                attendance.check_out_within_allowed_time = False
                 attendance.exceeded_duration = False
         else:
             attendance.duration = "0h 0m 0s"
+            attendance.check_in_within_allowed_time = False
+            attendance.check_out_within_allowed_time = False
             attendance.exceeded_duration = False
     
     return render(request, 'library/all_attendence.html', {
         'attendances': attendances,
         'library': library
-    })
+    }) 
 
 @login_required
 def expense_dashboard(request, library_id):

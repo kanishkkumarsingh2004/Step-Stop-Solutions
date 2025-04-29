@@ -41,11 +41,27 @@
                         <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-800 text-center">
                             {{ attendance.user.get_full_name }}
                         </td>
-                        <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-800 text-center">
-                            {{ attendance.check_in_time|date:"M d, Y H:i" }}
+                        <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-center">
+                            {% if attendance.check_in_time %}
+                                {% if attendance.check_in_within_allowed_time %}
+                                    <span class="text-green-600">{{ attendance.check_in_time|date:"M d, Y H:i" }}</span>
+                                {% else %}
+                                    <span class="text-red-600">{{ attendance.check_in_time|date:"M d, Y H:i" }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
                         </td>
-                        <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-800 text-center">
-                            {{ attendance.check_out_time|date:"M d, Y H:i"|default:"-" }}
+                        <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-center">
+                            {% if attendance.check_out_time %}
+                                {% if attendance.check_out_within_allowed_time %}
+                                    <span class="text-green-600">{{ attendance.check_out_time|date:"M d, Y H:i" }}</span>
+                                {% else %}
+                                    <span class="text-red-600">{{ attendance.check_out_time|date:"M d, Y H:i" }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
                         </td>
                         <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-center">
                             {% if attendance.check_out_time %}
