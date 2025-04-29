@@ -13,6 +13,7 @@ from django.contrib.admin.models import LogEntry
 import logging
 from django.core.paginator import Paginator
 
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,6 @@ from .models import (
     HomePageTextBanner,
     Review,
 )
-
 # Python standard library imports
 import json
 import base64
@@ -250,7 +250,8 @@ def mark_attendance(request):
             user = CustomUser.objects.get(nfc_id=nfc_serial)
             library = Library.objects.get(id=library_id)
             
-            current_time = timezone.now()
+            # Get current time in IST (UTC+5:30)
+            current_time = timezone.now() + timedelta(hours=5, minutes=30)
             active_subscription = UserSubscription.objects.filter(
                 user=user,
                 subscription__library=library,
@@ -266,20 +267,43 @@ def mark_attendance(request):
                 library=library
             ).order_by('-check_in_time').first()
             
+            # Handle time comparisons with date adjustments
+            start_time = active_subscription.start_time
+            end_time = active_subscription.end_time
+            
+            # Adjust dates based on time comparison
+            if start_time > end_time:
+                end_date = active_subscription.start_date + timedelta(days=1)
+                start_date = active_subscription.start_date
+            else:
+                start_date = active_subscription.start_date
+                end_date = active_subscription.start_date
+            
+            # Create datetime objects with adjusted dates
+            start_datetime = timezone.make_aware(datetime.combine(
+                start_date,
+                start_time
+            ))
+            end_datetime = timezone.make_aware(datetime.combine(
+                end_date,
+                end_time
+            ))
+            current_datetime = timezone.make_aware(datetime.combine(
+                current_time.date(),
+                current_time.time()
+            ))
+            
+            # Check if current time is within allowed period
+            is_within_time = (start_datetime <= current_datetime <= end_datetime)
+            check_out_color = 0 if is_within_time else 1
+            
             if not latest_attendance or latest_attendance.check_out_time:
                 # New check-in
-                current_time_only = current_time.time()
-                # Convert times to datetime for proper comparison
-                start_time = datetime.combine(current_time.date(), active_subscription.start_time)
-                end_time = datetime.combine(current_time.date(), active_subscription.end_time)
-                current_datetime = datetime.combine(current_time.date(), current_time_only)
-                
-                check_in_color = 0 if (start_time <= current_datetime <= end_time) else 1
                 attendance = Attendance.objects.create(
                     user=user,
                     library=library,
                     check_in_time=current_time,
-                    check_in_color=check_in_color,
+                    check_in_color=check_out_color,
                     check_out_color=0,
                     nfc_id=nfc_serial
                 )
@@ -291,13 +315,6 @@ def mark_attendance(request):
                 })
             else:
                 # Check-out
-                current_time_only = current_time.time()
-                # Convert times to datetime for proper comparison
-                start_time = datetime.combine(current_time.date(), active_subscription.start_time)
-                end_time = datetime.combine(current_time.date(), active_subscription.end_time)
-                current_datetime = datetime.combine(current_time.date(), current_time_only)
-                
-                check_out_color = 0 if (start_time <= current_datetime <= end_time) else 1
                 latest_attendance.check_out_time = current_time
                 latest_attendance.check_out_color = check_out_color
                 latest_attendance.save()
