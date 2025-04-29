@@ -311,7 +311,7 @@ def mark_attendance(request):
                     "message": f"Checked in: {user.get_full_name()}",
                     "action": "checkin",
                     "date": current_time.date().isoformat(),
-                    "time": attendance.check_in_time.strftime("%H:%M:%S")
+                    "time": attendance.check_in_time.strftime("%H:%M:%S") + timedelta(hours=5, minutes=30)
                 })
             else:
                 # Check-out
@@ -322,7 +322,7 @@ def mark_attendance(request):
                     "message": f"Checked out: {user.get_full_name()}",
                     "action": "checkout",
                     "date": current_time.date().isoformat(),
-                    "time": latest_attendance.check_out_time.strftime("%H:%M:%S")
+                    "time": latest_attendance.check_out_time.strftime("%H:%M:%S") + timedelta(hours=5, minutes=30)
                 })
                 
         except CustomUser.DoesNotExist:
