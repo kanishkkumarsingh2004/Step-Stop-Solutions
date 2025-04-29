@@ -180,6 +180,8 @@ class Attendance(models.Model):
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='attendances')
     check_in_time = models.DateTimeField(null=True, blank=True)
     check_out_time = models.DateTimeField(null=True, blank=True)
+    check_in_color = models.IntegerField(default=0) 
+    check_out_color = models.IntegerField(default=0)
     nfc_id = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:

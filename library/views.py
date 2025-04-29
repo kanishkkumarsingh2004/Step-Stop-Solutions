@@ -250,12 +250,14 @@ def mark_attendance(request):
             user = CustomUser.objects.get(nfc_id=nfc_serial)
             library = Library.objects.get(id=library_id)
             
-            # Check if user has active subscription
+            current_time = timezone.now()
+            
             active_subscription = UserSubscription.objects.filter(
                 user=user,
-                subscription__library=library,  # Access library through subscription
-                end_date__gte=timezone.now().date()
-            ).exists()
+                subscription__library=library,
+                start_date__lte=current_time.date(),
+                end_date__gte=current_time.date()
+            ).first()
             
             if not active_subscription:
                 return JsonResponse({"error": "User does not have an active subscription"}, status=403)
@@ -265,28 +267,24 @@ def mark_attendance(request):
                 library=library
             ).order_by('-check_in_time').first()
             
-            if latest_attendance and not latest_attendance.check_out_time:
-                latest_attendance.check_out_time = timezone.now()
-                latest_attendance.save()
-                return JsonResponse({
-                    "message": f"Checked out: {user.get_full_name()}",
-                    "action": "checkout",
-                    "date": timezone.now().date().isoformat(),
-                    "time": latest_attendance.check_out_time.strftime("%H:%M:%S")
-                })
-            else:
-                attendance = Attendance.objects.create(
+            if not latest_attendance or latest_attendance.check_out_time:
+                # New check-in
+                check_in_color = 0 if (active_subscription.subscription.start_time <= current_time.time() <= active_subscription.subscription.end_time) else 1
+                Attendance.objects.create(
                     user=user,
                     library=library,
-                    check_in_time=timezone.now(),
-                    nfc_id=nfc_serial
+                    check_in_time=current_time,
+                    check_in_color=check_in_color,
+                    check_out_color=0  # Default for check-out color
                 )
-                return JsonResponse({
-                    "message": f"Checked in: {user.get_full_name()}",
-                    "action": "checkin",
-                    "date": timezone.now().date().isoformat(),
-                    "time": attendance.check_in_time.strftime("%H:%M:%S")
-                })
+                return JsonResponse({"message": "Check-in recorded successfully"})
+            else:
+                # Check-out
+                check_out_color = 0 if (active_subscription.subscription.start_time <= current_time.time() <= active_subscription.subscription.end_time) else 1
+                latest_attendance.check_out_time = current_time
+                latest_attendance.check_out_color = check_out_color
+                latest_attendance.save()
+                return JsonResponse({"message": "Check-out recorded successfully"})
                 
         except CustomUser.DoesNotExist:
             return JsonResponse({"error": "User not found"}, status=404)
@@ -295,7 +293,7 @@ def mark_attendance(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
     
-    return JsonResponse({"error": "Invalid request method"}, status=405)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required
 def confirm_payment(request, plan_id):
@@ -401,7 +399,7 @@ def all_attendance(request, vendor_id):
             Q(user__last_name__icontains=search_query)
         )
     
-    # Calculate duration and check time validity for each attendance
+    # Calculate duration for each attendance
     for attendance in attendances:
         if attendance.check_in_time and attendance.check_out_time:
             duration = attendance.check_out_time - attendance.check_in_time
@@ -409,9 +407,9 @@ def all_attendance(request, vendor_id):
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
-            attendance.duration = f"{hours}h {minutes}m {seconds}s"
+            attendance.duration = f"{hours}h:{minutes}m:{seconds}s"
             
-            # Get the user's active subscription
+            # Check if duration exceeds the user's subscription plan duration
             try:
                 subscription = UserSubscription.objects.filter(
                     user=attendance.user,
@@ -421,42 +419,19 @@ def all_attendance(request, vendor_id):
                 ).first()
                 
                 if subscription:
-                    # Use default times (9 AM to 9 PM) since SubscriptionPlan doesn't have time fields
-                    allowed_start_time = datetime.strptime('09:00:00', '%H:%M:%S').time()
-                    allowed_end_time = datetime.strptime('21:00:00', '%H:%M:%S').time()
-                    
-                    # Convert check-in and check-out times to time objects
-                    check_in_time = attendance.check_in_time.time()
-                    check_out_time = attendance.check_out_time.time()
-                    
-                    # Check if times are within allowed range
-                    attendance.check_in_within_allowed_time = (
-                        allowed_start_time <= check_in_time <= allowed_end_time
-                    )
-                    attendance.check_out_within_allowed_time = (
-                        allowed_start_time <= check_out_time <= allowed_end_time
-                    )
-                    
-                    # Check if duration exceeds the plan's allowed duration
                     attendance.exceeded_duration = total_seconds > (subscription.subscription.duration_in_hours * 3600)
                 else:
-                    attendance.check_in_within_allowed_time = False
-                    attendance.check_out_within_allowed_time = False
                     attendance.exceeded_duration = False
             except UserSubscription.DoesNotExist:
-                attendance.check_in_within_allowed_time = False
-                attendance.check_out_within_allowed_time = False
                 attendance.exceeded_duration = False
         else:
             attendance.duration = "0h 0m 0s"
-            attendance.check_in_within_allowed_time = False
-            attendance.check_out_within_allowed_time = False
             attendance.exceeded_duration = False
-    
+    from_date = request.GET.get('from_date')
     return render(request, 'library/all_attendence.html', {
         'attendances': attendances,
         'library': library
-    }) 
+    })
 
 @login_required
 def expense_dashboard(request, library_id):
