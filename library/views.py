@@ -274,10 +274,13 @@ def mark_attendance(request):
                     library=library,
                     check_in_time=current_time,
                     check_in_color=check_in_color,
-                    check_out_color=0  # Default for check-out color
+                    check_out_color=0,
+                    nfc_id=nfc_serial
                 )
                 return JsonResponse({
-                    "message": "Check-in recorded successfully",
+                    "message": f"Checked in: {user.get_full_name()}",
+                    "action": "checkin",
+                    "date": current_time.date().isoformat(),
                     "time": attendance.check_in_time.strftime("%H:%M:%S")
                 })
             else:
@@ -286,7 +289,12 @@ def mark_attendance(request):
                 latest_attendance.check_out_time = current_time
                 latest_attendance.check_out_color = check_out_color
                 latest_attendance.save()
-                return JsonResponse({"message": "Check-out recorded successfully"})
+                return JsonResponse({
+                    "message": f"Checked out: {user.get_full_name()}",
+                    "action": "checkout",
+                    "date": current_time.date().isoformat(),
+                    "time": latest_attendance.check_out_time.strftime("%H:%M:%S")
+                })
                 
         except CustomUser.DoesNotExist:
             return JsonResponse({"error": "User not found"}, status=404)
@@ -295,7 +303,7 @@ def mark_attendance(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
     
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 @login_required
 def confirm_payment(request, plan_id):
@@ -409,7 +417,7 @@ def all_attendance(request, vendor_id):
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
-            attendance.duration = f"{hours}h:{minutes}m:{seconds}s"
+            attendance.duration = f"{hours}h {minutes}m {seconds}s"
             
             # Check if duration exceeds the user's subscription plan duration
             try:
@@ -429,7 +437,7 @@ def all_attendance(request, vendor_id):
         else:
             attendance.duration = "0h 0m 0s"
             attendance.exceeded_duration = False
-    from_date = request.GET.get('from_date')
+    
     return render(request, 'library/all_attendence.html', {
         'attendances': attendances,
         'library': library
