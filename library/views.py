@@ -297,6 +297,7 @@ def mark_attendance(request):
             is_within_time = (start_datetime <= current_datetime <= end_datetime)
             check_out_color = 0 if is_within_time else 1
             current_time = timezone.now()
+            ist_time = current_time + timedelta(hours=5, minutes=30)
             if not latest_attendance or latest_attendance.check_out_time:
                 # New check-in
                 attendance = Attendance.objects.create(
@@ -311,7 +312,7 @@ def mark_attendance(request):
                     "message": f"Checked in: {user.get_full_name()}",
                     "action": "checkin",
                     "date": current_time.date().isoformat(),
-                    "time": attendance.check_in_time.strftime("%H:%M:%S") + timedelta(hours=5, minutes=30)
+                    "time": ist_time.strftime("%H:%M:%S")
                 })
             else:
                 # Check-out
@@ -322,9 +323,8 @@ def mark_attendance(request):
                     "message": f"Checked out: {user.get_full_name()}",
                     "action": "checkout",
                     "date": current_time.date().isoformat(),
-                    "time": latest_attendance.check_out_time.strftime("%H:%M:%S") + timedelta(hours=5, minutes=30)
+                    "time": ist_time.strftime("%H:%M:%S")
                 })
-                
         except CustomUser.DoesNotExist:
             return JsonResponse({"error": "User not found"}, status=404)
         except Library.DoesNotExist:
