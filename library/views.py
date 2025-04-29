@@ -449,23 +449,21 @@ def all_attendance(request, vendor_id):
             attendance.duration = f"{hours}h {minutes}m {seconds}s"
             
             # Check if duration exceeds the user's subscription plan duration
-            try:
-                subscription = UserSubscription.objects.filter(
-                    user=attendance.user,
-                    subscription__library=library,
-                    start_date__lte=attendance.check_in_time.date(),
-                    end_date__gte=attendance.check_in_time.date()
-                ).first()
-                
-                if subscription:
-                    attendance.exceeded_duration = total_seconds > (subscription.subscription.duration_in_hours * 3600)
-                else:
-                    attendance.exceeded_duration = False
-            except UserSubscription.DoesNotExist:
-                attendance.exceeded_duration = False
+            subscription = UserSubscription.objects.filter(
+                user=attendance.user,
+                subscription__library=library,
+                start_date__lte=attendance.check_in_time.date(),
+                end_date__gte=attendance.check_in_time.date()
+            ).first()
+            
+            if subscription:
+                subscription_duration = subscription.subscription.duration_in_hours * 3600
+                attendance.duration_color = 'red' if total_seconds > subscription_duration else 'green'
+            else:
+                attendance.duration_color = 'green'  # No subscription found, default to green
         else:
             attendance.duration = "0h 0m 0s"
-            attendance.exceeded_duration = False
+            attendance.duration_color = 'green'
     
     return render(request, 'library/all_attendence.html', {
         'attendances': attendances,
