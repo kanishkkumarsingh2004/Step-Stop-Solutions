@@ -46,12 +46,12 @@
             {% if active_subscriptions %}
             <div class="space-y-4">
                 {% for subscription in active_subscriptions %}
-                <div class="p-4 border rounded-lg">
+                <div class="p-4 border rounded-lg {% if subscription.payment_status.status == 'expired' %}bg-gray-50{% endif %}">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="text-lg font-semibold">{{ subscription.subscription.name }}</h3>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-{{ subscription.payment_status.color }}-50 text-{{ subscription.payment_status.color }}-700">
-                                {{ subscription.payment_status.status }}
-                            </span>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-{{ subscription.payment_status.color }}-50 text-{{ subscription.payment_status.color }}-700">
+                           Payment Status: {{ subscription.payment_status.status }}
+                        </span>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -68,9 +68,15 @@
                                 {% if subscription.end_time %}{{ subscription.end_time|time:"H:i" }}{% endif %}
                             </p>
                         </div>
-                        <div class="col-span-2">
-                            <p class="text-xs text-gray-500">Price</p>
-                            <p class="text-lg font-bold text-gray-800">₹{{ subscription.cost }}</p>
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500">Price</p>
+                                <p class="text-base sm:text-lg font-bold text-gray-800">₹{{ subscription.cost }}</p>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500">Subscription Status</p>
+                                <p class="text-base sm:text-lg font-bold text-{{ status_color }}-800">{{ status }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>

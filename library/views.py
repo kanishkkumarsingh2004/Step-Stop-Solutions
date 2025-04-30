@@ -60,51 +60,75 @@ def home(request):
 
 @login_required
 def dashboard(request):
+    # Redirect if not authenticated (redundant with @login_required but kept for safety)
     if not request.user.is_authenticated:
         return redirect('login')
     
     today = timezone.now().date()
     
     # Get user's active subscriptions with their latest transaction
-    active_subscriptions = UserSubscription.objects.filter(
-        user=request.user,
-        end_date__gte=today
-    ).select_related('subscription')
+    subscriptions = UserSubscription.objects.filter(
+        user=request.user
+    ).select_related('subscription').order_by('-end_date')
     
-    # Add transaction details to each subscription and sort by subscription time
+    # Process subscriptions and add transaction details
     subscriptions_with_details = []
-    for subscription in active_subscriptions:
+    for subscription in subscriptions:
+        # Update status based on end date
+        if subscription.end_date < today:
+            subscription.status = 'expired'
+            subscription.save()
+        
+        # Get latest transaction for this subscription
         latest_transaction = Transaction.objects.filter(
             user=request.user,
             subscription=subscription.subscription
         ).order_by('-created_at').first()
         
+        # Determine payment status and color
+        if latest_transaction:
+            status = latest_transaction.status
+            color = 'green' if status == 'valid' else 'yellow' if status == 'pending' else 'red'
+            cost = latest_transaction.amount
+        else:
+            status = None
+            color = 'red'
+            cost = subscription.subscription.normal_price
+
+        # Use the existing status field from UserSubscription model
+        if subscription.status == 'expired':
+            status_color = 'red'
+        else:
+            status_color = 'green'
+        # Add processed data to subscription
         subscription.latest_transaction = latest_transaction
-        subscription.payment_status = {
-            'status': latest_transaction.status if latest_transaction else None,
-            'color': 'green' if latest_transaction and latest_transaction.status == 'valid' else 
-                    'yellow' if latest_transaction and latest_transaction.status == 'pending' else 
-                    'red'
-        }
-        # Add subscription cost to each subscription
-        subscription.cost = latest_transaction.amount if latest_transaction else subscription.subscription.normal_price
+        subscription.payment_status = {'status': status, 'color': color}
+        subscription.cost = cost
         
-        # Add subscription to list with its start date for sorting
+        # Add to list for sorting
         subscriptions_with_details.append({
             'subscription': subscription,
             'start_date': subscription.start_date
         })
     
     # Sort subscriptions by start date (most recent first)
-    sorted_subscriptions = sorted(subscriptions_with_details, key=lambda x: x['start_date'], reverse=True)
-    active_subscriptions = [item['subscription'] for item in sorted_subscriptions]
+    sorted_subscriptions = sorted(
+        subscriptions_with_details,
+        key=lambda x: x['start_date'],
+        reverse=True
+    )
+    subscriptions = [item['subscription'] for item in sorted_subscriptions]
     
+    # Get recent attendances
     attendances = Attendance.objects.filter(
         user=request.user
     ).order_by('-check_in_time')[:15]
     
+    # Prepare context
     context = {
-        'active_subscriptions': active_subscriptions,
+        'status_color': status_color,
+        'status': subscription.status, 
+        'active_subscriptions': subscriptions,
         'attendances': attendances,
     }
     
@@ -923,14 +947,23 @@ def user_subscriptions(request):
             subscription=subscription.subscription
         ).order_by('-created_at').first()
         
+        # Use the existing status field from UserSubscription model
+        if subscription.status == 'expired':
+            status_color = 'red'
+        else:
+            status_color = 'green'
+        # Determine payment status
         subscription.latest_transaction = latest_transaction
         subscription.payment_status = {
             'status': latest_transaction.status if latest_transaction else None,
+            'subscription_status': subscription.status,
+            'subscription_status_color': status_color,
             'color': 'green' if latest_transaction and latest_transaction.status == 'valid' else 
                     'yellow' if latest_transaction and latest_transaction.status == 'pending' else 
                     'red'
         }
         subscription.cost = latest_transaction.amount if latest_transaction else subscription.subscription.normal_price
+
     context = {
         'subscriptions': subscriptions
     }
@@ -1098,7 +1131,6 @@ def nfc_add_user_page(request, library_id):
 @login_required
 def attendance_page(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    # Add your attendance page logic here
     return render(request, 'library/attendance_page.html', {'library': library})
 
 @login_required

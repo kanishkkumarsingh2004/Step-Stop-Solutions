@@ -44,11 +44,19 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
-                        <div class="flex items-center space-x-2">
-                            <p class="text-gray-600 text-sm sm:text-base font-medium">Status:</p>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
-                                {{ subscription.payment_status.status|default:"N/A" }}
-                            </span>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <p class="text-gray-600 text-sm sm:text-base font-medium">Payment Status:</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
+                                    {{ subscription.payment_status.status|default:"N/A" }}
+                                </span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <p class="text-gray-600 text-sm sm:text-base font-medium">Subscription Status:</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-{{ subscription.payment_status.subscription_status_color }}-100 text-{{ subscription.payment_status.subscription_status_color }}-800">
+                                    {{ subscription.payment_status.subscription_status|default:"N/A" }}
+                                </span>
+                            </div>
                         </div>
                         <p class="text-gray-800 font-bold text-lg sm:text-xl">
                             ₹{{ subscription.cost }}
