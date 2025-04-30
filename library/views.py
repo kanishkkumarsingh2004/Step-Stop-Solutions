@@ -34,6 +34,7 @@ from .models import (
     HomePageImageBanner,
     HomePageTextBanner,
     Review,
+    VendorSSID,
 )
 # Python standard library imports
 import json
@@ -182,11 +183,6 @@ def user_logout(request):
 @login_required
 def manage_users(request, vendor_id):
     vendor = get_object_or_404(Library, id=vendor_id)
-    
-    # Check if the user is the owner of this library
-    if request.user != vendor.owner:
-        raise PermissionDenied("You don't have permission to access this dashboard")
-    
     users = CustomUser.objects.filter(
         usersubscription__subscription__user=vendor.owner
     ).distinct()
@@ -424,8 +420,6 @@ def payment_confirmation(request, transaction_id):
 def all_attendance(request, vendor_id):
     # Get the library/vendor
     library = get_object_or_404(Library, id=vendor_id)
-    if request.user != library.owner:
-        raise PermissionDenied("You don't have permission to access this dashboard")
     
     # Get all attendance records for this library
     attendances = Attendance.objects.filter(library=library).order_by('-check_in_time')
@@ -443,12 +437,8 @@ def all_attendance(request, vendor_id):
         if attendance.check_in_time and attendance.check_out_time:
             duration = attendance.check_out_time - attendance.check_in_time
             total_seconds = duration.total_seconds()
-            hours = int(total_seconds // 3600)
-            minutes = int((total_seconds % 3600) // 60)
-            seconds = int(total_seconds % 60)
-            attendance.duration = f"{hours}h {minutes}m {seconds}s"
             
-            # Check if duration exceeds the user's subscription plan duration
+            # Find active subscription
             subscription = UserSubscription.objects.filter(
                 user=attendance.user,
                 subscription__library=library,
@@ -458,12 +448,18 @@ def all_attendance(request, vendor_id):
             
             if subscription:
                 subscription_duration = subscription.subscription.duration_in_hours * 3600
-                attendance.duration_color = 'red' if total_seconds > subscription_duration else 'green'
-            else:
-                attendance.duration_color = 'green'  # No subscription found, default to green
+                # Set duration_color to 1 if exceeded, 0 if within limit
+                attendance.duration_color = 1 if total_seconds > subscription_duration else 0
+                attendance.save()
+            
+            # Format duration string
+            hours = int(total_seconds // 3600)
+            minutes = int((total_seconds % 3600) // 60)
+            seconds = int(total_seconds % 60)
+            attendance.duration = f"{hours}h:{minutes}m:{seconds}s"
         else:
-            attendance.duration = "0h 0m 0s"
-            attendance.duration_color = 'green'
+            attendance.duration = "0h:0m:0s"
+            attendance.duration_color = 0
     
     return render(request, 'library/all_attendence.html', {
         'attendances': attendances,
@@ -475,11 +471,7 @@ def expense_dashboard(request, library_id):
     if not request.user.is_authenticated:
         return redirect('login')
     library = get_object_or_404(Library, id=library_id)
-    
-    # Check if the user is the owner
-    if request.user != library.owner:
-        raise PermissionDenied("You don't have permission to view this library's expenses")
-    
+
     # Get date filters from request
     from_date = request.GET.get('from_date')
     to_date = request.GET.get('to_date')
@@ -947,8 +939,6 @@ def user_subscriptions(request):
 @login_required
 def verify_payments(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    if request.user != library.owner:
-        raise PermissionDenied("You don't have permission to access this dashboard")
     
     transactions = Transaction.objects.filter(
         subscription__library=library
@@ -1092,9 +1082,7 @@ def allocate(request):
 @login_required
 def nfc_add_user_page(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    if request.user != library.owner:
-        raise PermissionDenied("You don't have permission to access this dashboard")
-    
+
     # Get users who have joined this library
     users = CustomUser.objects.filter(
         usersubscription__subscription__library=library
@@ -1200,9 +1188,22 @@ def disclaimer(request):
 def staff_management(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     staff_members = library.staff.all()
+    
+    # Get VendorSSID permissions for each staff member
+    staff_data = []
+    for staff in staff_members:
+        vendor_ssid = VendorSSID.objects.filter(user=staff, library=library).first()
+        permissions = vendor_ssid.permissions.split(',') if vendor_ssid and vendor_ssid.permissions else []
+        staff_data.append({
+            'staff': staff,
+            'permissions': permissions
+        })
+    
     return render(request, 'library/staff_management.html', {
         'library': library,
-        'staff_members': staff_members
+        'staff_members': staff_members,
+        'staff_data': staff_data
+
     })
 
 @login_required
@@ -1215,6 +1216,8 @@ def add_staff(request, library_id):
             return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
         
         ssid = request.POST.get('ssid')
+        permissions = request.POST.getlist('permissions[]')  # Get selected permissions
+        
         if not ssid:
             return JsonResponse({'success': False, 'message': 'SSID is required'}, status=400)
         
@@ -1228,11 +1231,11 @@ def add_staff(request, library_id):
             # Add user to staff and update vendor relationship
             library.staff.add(user)
             
-            # Store vendor's SSID in the user's vendor_ssids field
+            # Store vendor's SSID and permissions in the user's vendor_ssids field
             if not user.vendor_ssids:
-                user.vendor_ssids = request.user.ssid
+                user.vendor_ssids = f"{request.user.ssid}:{','.join(permissions)}"
             else:
-                user.vendor_ssids += f",{request.user.ssid}"
+                user.vendor_ssids += f",{request.user.ssid}:{','.join(permissions)}"
             
             user.save()
             
@@ -1241,7 +1244,8 @@ def add_staff(request, library_id):
                 'message': f'{user.get_full_name()} added as staff',
                 'user': {
                     'full_name': user.get_full_name(),
-                    'ssid': user.ssid
+                    'ssid': user.ssid,
+                    'permissions': permissions
                 }
             })
             
@@ -1867,12 +1871,49 @@ def remove_staff(request, library_id, user_id):
 def staff_dashboard(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     
-    # Check if the user is staff of this library
     if request.user not in library.staff.all():
         raise PermissionDenied("You don't have permission to access this dashboard")
     
-    context = {'library': library}
-    return render(request, 'library/staff_dashboard.html', context)
+    # Get staff permissions from VendorSSID table
+    staff_permissions = []
+    try:
+        vendor_ssid = VendorSSID.objects.filter(
+            user=request.user,
+            library=library
+        ).first()
+        
+        if vendor_ssid:
+            staff_permissions = vendor_ssid.permissions.split(',') if vendor_ssid.permissions else []
+    except Exception as e:
+        logger.error(f"Error getting staff permissions: {str(e)}")
+    
+    # Get today's date
+    today = timezone.now().date()
+    
+    # Get dashboard stats
+    active_users_count = UserSubscription.objects.filter(
+        subscription__library=library,
+        end_date__gte=today
+    ).values('user').distinct().count()
+    
+    # Filter attendance by check_in_time instead of date
+    todays_attendance_count = Attendance.objects.filter(
+        library=library,
+        check_in_time__date=today
+    ).count()
+    
+    active_subscriptions_count = UserSubscription.objects.filter(
+        subscription__library=library,
+        end_date__gte=today
+    ).count()
+    
+    return render(request, 'library/staff_dashboard.html', {
+        'library': library,
+        'active_users_count': active_users_count,
+        'todays_attendance_count': todays_attendance_count,
+        'active_subscriptions_count': active_subscriptions_count,
+        'staff_permissions': staff_permissions
+    })
 
 @login_required
 def manage_banner(request, library_id):
@@ -2149,3 +2190,144 @@ def apply_vendor(request):
 
 def about_us(request):
     return render(request, 'users_pages/about_us.html')
+
+@require_POST
+@login_required
+def add_permission(request, library_id, staff_id):
+    library = get_object_or_404(Library, id=library_id)
+    staff_member = get_object_or_404(CustomUser, id=staff_id)
+    
+    if request.user != library.owner:
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+    
+    data = json.loads(request.body)
+    permission = data.get('permission')
+    
+    if not permission:
+        return JsonResponse({'success': False, 'message': 'Permission is required'}, status=400)
+    
+    try:
+        vendor_ssid = staff_member.vendor_ssids.filter(library=library).first()
+        if vendor_ssid:
+            permissions = vendor_ssid.permissions.split(',') if vendor_ssid.permissions else []
+            if permission not in permissions:
+                permissions.append(permission)
+                vendor_ssid.permissions = ','.join(permissions)
+                vendor_ssid.save()
+                return JsonResponse({'success': True, 'message': 'Permission added successfully'})
+            return JsonResponse({'success': False, 'message': 'Permission already exists'})
+        return JsonResponse({'success': False, 'message': 'Staff member not found'}, status=404)
+    except Exception as e:
+        logger.error(f"Error adding permission: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)
+
+@login_required
+@require_POST
+def remove_permission(request, library_id, staff_id):
+    library = get_object_or_404(Library, id=library_id)
+    staff_member = get_object_or_404(CustomUser, id=staff_id)
+    
+    if request.user != library.owner:
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+    
+    data = json.loads(request.body)
+    permission = data.get('permission')
+    
+    if not permission:
+        return JsonResponse({'success': False, 'message': 'Permission is required'}, status=400)
+    
+    try:
+        # Check if staff member is part of this library
+        if staff_member not in library.staff.all():
+            return JsonResponse({'success': False, 'message': 'Staff member not found in this library'}, status=404)
+        
+        # Get the vendor_ssids relationship
+        vendor_ssid = VendorSSID.objects.filter(
+            user=staff_member,
+            library=library
+        ).first()
+        
+        if vendor_ssid and vendor_ssid.permissions:
+            # Remove the permission if it exists
+            permissions = vendor_ssid.permissions.split(',')
+            if permission in permissions:
+                permissions.remove(permission)
+                vendor_ssid.permissions = ','.join(permissions)
+                vendor_ssid.save()
+                return JsonResponse({'success': True, 'message': 'Permission removed successfully'})
+            return JsonResponse({'success': False, 'message': 'Permission not found'}, status=404)
+        return JsonResponse({'success': False, 'message': 'No permissions found for this staff member'}, status=404)
+    except Exception as e:
+        logger.error(f"Error removing permission: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)
+
+@login_required
+@require_POST
+def manage_permissions(request, library_id, staff_id):
+    library = get_object_or_404(Library, id=library_id)
+    staff_member = get_object_or_404(CustomUser, id=staff_id)
+    
+    if request.user != library.owner:
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+    
+    data = json.loads(request.body)
+    permissions = list(set(data.get('permissions', [])))  # Remove duplicates
+    
+    try:
+        # Ensure the staff member is part of the library's staff
+        if staff_member not in library.staff.all():
+            return JsonResponse({'success': False, 'message': 'Staff member not found in this library'}, status=404)
+        
+        # Get existing vendor_ssids relationship
+        vendor_ssid = VendorSSID.objects.filter(
+            user=staff_member,
+            library=library
+        ).first()
+        
+        if vendor_ssid:
+            # Update existing permissions
+            vendor_ssid.permissions = ','.join(permissions)
+            vendor_ssid.save()
+        else:
+            # Create new vendor_ssids relationship only if there are permissions to add
+            if permissions:
+                VendorSSID.objects.create(
+                    user=staff_member,
+                    library=library,
+                    permissions=','.join(permissions)
+                )
+            else:
+                return JsonResponse({'success': False, 'message': 'No permissions to add'}, status=400)
+        
+        return JsonResponse({'success': True, 'message': 'Permissions updated successfully'})
+    except Exception as e:
+        logger.error(f"Error managing permissions: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)
+
+@login_required
+def get_permissions(request, library_id, staff_id):
+    library = get_object_or_404(Library, id=library_id)
+    staff_member = get_object_or_404(CustomUser, id=staff_id)
+    
+    # Check if user is owner or staff
+    if request.user != library.owner and request.user not in library.staff.all():
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+    
+    try:
+        # Check if staff member is actually part of this library
+        if staff_member not in library.staff.all():
+            return JsonResponse({'success': False, 'message': 'Staff member not found in this library'}, status=404)
+        
+        # Get the vendor_ssids relationship
+        vendor_ssid = VendorSSID.objects.filter(
+            user=staff_member,
+            library=library
+        ).first()
+        
+        # Return permissions, even if empty
+        permissions = vendor_ssid.permissions.split(',') if vendor_ssid and vendor_ssid.permissions else []
+        return JsonResponse({'success': True, 'permissions': permissions})
+        
+    except Exception as e:
+        logger.error(f"Error getting permissions: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)

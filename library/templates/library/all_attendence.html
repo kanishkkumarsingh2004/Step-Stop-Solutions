@@ -65,7 +65,11 @@
                         </td>
                         <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-center">
                             {% if attendance.check_out_time %}
-                                <span class="text-{{ attendance.duration_color }}-600">{{ attendance.duration }}</span>
+                                {% if attendance.duration_color == 0 %}
+                                    <span class="text-green-600">{{ attendance.duration }}</span>
+                                {% else %}
+                                    <span class="text-red-600">{{ attendance.duration }}</span>
+                                {% endif %}
                             {% else %}
                                 -
                             {% endif %}

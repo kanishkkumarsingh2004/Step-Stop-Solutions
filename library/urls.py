@@ -163,4 +163,8 @@ urlpatterns = [
     path('apply-vendor/apply-for-vendor/coaching/', views.register_coaching, name='register_coaching'),
     path('apply-vendor/apply-for-vendor/', views.apply_for_vendor, name='apply_for_vendor'),
     path('about-us/', views.about_us, name='about_us'),
+    path('add-permission/<int:library_id>/<int:staff_id>/', views.add_permission, name='add_permission'),
+    path('remove-permission/<int:library_id>/<int:staff_id>/', views.remove_permission, name='remove_permission'),
+    path('manage-permissions/<int:library_id>/<int:staff_id>/', views.manage_permissions, name='manage_permissions'),
+    path('get-permissions/<int:library_id>/<int:staff_id>/', views.get_permissions, name='get_permissions'),
 ]

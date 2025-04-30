@@ -6,6 +6,9 @@ from shortuuid.django_fields import ShortUUIDField
 from django.core.exceptions import ValidationError
 import re
 from django.db.models import Avg
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Library(models.Model):
     first_name = models.CharField(max_length=100, blank=True, null=True)
@@ -93,12 +96,7 @@ class CustomUser(AbstractUser):
     education = models.CharField(max_length=50, choices=EDUCATION_CHOICES)
     is_checked_in = models.BooleanField(default=False)
     is_vendor = models.BooleanField(default=False)
-    vendor_ssids = models.ManyToManyField(
-        'self',
-        blank=True,
-        symmetrical=False,
-        related_name='staff_members'
-    )
+    vendor_ssids = models.ManyToManyField('VendorSSID', blank=True)
     category = models.CharField(
         max_length=10,
         choices=CATEGORY_CHOICES,
@@ -114,6 +112,16 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    def get_permissions_for_library(self, library):
+        try:
+            vendor_ssid = self.vendor_ssids.filter(library=library).first()
+            if vendor_ssid and vendor_ssid.permissions:
+                return vendor_ssid.permissions.split(',')
+            return []
+        except Exception as e:
+            logger.error(f"Error getting permissions for library: {str(e)}")
+            return []
 
 class Institution(models.Model):
     name = models.CharField(max_length=200)
@@ -180,8 +188,9 @@ class Attendance(models.Model):
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='attendances')
     check_in_time = models.DateTimeField(null=True, blank=True)
     check_out_time = models.DateTimeField(null=True, blank=True)
-    check_in_color = models.IntegerField(default=0) 
+    check_in_color = models.IntegerField(default=0)
     check_out_color = models.IntegerField(default=0)
+    duration_color = models.IntegerField(default=0)
     nfc_id = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
@@ -358,3 +367,22 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.rating} stars"
+
+class VendorSSID(models.Model):
+    PERMISSION_CHOICES = [
+        ('manage_users', 'Manage Users'),
+        ('nfc_add_user', 'Add User via NFC'),
+        ('attendance', 'Attendance'),
+        ('view_vendor_details', 'View Vendor Details'),
+        ('view_expenses', 'View Expense Page'),
+        ('view_all_attendance', 'View All Attendance'),
+        ('verify_payments', 'Verify Payments')
+    ]
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    library = models.ForeignKey(Library, on_delete=models.CASCADE)
+    permissions = models.CharField(max_length=255, choices=PERMISSION_CHOICES, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.library}"

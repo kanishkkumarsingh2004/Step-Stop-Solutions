@@ -1,248 +1,76 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
-    <!-- Dashboard Header -->
-    <div class="text-center mb-2 sm:mb-3">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 animate-fade-in">
-            <span class="text-gray-800">Dashboard</span>
-        </h1>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Staff Dashboard - {{ library.venue_name }}</h1>
+    
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-gray-500 text-sm">Active Users</h3>
+            <p class="text-2xl font-bold">{{ active_users_count }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-gray-500 text-sm">Today's Attendance</h3>
+            <p class="text-2xl font-bold">{{ todays_attendance_count }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-gray-500 text-sm">Active Subscriptions</h3>
+            <p class="text-2xl font-bold">{{ active_subscriptions_count }}</p>
+        </div>
     </div>
 
-    <!-- Header Section -->
-    <div class="mb-4 md:mb-8 bg-gradient-to-r from-blue-50 to-green-50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 text-left">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 animate-fade-in">
-            <div class="text-blue-600 block mb-2">
-                <span class="font-medium text-gray-500">Library's Name:</span> 
-                {{ library.venue_name }}
-            </div>
-            <div class="text-green-600 block">
-                <span class="font-medium text-gray-500">Owner's Name:</span> 
-                {{ library.first_name }}
-            </div>
-        </h1>
-        <p class="text-sm sm:text-base text-gray-600 leading-relaxed flex items-center">
-            <i class="bi bi-gear-fill text-blue-500 mr-2 animate-spin-slow"></i>
-            <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600">
-                Manage your library operations efficiently
-            </span>
-        </p>
-    </div>
-    <!-- Navigation Buttons -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-4 md:mb-8">
-        <a href="{% url 'manage_users' library.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-people-fill text-sm sm:text-lg"></i>
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% if 'manage_users' in staff_permissions %}
+        <a href="{% url 'manage_users' library.id %}" class="bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-lg shadow flex items-center space-x-4">
+            <i class="bi bi-people-fill text-2xl"></i>
             <span>Manage Users</span>
         </a>
-        <a href="{% url 'nfc_add_user_page' library.id %}" class="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-nfc text-sm sm:text-lg"></i>
+        {% endif %}
+        
+        {% if 'nfc_add_user' in staff_permissions %}
+        <a href="{% url 'nfc_add_user_page' library.id %}" class="bg-green-500 hover:bg-green-600 text-white p-6 rounded-lg shadow flex items-center space-x-4">
+            <i class="bi bi-credit-card text-2xl"></i>
             <span>Add User via NFC</span>
         </a>
-        <a href="{% url 'attendance_page' library.id %}" class="bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-clipboard-data text-sm sm:text-lg"></i>
+        {% endif %}
+        
+        {% if 'attendance' in staff_permissions %}
+        <a href="{% url 'attendance_page' library.id %}" class="bg-purple-500 hover:bg-purple-600 text-white p-6 rounded-lg shadow flex items-center space-x-4">
+            <i class="bi bi-clipboard-data text-2xl"></i>
             <span>Attendance</span>
         </a>
-    </div>
-
-    <!-- Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        <!-- Vender Details Card -->
-        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
-            <div class="flex items-center justify-between mb-2 sm:mb-3">
-                <div class="flex items-center space-x-2">
-                    <i class="bi bi-shop text-orange-500 text-lg sm:text-xl"></i>
-                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Vender Details</h2>
-                </div>
-                <a href="{% url 'edit_library_profile' library.id %}" class="text-sm sm:text-base text-blue-600 hover:text-blue-700 flex items-center space-x-1">
-                    <i class="bi bi-pencil-square"></i>
-                    <span>Edit</span>
-                </a>
-            </div>
-            <div class="space-y-1 sm:space-y-2">
-                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
-                    <span class="text-xs sm:text-sm text-gray-600">Capacity</span>
-                    <span class="font-semibold text-blue-600 text-sm sm:text-base md:text-lg">{{ library.capacity }}</span>
-                </div>
-                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
-                    <span class="text-xs sm:text-sm text-gray-600">Email</span>
-                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ library.email|slice:":35" }}</span>
-                </div>
-                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
-                    <span class="text-xs sm:text-sm text-gray-600">Mobile</span>
-                    <span class="font-semibold text-purple-600 text-sm sm:text-base md:text-lg">{{ library.mobile_number }}</span>
-                </div>
-                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
-                    <span class="text-xs sm:text-sm text-gray-600">Address</span>
-                    <span class="font-semibold text-indigo-600 text-sm sm:text-base md:text-lg">{{ library.venue_location|slice:":35" }}...</span>
-                </div>
-            </div>
-        </div>
+        {% endif %}
         
-        <!-- Statistics Card -->
-        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
-            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
-                <i class="bi bi-bar-chart-line-fill text-green-500 text-lg sm:text-xl"></i>
-                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Statistics</h2>
-            </div>
-            <div class="space-y-2">
-                <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <span class="text-xs sm:text-sm text-gray-600">Total Users Joined</span>
-                    <span class="font-semibold text-blue-600 text-base sm:text-lg">{{ user_count }}</span>
-                </div>
-                <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <span class="text-xs sm:text-sm text-gray-600">Active Subscriptions</span>
-                    <span class="font-semibold text-green-600 text-base sm:text-lg">{{ active_subscriptions_count }}</span>
-                </div>
-                <a href="{% url 'expense_dashboard' library.id %}" class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <span class="text-xs sm:text-sm text-gray-600">View Expenses</span>
-                    <div class="flex items-center space-x-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-currency-rupee text-green-600" viewBox="0 0 16 16">
-                            <path d="M4 3.06h2.726c1.22 0 2.12.575 2.325 1.724H4v1.051h5.051C8.855 7.001 8 7.558 6.788 7.558H4v1.317L8.437 14h2.11L6.095 8.884h.855c2.316-.018 3.465-1.476 3.688-3.049H12V4.784h-1.345c-.08-.778-.357-1.335-.793-1.732H12V2H4v1.06z"/>
-                        </svg>
-                        <i class="bi bi-chevron-right text-green-600"></i>
-                    </div>
-                </a>
-                <a href="{% url 'expense_chart' library.id %}" class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <span class="text-xs sm:text-sm text-gray-600">Visualize Charts</span>
-                    <div class="flex items-center space-x-2">
-                        <i class="bi bi-bar-chart text-purple-600 fs-5"></i>
-                        <i class="bi bi-chevron-right text-purple-600"></i>
-                    </div>
-                </a>
-            </div>
-        </div>
+        {% if 'view_vendor_details' in staff_permissions %}
+        <a href="{% url 'library_details' library.id %}" class="bg-yellow-500 hover:bg-yellow-600 text-white p-6 rounded-lg shadow flex items-center space-x-4">
+            <i class="bi bi-building text-2xl"></i>
+            <span>View Vendor Details</span>
+        </a>
+        {% endif %}
         
-        <!-- Quick Actions Card -->
-        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
-            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
-                <i class="bi bi-lightning-fill text-yellow-500 text-lg sm:text-xl"></i>
-                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Quick Actions</h2>
-            </div>
-            <div class="space-y-2">
-                <a href="{% url 'verify_payments' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>Verify Payments</span>
-                    <i class="bi bi-check-circle text-gray-500 text-sm sm:text-base"></i>
-                </a>
-                <a href="{% url 'all_attendance' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>View all Attendance</span>
-                    <i class="bi bi-check-circle text-gray-500 text-sm sm:text-base"></i>
-                </a>
-
-                <a href="{% url 'library_staff_management' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>Staff management</span>
-                    <i class="bi bi-check-circle text-gray-500 text-sm sm:text-base"></i>
-                </a>
-            </div>
-        </div>
+        {% if 'view_expenses' in staff_permissions %}
+        <a href="{% url 'expense_dashboard' library.id %}" class="bg-indigo-500 hover:bg-indigo-600 text-white p-6 rounded-lg shadow flex items-center space-x-4">
+            <i class="bi bi-cash-stack text-2xl"></i>
+            <span>View Expenses</span>
+        </a>
+        {% endif %}
         
-        <!-- Subscription Plans Card -->
-        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
-            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
-                <i class="bi bi-credit-card-fill text-purple-500 text-lg sm:text-xl"></i>
-                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Subscription Plans</h2>
-            </div>
-            <div class="space-y-2">
-                <a href="{% url 'create_subscription' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>Add New Subscription Plan</span>
-                    <i class="bi bi-plus-lg text-gray-500 text-sm sm:text-base"></i>
-                </a>
-                <a href="{% url 'subscription_page' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>View Existing Plans</span>
-                    <i class="bi bi-eye text-gray-500 text-sm sm:text-base"></i>
-                </a>
-                <a href="{% url 'manage_subscriptions' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>Edit Existing Plans</span>
-                    <i class="bi bi-pencil-square text-gray-500 text-sm sm:text-base"></i>
-                </a>
-            </div>
-        </div>
-
-        <!-- Add this card next to the Subscription Plans card -->
-        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
-            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
-                <i class="bi bi-tag-fill text-green-500 text-lg sm:text-xl"></i>
-                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Coupons</h2>
-            </div>
-            
-            <div class="space-y-2">
-                <a href="{% url 'manage_coupons' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>Manage Coupons</span>
-                    <i class="bi bi-gear-fill text-gray-500 text-sm sm:text-base"></i>
-                </a>
-                <a href="{% url 'create_coupon' library.id %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>Add Coupons</span>
-                    <i class="bi bi-plus-circle-fill text-gray-500 text-sm sm:text-base"></i>
-                </a>
-            </div>
-        </div>
-        <!-- Subscription Plans Card -->
-        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
-            <div class="flex items-center justify-between mb-2 sm:mb-3">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                    </svg>
-                    <h2 class="text-base sm:text-lg font-semibold text-gray-700">UPI Data</h2>
-                </div>
-                <button type="button" onclick="toggleEditForm()" class="p-1.5 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <i class="bi bi-pencil-square text-red-500 text-sm sm:text-base"></i>
-                </button>
-            </div>
-
-            <!-- Display UPI Data -->
-            <div id="upiDataDisplay" class="space-y-2">
-                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span class="text-gray-600">UPI ID:</span>
-                    <span class="font-medium">{{ upidata.upi_id }}</span>
-                </div>
-                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span class="text-gray-600">Recipient Name:</span>
-                    <span class="font-medium">{{ upidata.recipient_name }}</span>
-                </div>
-                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span class="text-gray-600">Thank You Message:</span>
-                    <span class="font-medium">{{ upidata.thank_you_message }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Edit Form (hidden by default) -->
-        <div id="editForm" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg sm:rounded-xl shadow-md p-6 w-full max-w-md">
-                <form method="POST" action="{% url 'update_upi_data' library.id %}">
-                    {% csrf_token %}
-                    <div class="space-y-4">
-                        <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg flex flex-col space-y-2">
-                            <label class="text-gray-600">UPI ID:</label>
-                            <input type="text" name="upi_id" value="{{ upidata.upi_id }}" class="p-1 border rounded">
-                        </div>
-                        <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg flex flex-col space-y-2">
-                            <label class="text-gray-600">Recipient Name:</label>
-                            <input type="text" name="recipient_name" value="{{ upidata.recipient_name }}" class="p-1 border rounded">
-                        </div>
-                        <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg flex flex-col space-y-2">
-                            <label class="text-gray-600">Thank You Message:</label>
-                            <textarea name="thank_you_message" class="p-1 border rounded">{{ upidata.thank_you_message }}</textarea>
-                        </div>
-                        <div class="flex justify-end space-x-2">
-                            <button type="button" onclick="toggleEditForm()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">
-                                Cancel
-                            </button>
-                            <button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors duration-200">
-                                Save Changes
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
+        {% if 'view_all_attendance' in staff_permissions %}
+        <a href="{% url 'all_attendance' library.id %}" class="bg-pink-500 hover:bg-pink-600 text-white p-6 rounded-lg shadow flex items-center space-x-4">
+            <i class="bi bi-list-check text-2xl"></i>
+            <span>View All Attendance</span>
+        </a>
+        {% endif %}
+        
+        {% if 'verify_payments' in staff_permissions %}
+        <a href="{% url 'verify_payments' library.id %}" class="bg-teal-500 hover:bg-teal-600 text-white p-6 rounded-lg shadow flex items-center space-x-4">
+            <i class="bi bi-check-circle text-2xl"></i>
+            <span>Verify Payments</span>
+        </a>
+        {% endif %}
     </div>
 </div>
-
-<script>
-    function toggleEditForm() {
-        const form = document.getElementById('editForm');
-        form.classList.toggle('hidden');
-    }
-</script>
 {% endblock %}

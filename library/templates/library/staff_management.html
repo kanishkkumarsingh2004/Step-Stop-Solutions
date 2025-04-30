@@ -2,54 +2,140 @@
 {% load static %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-6">Staff Management</h1>
+<div class="container mx-auto px-2 py-4">
+    <h1 class="text-xl font-bold mb-4">Staff Management</h1>
     
     <!-- Search User by SSID -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 class="text-xl font-semibold mb-4">Search User by SSID</h2>
-        <div class="mb-4">
-            <form id="search-user-form" class="flex items-center">
+    <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+        <h2 class="text-lg font-semibold mb-3">Search User by SSID</h2>
+        <div class="mb-3">
+            <form id="search-user-form" class="flex flex-col gap-2">
                 {% csrf_token %}
-                <input type="text" name="ssid" placeholder="Enter SSID" class="px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">Search</button>
+                <input type="text" name="ssid" placeholder="Enter SSID" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Search</button>
             </form>
         </div>
-        <div id="search-results" class="mt-4">
-            
+        <div id="search-results" class="mt-3">
+            <!-- Permissions Selection -->
+            <div id="permissions-section" class="hidden mt-3">
+                <h3 class="font-semibold mb-2">Select Permissions:</h3>
+                <div class="grid grid-cols-1 gap-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="manage_users" class="mr-2"> Manage Users
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="nfc_add_user" class="mr-2"> Add User via NFC
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="attendance" class="mr-2"> Attendance
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="view_vendor_details" class="mr-2"> View Vendor Details
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="view_expenses" class="mr-2"> View Expense Page
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="view_all_attendance" class="mr-2"> View All Attendance
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="verify_payments" class="mr-2"> Verify Payments
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Existing Staff List -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-semibold mb-4">Current Staff</h2>
-        <div id="staffList" class="space-y-4">
+    <div class="bg-white p-4 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold mb-3">Current Staff</h2>
+        <div id="staffList" class="space-y-3">
             {% for staff_member in library.staff.all %}
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-md mb-2">
-                    <div>
-                        <p class="font-medium"><span class="text-gray-600">Name:</span> {{ staff_member.get_full_name }}</p>
-                        <p class="font-medium"><span class="text-gray-600">Mobile:</span> {{ staff_member.mobile_number }}</p>
-                        <p class="text-sm text-gray-600"><span class="text-gray-600">Email:</span> {{ staff_member.email }}</p>
+                <div class="flex flex-col items-start justify-between p-3 bg-gray-50 rounded-md mb-2 gap-3">
+                    <div class="flex-grow">
+                        <p class="font-medium text-sm"><span class="text-gray-600">Name:</span> {{ staff_member.get_full_name }}</p>
+                        <p class="font-medium text-sm"><span class="text-gray-600">Mobile:</span> {{ staff_member.mobile_number }}</p>
+                        <p class="text-xs text-gray-600"><span class="text-gray-600">Email:</span> {{ staff_member.email }}</p>
+                        <div class="mt-1">
+                            <span class="text-xs font-medium text-gray-600">Permissions:</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                {% for data in staff_data %}
+                                    {% if data.staff.id == staff_member.id %}
+                                        {% for permission in data.permissions %}
+                                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded flex items-center">
+                                                {{ permission }}
+                                                <button onclick="removePermission('{{ library.id }}', '{{ staff_member.id }}', '{{ permission }}')" class="ml-1 text-red-500 hover:text-red-700">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-gray-500 text-xs">No permissions assigned</span>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
-                    <form method="POST" action="{% url 'remove_staff' library.id staff_member.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="text-red-500 hover:text-red-700">
-                            <i class="bi bi-trash"></i> Remove
+                    <div class="flex items-center gap-2 self-end">
+                        <button onclick="showPermissionModal('{{ library.id }}', '{{ staff_member.id }}')" class="bg-blue-500 text-white px-2 py-1 text-sm rounded hover:bg-blue-600">
+                            Manage
                         </button>
-                    </form>
+                        <form method="POST" action="{% url 'remove_staff' library.id staff_member.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-500 hover:text-red-700 text-sm">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% empty %}
-                <p class="text-gray-500">No staff members found.</p>
+                <p class="text-gray-500 text-sm">No staff members found.</p>
             {% endfor %}
         </div>
     </div>
-</div>                                                                                                                                                                                                                                      
+</div>
+
+<!-- Permission Modal -->
+<div id="permissionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white p-4 rounded-lg w-full max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-semibold mb-4">Manage Permissions</h3>
+        <div class="grid grid-cols-1 gap-2">
+            <label class="flex items-center">
+                <input type="checkbox" name="permissions[]" value="manage_users" class="mr-2"> Manage Users
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" name="permissions[]" value="nfc_add_user" class="mr-2"> Add User via NFC
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" name="permissions[]" value="attendance" class="mr-2"> Attendance
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" name="permissions[]" value="view_vendor_details" class="mr-2"> View Vendor Details
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" name="permissions[]" value="view_expenses" class="mr-2"> View Expense Page
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" name="permissions[]" value="view_all_attendance" class="mr-2"> View All Attendance
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" name="permissions[]" value="verify_payments" class="mr-2"> Verify Payments
+            </label>
+        </div>
+        <div class="mt-4 flex justify-end gap-2">
+            <button onclick="closePermissionModal()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+            <button onclick="savePermissions()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+        </div>
+    </div>
+</div>
+
 <div id="libid" class="hidden" data-library-id="{{ library.id }}"></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const searchUserForm = document.getElementById('search-user-form');
     const searchResults = document.getElementById('search-results');
+    const permissionsSection = document.getElementById('permissions-section');
     const libraryId = document.getElementById('libid').dataset.libraryId;
 
     const handleFormSubmit = async (form, url) => { 
@@ -68,44 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return { success: false, message: 'An error occurred. Please try again.' };
         }
     };
-
-   
-    // Helper function to get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    async function loadStaffList() {
-        try {
-            const response = await fetch(`/${libraryId}/get-staff/`);
-            const data = await response.json();
-            
-            if (data.staff) {
-                const staffList = document.getElementById('staffList');
-                staffList.innerHTML = data.staff.map(staff => `
-                    <div class="p-4 border rounded-lg mb-2">
-                        <p class="font-medium">${staff.full_name}</p>
-                        <p class="text-sm text-gray-600">SSID: ${staff.ssid}</p>
-                    </div>
-                `).join('');
-            }
-        } catch (error) {
-            console.error('Error loading staff list:', error);
-            const staffList = document.getElementById('staffList');
-            staffList.innerHTML = `<p class="text-red-600">Error loading staff list. Please try again.</p>`;
-        }
-    }
 
     if (searchUserForm) {
         searchUserForm.addEventListener('submit', async (e) => {
@@ -185,5 +233,116 @@ function getCookie(name) {
 }
 </script>
 
-<!-- Add this to your HTML template where you want to store the library ID -->
+<script>
+let currentLibraryId = null;
+let currentStaffId = null;
+
+function showPermissionModal(libraryId, staffId) {
+    currentLibraryId = libraryId;
+    currentStaffId = staffId;
+    
+    // Fetch current permissions and update checkboxes
+    fetch(`/get-permissions/${libraryId}/${staffId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Uncheck all checkboxes first
+                document.querySelectorAll('input[name="permissions[]"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                // Check the boxes for existing permissions
+                const uniquePermissions = [...new Set(data.permissions)]; // Remove duplicates
+                uniquePermissions.forEach(permission => {
+                    const checkbox = document.querySelector(`input[name="permissions[]"][value="${permission}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+                
+                // Show the modal
+                document.getElementById('permissionModal').classList.remove('hidden');
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while fetching permissions');
+        });
+}
+
+function closePermissionModal() {
+    document.getElementById('permissionModal').classList.add('hidden');
+}
+
+function savePermissions() {
+    const selectedPermissions = Array.from(
+        document.querySelectorAll('input[name="permissions[]"]:checked')
+    ).map(checkbox => checkbox.value);
+
+    // Remove duplicates
+    const uniquePermissions = [...new Set(selectedPermissions)];
+
+    fetch(`/manage-permissions/${currentLibraryId}/${currentStaffId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ permissions: uniquePermissions })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the UI without reloading the page
+            const permissionsContainer = document.querySelector(`#staffList [data-staff-id="${currentStaffId}"] .permissions-container`);
+            if (permissionsContainer) {
+                permissionsContainer.innerHTML = uniquePermissions.map(permission => `
+                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded flex items-center">
+                        ${permission}
+                        <button onclick="removePermission('${currentLibraryId}', '${currentStaffId}', '${permission}')" class="ml-1 text-red-500 hover:text-red-700">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </span>
+                `).join('');
+            }
+            closePermissionModal();
+            location.reload(); // Reload the page to reflect changes
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving permissions');
+    });
+}
+
+function removePermission(libraryId, staffId, permission) {
+    if (confirm(`Are you sure you want to remove ${permission} permission?`)) {
+        fetch(`/remove-permission/${libraryId}/${staffId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ permission })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while removing permission');
+        });
+    }
+}
+</script>
+
 {% endblock %}
