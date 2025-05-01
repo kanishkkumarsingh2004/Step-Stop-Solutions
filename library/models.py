@@ -11,6 +11,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Library(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='libraries'
+    )
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
     address = models.TextField(blank=True, null=True)

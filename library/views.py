@@ -58,31 +58,21 @@ def home(request):
         'image_banners': image_banners
     })
 
-@login_required
 def dashboard(request):
-    # Redirect if not authenticated (redundant with @login_required but kept for safety)
-    if not request.user.is_authenticated:
-        return redirect('login')
+    # Get all libraries
+    libraries = Library.objects.all()
+    first_library = libraries.first()
     
-    today = timezone.now().date()
-    
-    # Get user's active subscriptions with their latest transaction
-    subscriptions = UserSubscription.objects.filter(
-        user=request.user
-    ).select_related('subscription').order_by('-end_date')
+    # Get subscriptions for the current user
+    subscriptions = UserSubscription.objects.filter(user=request.user)
     
     # Process subscriptions and add transaction details
     subscriptions_with_details = []
     for subscription in subscriptions:
-        # Update status based on end date
-        if subscription.end_date < today:
-            subscription.status = 'expired'
-            subscription.save()
-        
         # Get latest transaction for this subscription
         latest_transaction = Transaction.objects.filter(
-            user=request.user,
-            subscription=subscription.subscription
+            subscription=subscription.subscription,
+            user=request.user
         ).order_by('-created_at').first()
         
         # Determine payment status and color
@@ -94,12 +84,7 @@ def dashboard(request):
             status = None
             color = 'red'
             cost = subscription.subscription.normal_price
-
-        # Use the existing status field from UserSubscription model
-        if subscription.status == 'expired':
-            status_color = 'red'
-        else:
-            status_color = 'green'
+            
         # Add processed data to subscription
         subscription.latest_transaction = latest_transaction
         subscription.payment_status = {'status': status, 'color': color}
@@ -119,28 +104,21 @@ def dashboard(request):
     )
     subscriptions = [item['subscription'] for item in sorted_subscriptions]
     
-    # Get recent attendances
-    attendances = Attendance.objects.filter(
-        user=request.user
-    ).order_by('-check_in_time')[:15]
+    # Get attendances for the current user
+    attendances = Attendance.objects.filter(user=request.user).order_by('-check_in_time')[:15]
     
-    # Get the user's library
-    library = request.user.owned_libraries.first()  # or use the appropriate related name
-    try:
-        total_seats = library.capacity if library else 0
-        available_seats = library.available_seats if library else 0
-    except AttributeError:
-        total_seats = 0
-        available_seats = 0
+    # Get library stats
+    total_seats = first_library.capacity if first_library else 0
+    available_seats = first_library.available_seats if first_library else 0
     
     context = {
-        'status_color': status_color,
-        'status': subscription.status, 
+        'status_color': 'gray',
+        'status': 'inactive', 
         'active_subscriptions': subscriptions,
         'attendances': attendances,
         'total_seats': total_seats,
         'available_seats': available_seats,
-        'library': library
+        'library': first_library
     }
     return render(request, 'users_pages/dashboard.html', context)
 
@@ -2399,4 +2377,5 @@ def get_permissions(request, library_id, staff_id):
         
     except Exception as e:
         logger.error(f"Error getting permissions: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)
         return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)
