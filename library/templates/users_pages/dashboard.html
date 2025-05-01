@@ -90,6 +90,21 @@
         </div>
     </div>
 
+    <!-- Add this section below the User Details Card -->
+    <div class="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg">
+        <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Seat Availability</h2>
+        <div class="space-y-2 sm:space-y-4">
+            <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                <p class="text-xs sm:text-sm text-gray-500">Total Seats</p>
+                <p class="text-sm sm:text-base font-medium text-gray-800">{{ total_seats }}</p>
+            </div>
+            <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                <p class="text-xs sm:text-sm text-gray-500">Available Seats</p>
+                <p class="text-sm sm:text-base font-medium text-gray-800">{{ available_seats }}</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Section - Attendance -->
     <div class="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg w-full">
         <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 text-center">Recent Attendance</h2>

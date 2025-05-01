@@ -42,6 +42,7 @@ class Library(models.Model):
     upi_id = models.CharField(max_length=50)
     recipient_name = models.CharField(max_length=100)
     thank_you_message = models.CharField(max_length=200)
+    available_seats = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -51,6 +52,11 @@ class Library(models.Model):
 
     def average_rating(self):
         return self.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    
+    def save(self, *args, **kwargs):
+        if not self.pk and self.available_seats == 0:
+            self.available_seats = self.capacity
+        super().save(*args, **kwargs)
 
 class CustomUser(AbstractUser):
     GENDER_CHOICES = [
