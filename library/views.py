@@ -142,7 +142,6 @@ def dashboard(request):
         'available_seats': available_seats,
         'library': library
     }
-
     return render(request, 'users_pages/dashboard.html', context)
 
 @login_required
@@ -271,17 +270,64 @@ def check_access(request):
 def mark_attendance(request):
     if request.method == "POST":
         try:
-            nfc_serial = request.POST.get("nfc_serial")
+            data = json.loads(request.body)
+            nfc_serial = data.get("nfc_serial")
+            library_id = data.get("library_id")
+            
+            if not nfc_serial or not library_id:
+                return JsonResponse({"error": "NFC serial and Library ID are required"}, status=400)
+            
             user = CustomUser.objects.get(nfc_id=nfc_serial)
-            library = Library.objects.get(owner=request.user)
+            library = Library.objects.get(id=library_id)
+            
+            # Get current time in IST (UTC+5:30)
+            current_time = timezone.now() + timedelta(hours=5, minutes=30)
+            active_subscription = UserSubscription.objects.filter(
+                user=user,
+                subscription__library=library,
+                start_date__lte=current_time.date(),
+                end_date__gte=current_time.date()
+            ).first()
 
-            # Get the latest attendance for this user
+            if not active_subscription:
+                return JsonResponse({"error": "User does not have an active subscription"}, status=403)
+            
             latest_attendance = Attendance.objects.filter(
-                user=user, library=library
+                user=user,
+                library=library
             ).order_by('-check_in_time').first()
-
+            
+            # Handle time comparisons with date adjustments
+            start_time = active_subscription.start_time
+            end_time = active_subscription.end_time
+            
+            # Adjust dates based on time comparison
+            if start_time > end_time:
+                end_date = active_subscription.start_date + timedelta(days=1)
+                start_date = active_subscription.start_date
+            else:
+                start_date = active_subscription.start_date
+                end_date = active_subscription.start_date
+            
+            # Create datetime objects with adjusted dates
+            start_datetime = timezone.make_aware(datetime.combine(
+                start_date,
+                start_time
+            ))
+            end_datetime = timezone.make_aware(datetime.combine(
+                end_date,
+                end_time
+            ))
+            current_datetime = timezone.make_aware(datetime.combine(
+                current_time.date(),
+                current_time.time()
+            ))
+            
+            # Check if current time is within allowed period
+            is_within_time = (start_datetime <= current_datetime <= end_datetime)
+            check_out_color = 0 if is_within_time else 1
             current_time = timezone.now()
-
+            ist_time = current_time + timedelta(hours=5, minutes=30)
             if not latest_attendance or latest_attendance.check_out_time:
                 # Check if seats are available
                 if library.available_seats <= 0:
@@ -295,37 +341,37 @@ def mark_attendance(request):
                     user=user,
                     library=library,
                     check_in_time=current_time,
-                    check_in_color=0,
+                    check_in_color=check_out_color,
                     check_out_color=0,
                     nfc_id=nfc_serial
                 )
                 
-                # Decrease available seats and save
-                library.available_seats = max(0, library.available_seats - 1)
+                # Decrease available seats
+                library.available_seats -= 1
                 library.save()
                 
                 return JsonResponse({
                     "message": f"Checked in: {user.get_full_name()}",
                     "action": "checkin",
                     "date": current_time.date().isoformat(),
-                    "time": current_time.strftime("%H:%M:%S"),
+                    "time": ist_time.strftime("%H:%M:%S"),
                     "available_seats": library.available_seats
                 })
             else:
                 # Check-out
                 latest_attendance.check_out_time = current_time
-                latest_attendance.check_out_color = 0
+                latest_attendance.check_out_color = check_out_color
                 latest_attendance.save()
                 
-                # Increase available seats and save
-                library.available_seats = min(library.capacity, library.available_seats + 1)
+                # Increase available seats
+                library.available_seats += 1
                 library.save()
                 
                 return JsonResponse({
                     "message": f"Checked out: {user.get_full_name()}",
                     "action": "checkout",
                     "date": current_time.date().isoformat(),
-                    "time": current_time.strftime("%H:%M:%S"),
+                    "time": ist_time.strftime("%H:%M:%S"),
                     "available_seats": library.available_seats
                 })
         except CustomUser.DoesNotExist:
