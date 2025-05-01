@@ -510,12 +510,16 @@ def all_attendance(request, vendor_id):
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
             attendance.duration = f"{hours}h:{minutes}m:{seconds}s"
+            # Add pagination
+            paginator = Paginator(attendances, 10)  # Show 10 attendances per page
+            page_number = request.GET.get('page')
+            page_obj = paginator.get_page(page_number)
         else:
             attendance.duration = "0h:0m:0s"
             attendance.duration_color = 0
     
     return render(request, 'library/all_attendence.html', {
-        'attendances': attendances,
+        'attendances': page_obj,
         'library': library
     })
 
@@ -704,6 +708,8 @@ def library_dashboard(request, library_id):
         return redirect('login')
     
     library = get_object_or_404(Library, id=library_id)
+    total_seats = library.capacity if library else 0
+    available_seats = library.available_seats if library else 0
     
     # Get unique users who have active subscriptions
     active_users = UserSubscription.objects.filter(
@@ -746,7 +752,9 @@ def library_dashboard(request, library_id):
         'plans': plans_data,
         'user_count': active_users,
         'active_subscriptions_count': active_subscriptions_count,
-        'upidata': upidata
+        'upidata': upidata,
+        'total_seats': total_seats,
+        'available_seats': available_seats
     })
 
 @login_required
