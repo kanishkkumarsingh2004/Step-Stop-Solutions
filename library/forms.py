@@ -43,20 +43,21 @@ class LibraryRegistrationForm(forms.ModelForm):
     email = forms.EmailField(required=True)
     mobile_number = forms.CharField(max_length=15, required=True)
     address = forms.CharField(widget=forms.Textarea, required=True)
+    opening_time = forms.TimeField(required=True, widget=forms.TimeInput(attrs={'type': 'time'}))
+    closing_time = forms.TimeField(required=True, widget=forms.TimeInput(attrs={'type': 'time'}))
 
     class Meta:
         model = Library
         fields = [
             'first_name', 'last_name', 'email', 'mobile_number', 'address',
             'venue_name', 'venue_location', 'description', 
-            'business_hours', 'capacity', 'pincode', 
-            'district', 'city', 'state', 'social_media_links', 
-            'equipment_available', 'additional_services'
+            'capacity', 'pincode', 'district', 'city', 'state', 
+            'social_media_links', 'equipment_available', 'additional_services',
+            'opening_time', 'closing_time'
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
             'venue_location': forms.Textarea(attrs={'rows': 3}),
-            'social_media_links': forms.Textarea(attrs={'rows': 2}),
             'equipment_available': forms.Textarea(attrs={'rows': 3}),
             'additional_services': forms.Textarea(attrs={'rows': 3}),
         }

@@ -29,7 +29,6 @@ class Library(models.Model):
     ])
     max_banners = models.PositiveIntegerField(default=2, help_text="Maximum number of banners allowed")
     social_media_links = models.TextField(blank=True, null=True, help_text="Comma separated list of social media links")
-    business_hours = models.CharField(max_length=100, help_text="Operating hours of the business")
     capacity = models.PositiveIntegerField(help_text="Maximum capacity of the venue")
     equipment_available = models.TextField(blank=True, null=True, help_text="List of available equipment")
     additional_services = models.TextField(blank=True, null=True, help_text="Any additional services offered")
@@ -48,6 +47,8 @@ class Library(models.Model):
     recipient_name = models.CharField(max_length=100)
     thank_you_message = models.CharField(max_length=200)
     available_seats = models.PositiveIntegerField(default=0)
+    opening_time = models.TimeField()
+    closing_time = models.TimeField()
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -62,6 +63,10 @@ class Library(models.Model):
         if not self.pk and self.available_seats == 0:
             self.available_seats = self.capacity
         super().save(*args, **kwargs)
+
+    @property
+    def business_hours(self):
+        return f"{self.opening_time.strftime('%I:%M %p')} - {self.closing_time.strftime('%I:%M %p')}"
 
 class CustomUser(AbstractUser):
     GENDER_CHOICES = [

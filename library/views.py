@@ -61,12 +61,11 @@ def home(request):
 def dashboard(request):
     # Get all libraries
     libraries = Library.objects.all()
-    first_library = libraries.first()
     
-    # Get subscriptions for the current user
-    subscriptions = UserSubscription.objects.filter(user=request.user)
+    # Get subscriptions for the current user with library details
+    subscriptions = UserSubscription.objects.filter(user=request.user).select_related('subscription__library')
     
-    # Process subscriptions and add transaction details
+    # Process subscriptions and add library seat details
     subscriptions_with_details = []
     for subscription in subscriptions:
         # Get latest transaction for this subscription
@@ -85,10 +84,19 @@ def dashboard(request):
             color = 'red'
             cost = subscription.subscription.normal_price
             
+        # Get library details for this subscription
+        library = subscription.subscription.library
+        total_seats = library.capacity if library else 0
+        available_seats = library.available_seats if library else 0
+        
         # Add processed data to subscription
         subscription.latest_transaction = latest_transaction
         subscription.payment_status = {'status': status, 'color': color}
         subscription.cost = cost
+        subscription.library_seats = {
+            'total_seats': total_seats,
+            'available_seats': available_seats
+        }
         
         # Add to list for sorting
         subscriptions_with_details.append({
@@ -107,18 +115,11 @@ def dashboard(request):
     # Get attendances for the current user
     attendances = Attendance.objects.filter(user=request.user).order_by('-check_in_time')[:15]
     
-    # Get library stats
-    total_seats = first_library.capacity if first_library else 0
-    available_seats = first_library.available_seats if first_library else 0
-    
     context = {
         'status_color': 'gray',
         'status': 'inactive', 
         'active_subscriptions': subscriptions,
         'attendances': attendances,
-        'total_seats': total_seats,
-        'available_seats': available_seats,
-        'library': first_library
     }
     return render(request, 'users_pages/dashboard.html', context)
 
@@ -577,13 +578,12 @@ def vender_type(request):
 
 @login_required
 def register_library(request):
-    """Handle library registration"""
     if request.method == 'POST':
         form = LibraryRegistrationForm(request.POST)
         if form.is_valid():
             library = form.save(commit=False)
             library.owner = request.user
-            library.business_type = 'Library'  
+            library.business_type = 'Library'
             library.save()
             messages.success(request, "Library registered successfully!")
             return redirect('dashboard')
@@ -880,7 +880,7 @@ def create_subscription(request, library_id):
 def payment_page(request, plan_id):
     # Get the subscription plan and user's library
     plan = get_object_or_404(SubscriptionPlan, id=plan_id)
-    library = request.user.owned_libraries.first()
+    library = plan.library
     
     # Process coupon code from request
     coupon_code = request.GET.get('coupon')
@@ -1604,10 +1604,6 @@ def update_profile(request, user_id):
 @login_required
 def create_coupon(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
-    if request.user != library.owner:
-        raise PermissionDenied("You don't have permission to create coupons for this library")
-    
     if request.method == 'POST':
         form = CouponForm(request.POST, library_id=library_id)
         if form.is_valid():
@@ -1762,10 +1758,6 @@ def edit_subscription(request):
 @login_required
 def toggle_coupon_status(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
-    
-    # Check if the user has permission to modify this coupon
-    if request.user != coupon.created_by:
-        raise PermissionDenied("You don't have permission to modify this coupon")
     
     coupon.is_active = not coupon.is_active
     coupon.save()

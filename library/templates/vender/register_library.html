@@ -63,8 +63,15 @@
                         <textarea name="description" placeholder="Describe your library's services and features" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" rows="3" required></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Business Hours <span class="text-red-500">*</span></label>
-                        <input type="text" name="business_hours" placeholder="e.g., 9 AM - 6 PM, Mon-Sat" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Opening Time <span class="text-red-500">*</span></label>
+                        <input type="time" name="opening_time" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Closing Time <span class="text-red-500">*</span></label>
+                        <input type="time" name="closing_time" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600">Live Duration: <span id="liveDuration" class="font-medium text-blue-600">Calculating...</span></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Library Capacity <span class="text-red-500">*</span></label>
@@ -178,4 +185,37 @@
         }
     });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const openingTime = document.querySelector('input[name="opening_time"]');
+        const closingTime = document.querySelector('input[name="closing_time"]');
+        const liveDuration = document.getElementById('liveDuration');
+    
+        function calculateDuration() {
+            if (openingTime.value && closingTime.value) {
+                const [openHour, openMinute] = openingTime.value.split(':').map(Number);
+                const [closeHour, closeMinute] = closingTime.value.split(':').map(Number);
+                
+                let totalHours = closeHour - openHour;
+                let totalMinutes = closeMinute - openMinute;
+                
+                if (totalMinutes < 0) {
+                    totalHours--;
+                    totalMinutes += 60;
+                }
+                
+                if (totalHours < 0) {
+                    totalHours += 24;
+                }
+                
+                liveDuration.textContent = `${totalHours} hours ${totalMinutes} minutes`;
+            } else {
+                liveDuration.textContent = 'Please enter both times';
+            }
+        }
+    
+        openingTime.addEventListener('change', calculateDuration);
+        closingTime.addEventListener('change', calculateDuration);
+    });
+    </script>
 {% endblock %}
