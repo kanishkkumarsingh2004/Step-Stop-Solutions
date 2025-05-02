@@ -46,12 +46,19 @@
             {% if active_subscriptions %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for subscription in active_subscriptions %}
-                <div class="p-4 border rounded-lg {% if subscription.payment_status.status == 'expired' %}bg-gray-100{% else %}bg-white{% endif %}">
-                    <div class="flex flex-col space-y-2 mb-4">
-                        <h3 class="text-lg font-bold text-gray-900">{{ subscription.subscription.name }}</h3>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
-                            Payment Status: {{ subscription.payment_status.status|title }}
-                        </span>
+                <div class="p-3 border rounded-lg {% if subscription.payment_status.status == 'expired' %}bg-gray-100{% else %}bg-white{% endif %}">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div class="flex flex-col space-y-1">
+                            <h3 class="text-sm font-bold text-gray-900">{{ subscription.subscription.name }}</h3>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
+                                Payment: {{ subscription.payment_status.status|title }}
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.subscription_status.color }}-100 text-{{ subscription.subscription_status.color }}-800">
+                                Subscription: {{ subscription.subscription_status.status|title }}
+                            </span>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
@@ -70,21 +77,22 @@
                             </p>
                         </div>
                     </div>
-                    
-                    <div class="grid grid-cols-3 gap-4 bg-gray-100 p-3 rounded-md">
+                    {% if subscription.subscription_status.status == 'active' %}
+                    <div class="grid grid-cols-3 gap-2 sm:gap-4 bg-gray-100 p-2 sm:p-3 rounded-md">
                         <div class="text-center">
-                            <p class="text-xs text-gray-500">Price</p>
-                            <p class="text-base font-bold text-gray-800">₹{{ subscription.cost }}</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500">Price</p>
+                            <p class="text-sm sm:text-base font-bold text-gray-800">₹{{ subscription.cost }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-500">Total Seats</p>
-                            <p class="text-base font-bold text-gray-800">{{ subscription.library_seats.total_seats }}</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500">Total Seats</p>
+                            <p class="text-sm sm:text-base font-bold text-gray-800">{{ subscription.library_seats.total_seats }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-500">Available Seats</p>
-                            <p class="text-base font-bold text-gray-800">{{ subscription.library_seats.available_seats }}</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500">Available Seats</p>
+                            <p class="text-sm sm:text-base font-bold text-gray-800">{{ subscription.library_seats.available_seats }}</p>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -96,25 +104,34 @@
         </div>
     </div>
 
-    <!-- Attendance Section - Mobile Friendly -->
+    <!-- Attendance Section - Responsive Table Format -->
     <div class="bg-white p-4 rounded-lg shadow">
         <h2 class="text-lg font-semibold text-gray-800 mb-4 text-center">Recent Attendance</h2>
-        <div class="space-y-2">
-            {% for attendance in attendances %}
-            <div class="p-3 border rounded-lg">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <p class="text-xs text-gray-500">Check-in</p>
-                        <p class="text-sm text-gray-800">{{ attendance.check_in_time|date:"H:i, M d" }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500">Check-out</p>
-                        <p class="text-sm text-gray-800">{{ attendance.check_out_time|date:"H:i, M d"|default:"-" }}</p>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for attendance in attendances %}
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">{{ attendance.check_in_time|date:"M d, Y" }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-center">{{ attendance.check_in_time|time:"H:i" }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-center">
+                            {% if attendance.check_out_time %}
+                                {{ attendance.check_out_time|time:"H:i" }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
 {% endblock %}

@@ -89,6 +89,10 @@ def dashboard(request):
         total_seats = library.capacity if library else 0
         available_seats = library.available_seats if library else 0
         
+        # Get subscription status from UserSubscription
+        subscription_status = 'active' if subscription.status  == 'valid' else 'expired'
+        status_color = 'green' if subscription_status == 'active' else 'red'
+        
         # Add processed data to subscription
         subscription.latest_transaction = latest_transaction
         subscription.payment_status = {'status': status, 'color': color}
@@ -96,6 +100,10 @@ def dashboard(request):
         subscription.library_seats = {
             'total_seats': total_seats,
             'available_seats': available_seats
+        }
+        subscription.subscription_status = {
+            'status': subscription_status,
+            'color': status_color
         }
         
         # Add to list for sorting
