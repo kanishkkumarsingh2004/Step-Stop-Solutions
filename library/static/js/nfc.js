@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteButton = document.getElementById('delete-user-button');
     const userSelect = document.getElementById('user-select');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const libraryId = document.getElementById('library_id').value;
 
     // Function to add log messages
     const addLogMessage = (message) => {
