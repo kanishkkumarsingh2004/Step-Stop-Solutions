@@ -121,6 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ nfc_serial: nfcSerial })
             });
 
+            // Check if the response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const errorText = await response.text();
+                throw new Error(`Expected JSON, got: ${errorText}`);
+            }
+
             const data = await response.json();
             
             if (data.allocated) {

@@ -2517,7 +2517,7 @@ def allocate_card(request):
 
 @login_required
 @csrf_exempt
-def check_card_in_admin_db(request):
+def check_nfc_allocation(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -2526,11 +2526,13 @@ def check_card_in_admin_db(request):
             if not nfc_serial:
                 return JsonResponse({'error': 'NFC serial is required'}, status=400)
             
-            exists = AdminCard.objects.filter(card_id=nfc_serial).exists()
-            return JsonResponse({'exists': exists})
-            
+            user = CustomUser.objects.filter(nfc_id=nfc_serial).first()
+            return JsonResponse({
+                'allocated': bool(user),
+                'user_full_name': user.get_full_name() if user else None,
+                'user_mobile': user.mobile_number if user else None
+            })
         except Exception as e:
-            logger.error(f"Error in check_card_in_admin_db: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
