@@ -117,8 +117,8 @@
                             </a>
                             <span class="text-gray-300">|</span>
                             <button onclick="markAttendance('{{ user.id }}')" 
-                                    class="text-green-600 hover:text-green-900 text-sm">
-                                    Check-in
+                                    class="btn {% if user.is_checked_in %}btn-danger{% else %}btn-success{% endif %}">
+                                {% if user.is_checked_in %}Check-out{% else %}Check-in{% endif %}
                             </button>
                         </div>
                     </td>
@@ -131,39 +131,49 @@
 <!-- Add this script at the bottom of the file -->
 <script>
     function markAttendance(userId) {
-        fetch(`/mark-attendance/${userId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                library_id: '{{ library.id }}'
-            })
+    fetch(`/mark-attendance/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            library_id: '{{ library.id }}'
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update button text based on action
-                const button = document.querySelector(`button[onclick="markAttendance('${userId}')"]`);
-                if (data.action === 'checkin') {
-                    button.textContent = 'Check-out';
-                    button.classList.remove('text-green-600', 'hover:text-green-900');
-                    button.classList.add('text-red-600', 'hover:text-red-900');
-                } else if (data.action === 'checkout') {
-                    button.textContent = 'Check-in';
-                    button.classList.remove('text-red-600', 'hover:text-red-900');
-                    button.classList.add('text-green-600', 'hover:text-green-900');
-                }
-                alert(data.message);
-            } else {
-                alert('Error: ' + data.error);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const button = document.querySelector(`button[onclick="markAttendance('${userId}')"]`);
+            if (data.action === 'checkin') {
+                button.textContent = 'Check-out';
+                button.classList.remove('btn-success');
+                button.classList.add('btn-danger');
+            } else if (data.action === 'checkout') {
+                button.textContent = 'Check-in';
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-success');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while marking attendance');
-        });
-    }
-    </script>
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.error || 'An error occurred', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while marking attendance', 'error');
+    });
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
 {% endblock %}

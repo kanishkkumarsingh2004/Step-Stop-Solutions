@@ -17,8 +17,7 @@ urlpatterns = [
     path('library/<int:library_id>/edit/', views.edit_library_profile, name='edit_library_profile'),
     
     # User Management
-    path('vendor/<int:vendor_id>/manage-users/', views.manage_users, name='manage_users'),
-    
+   path('vendor/<int:library_id>/manage-users/', views.manage_users, name='manage_users'),    
     # Library Management
     path('register-library/', views.register_library, name='register_library'),
     path('register-vendors-shop/', views.register_venders_shop, name='register_venders_shop'),

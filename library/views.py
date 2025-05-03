@@ -202,24 +202,25 @@ def user_logout(request):
     return redirect('home')
 
 @login_required
-def manage_users(request, vendor_id):
-    vendor = get_object_or_404(Library, id=vendor_id)
-    users = CustomUser.objects.filter(
-        usersubscription__subscription__user=vendor.owner
+def manage_users(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    
+    # Get users who have subscriptions to this library
+    users_with_subscriptions = CustomUser.objects.filter(
+        usersubscription__subscription__library=library
     ).distinct()
 
-    # Search filter
-    search_query = request.GET.get('search')
-    if search_query:
-        users = users.filter(
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query) |
-            Q(mobile_number__icontains=search_query)
-        )
-
+    # Add subscription status to each user
+    for user in users_with_subscriptions:
+        user.has_active_subscription = UserSubscription.objects.filter(
+            user=user,
+            subscription__library=library,
+            end_date__gte=timezone.now().date()
+        ).exists()
+    
     return render(request, 'library/manage_users.html', {
-        'users': users,
-        'library': vendor
+        'library': library,
+        'users': users_with_subscriptions
     })
 
 @csrf_exempt
@@ -463,6 +464,9 @@ def all_attendance(request, vendor_id):
     
     # Get all attendance records for this library
     attendances = Attendance.objects.filter(library=library).order_by('-check_in_time')
+    paginator = Paginator(attendances, 25)  # Show 25 attendances per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)  # This ensures page_obj is always defined
     
     # Add search functionality
     search_query = request.GET.get('search')
@@ -497,10 +501,6 @@ def all_attendance(request, vendor_id):
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
             attendance.duration = f"{hours}h:{minutes}m:{seconds}s"
-            # Add pagination
-            paginator = Paginator(attendances, 10)  # Show 10 attendances per page
-            page_number = request.GET.get('page')
-            page_obj = paginator.get_page(page_number)
         else:
             attendance.duration = "0h:0m:0s"
             attendance.duration_color = 0
@@ -1065,14 +1065,28 @@ def edit_library_profile(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     
     if request.method == 'POST':
+        # Get the new capacity value
+        new_capacity = int(request.POST.get('capacity'))
+        old_capacity = library.capacity
+        
+        # Calculate the difference between new and old capacity
+        capacity_diff = new_capacity - old_capacity
+        
+        # Update available seats based on capacity change
+        if capacity_diff > 0:
+            library.available_seats += capacity_diff
+        elif capacity_diff < 0:
+            library.available_seats += capacity_diff
+        
         # Only update allowed fields
         library.address = request.POST.get('address')
         library.description = request.POST.get('description')
         library.venue_location = request.POST.get('venue_location')
         library.venue_name = request.POST.get('venue_name')
         library.social_media_links = request.POST.get('social_media_links')
-        library.business_hours = request.POST.get('business_hours')
         library.capacity = request.POST.get('capacity')
+        library.opening_time = request.POST.get('opening_time')
+        library.closing_time = request.POST.get('closing_time')
         library.equipment_available = request.POST.get('equipment_available')
         library.additional_services = request.POST.get('additional_services')
         library.pincode = request.POST.get('pincode')
@@ -2194,7 +2208,7 @@ def manage_reviews(request, library_id):
     reviews = library.get_reviews()
     
     # Pagination
-    paginator = Paginator(reviews, 10)  # Show 10 reviews per page
+    paginator = Paginator(reviews, 25)  # Show 10 reviews per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -2223,7 +2237,7 @@ def view_reviews(request, library_id):
     reviews = library.reviews.all().order_by('-created_at')
     
     # Pagination
-    paginator = Paginator(reviews, 10)
+    paginator = Paginator(reviews, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -2400,6 +2414,9 @@ def mark_attendance_manual(request, user_id):
             data = json.loads(request.body)
             library_id = data.get('library_id')
             
+            if not library_id:
+                return JsonResponse({"error": "Library ID is required"}, status=400)
+            
             user = CustomUser.objects.get(id=user_id)
             library = Library.objects.get(id=library_id)
             
@@ -2410,6 +2427,13 @@ def mark_attendance_manual(request, user_id):
             ).order_by('-check_in_time').first()
             
             if not latest_attendance or latest_attendance.check_out_time:
+                # Check if seats are available
+                if library.available_seats <= 0:
+                    return JsonResponse({
+                        "error": "No seats available",
+                        "status": "full"
+                    }, status=400)
+                
                 # New check-in
                 Attendance.objects.create(
                     user=user,
@@ -2419,26 +2443,38 @@ def mark_attendance_manual(request, user_id):
                     check_out_color=0,
                     nfc_id=user.nfc_id
                 )
+                
+                # Decrease available seats
+                library.available_seats -= 1
+                library.save()
+                
                 return JsonResponse({
-                    'success': True,
-                    'message': 'Checked in successfully',
-                    'action': 'checkin'
+                    "success": True,
+                    "message": "Checked in successfully",
+                    "action": "checkin",
+                    "available_seats": library.available_seats
                 })
             else:
                 # Check-out
                 latest_attendance.check_out_time = current_time
                 latest_attendance.save()
+                
+                # Increase available seats
+                library.available_seats += 1
+                library.save()
+                
                 return JsonResponse({
-                    'success': True,
-                    'message': 'Checked out successfully',
-                    'action': 'checkout'
+                    "success": True,
+                    "message": "Checked out successfully",
+                    "action": "checkout",
+                    "available_seats": library.available_seats
                 })
                 
         except CustomUser.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User not found'}, status=404)
+            return JsonResponse({"success": False, "error": "User not found"}, status=404)
         except Library.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Library not found'}, status=404)
+            return JsonResponse({"success": False, "error": "Library not found"}, status=404)
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
     
-    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)

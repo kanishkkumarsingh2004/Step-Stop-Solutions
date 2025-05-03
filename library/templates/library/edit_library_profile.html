@@ -142,13 +142,16 @@
                 <!-- Business Hours and Equipment Available -->
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Business Hours -->
+                        <!-- Opening Time -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Business hours</label>
-                            <input type="text" name="business_hours" value="{{ form.business_hours|default_if_none:'' }}"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                   required>
-                            <p class="mt-2 text-sm text-gray-500">Operating hours of the business</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Opening Time</label>
+                            <input type="time" name="opening_time" value="{{ form.opening_time|time:'H:i' }}" required>
+                        </div>
+
+                        <!-- Closing Time -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Closing Time</label>
+                            <input type="time" name="closing_time" value="{{ form.closing_time|time:'H:i' }}" required>
                         </div>
 
                         <!-- Capacity -->
@@ -180,7 +183,11 @@
                     <p class="mt-2 text-sm text-gray-500">Any additional services offered</p>
                 </div>
 
-               
+                <!-- Business Hours -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Business Hours</label>
+                    <p>{{ form.business_hours }}</p>
+                </div>
             </div>
             <div class="flex justify-end">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
