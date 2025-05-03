@@ -1209,7 +1209,7 @@ def check_nfc_allocation(request):
 
             # Check if NFC card is allocated to this library
             card = AdminCard.objects.get(card_id=nfc_serial)
-            if card.library and card.library.id != library_id:
+            if not card.library or str(card.library.id) != library_id:
                 return JsonResponse(
                     {'error': 'This card  is not alocated to this library or coaching'}, 
                     status=400,
