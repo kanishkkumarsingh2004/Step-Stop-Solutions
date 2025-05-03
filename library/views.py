@@ -1226,7 +1226,7 @@ def check_nfc_allocation(request):
             # Check if NFC card is allocated to this library using helper function
             if not is_card_allocated_to_library(nfc_serial, library_id):
                 return JsonResponse(
-                    {'error': 'This card  is not alocated to this library or coaching\n nfc_serial\n library_id'}, 
+                    {'error': f'This card  is not alocated to this library or coaching\n {nfc_serial}\n {library_id}'}, 
                     status=400,
                     content_type='application/json'
                 )
