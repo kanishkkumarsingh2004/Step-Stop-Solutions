@@ -1204,6 +1204,16 @@ def check_nfc_allocation(request):
                 )
                 
             nfc_serial = data.get('nfc_serial')
+            library_id = data.get('library_id')
+
+            # Check if NFC card is allocated to this library
+            card = AdminCard.objects.get(card_id=nfc_serial)
+            if card.library and card.library.id != library_id:
+                return JsonResponse(
+                    {'error': 'This card  is not alocated to this library or coaching'}, 
+                    status=400,
+                    content_type='application/json'
+                )
             
             if not nfc_serial or not isinstance(nfc_serial, str):
                 
@@ -2534,27 +2544,6 @@ def allocate_card(request):
         except Exception as e:
             logger.error(f"Error in allocate function: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=500)
-
-@login_required
-@csrf_exempt
-def check_nfc_allocation(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            nfc_serial = data.get('nfc_serial')
-            
-            if not nfc_serial:
-                return JsonResponse({'error': 'NFC serial is required'}, status=400)
-            
-            user = CustomUser.objects.filter(nfc_id=nfc_serial).first()
-            return JsonResponse({
-                'allocated': bool(user),
-                'user_full_name': user.get_full_name() if user else None,
-                'user_mobile': user.mobile_number if user else None
-            })
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required
 def delete_card(request, card_id):
