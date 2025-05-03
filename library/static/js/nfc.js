@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.allocated) {
                 // Update UI to show allocated user info
                 const userInfo = document.createElement('div');
+                nfcIdDisplay.textContent = serialNumber;
                 userInfo.innerHTML = `
                     <p class="text-sm text-gray-600 mt-2">Allocated to:</p>
                     <p class="text-lg font-semibold">${data.user_full_name}</p>
@@ -165,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const nfcReader = new NFCReader({
         onReading: (serialNumber) => {
             if (nfcIdDisplay) {
-                nfcIdDisplay.textContent = serialNumber;
                 checkNfcAllocation(serialNumber);   
                 if (nfcDetails) {
                     nfcDetails.classList.remove('hidden');
