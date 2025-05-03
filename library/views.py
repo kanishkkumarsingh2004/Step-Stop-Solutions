@@ -35,6 +35,7 @@ from .models import (
     HomePageTextBanner,
     Review,
     VendorSSID,
+    AdminCard,
 )
 # Python standard library imports
 import json
@@ -200,7 +201,6 @@ def user_signup(request):
 def user_logout(request):
     logout(request)
     return redirect('home')
-
 @login_required
 def manage_users(request, library_id):
     library = get_object_or_404(Library, id=library_id)
@@ -210,19 +210,25 @@ def manage_users(request, library_id):
         usersubscription__subscription__library=library
     ).distinct()
 
-    # Add subscription status to each user
+    # Add subscription status and checkin status to each user
     for user in users_with_subscriptions:
         user.has_active_subscription = UserSubscription.objects.filter(
             user=user,
             subscription__library=library,
             end_date__gte=timezone.now().date()
         ).exists()
+        
+        # Add checkin status
+        user.is_checked_in = Attendance.objects.filter(
+            user=user,
+            check_in_time__isnull=False,
+            check_out_time__isnull=True
+        ).exists()
     
     return render(request, 'library/manage_users.html', {
         'library': library,
         'users': users_with_subscriptions
     })
-
 @csrf_exempt
 def check_access(request):
     if request.method == "POST":
@@ -555,7 +561,7 @@ def expense_dashboard(request, library_id):
         'total_profit': total_profit,
         'valid_transactions': valid_transection,
         'from_date': from_date,
-        'to_date': to_date
+        'to_date': to_date,
     }
     
     return render(request, 'library/expense.html', context)
@@ -2478,3 +2484,52 @@ def mark_attendance_manual(request, user_id):
             return JsonResponse({"success": False, "error": str(e)}, status=500)
     
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
+
+def manage_cards(request):
+    cards = AdminCard.objects.all()
+    return render(request, 'admin_page/manage_cards.html', {'cards': cards})
+
+def add_card(request):
+    if request.method == 'POST':
+        card_id = request.POST.get('card_id')
+        if card_id:
+            AdminCard.objects.create(card_id=card_id)
+            return redirect('manage_cards')
+    return render(request, 'admin_page/add_card.html')
+
+def allocate_card(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get("nfc_serial")
+            user_id = data.get("user_id")
+            
+            # Check if card exists in admin-approved list
+            if not AdminCard.objects.filter(card_id=nfc_serial).exists():
+                return JsonResponse({'error': 'This card is not approved for use'}, status=400)
+
+            # Rest of the allocation logic...
+            return JsonResponse({'success': True, 'message': 'Card allocated successfully'})
+            
+        except Exception as e:
+            logger.error(f"Error in allocate function: {str(e)}", exc_info=True)
+            return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@csrf_exempt
+def check_card_in_admin_db(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get('nfc_serial')
+            
+            if not nfc_serial:
+                return JsonResponse({'error': 'NFC serial is required'}, status=400)
+            
+            exists = AdminCard.objects.filter(card_id=nfc_serial).exists()
+            return JsonResponse({'exists': exists})
+            
+        except Exception as e:
+            logger.error(f"Error in check_card_in_admin_db: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

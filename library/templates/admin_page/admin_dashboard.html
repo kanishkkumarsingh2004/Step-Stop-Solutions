@@ -103,6 +103,21 @@
                 </a>
             </div>
         </div>
+
+        <!-- Card Management -->
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">Card Management</h2>
+            <div class="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <a href="{% url 'manage_cards' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="bi bi-credit-card text-xl sm:text-2xl"></i>
+                    <span class="text-base sm:text-lg font-medium">Manage Cards</span>
+                </a>
+                <a href="{% url 'add_card' %}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="bi bi-plus-circle text-xl sm:text-2xl"></i>
+                    <span class="text-base sm:text-lg font-medium">Add New Card</span>
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

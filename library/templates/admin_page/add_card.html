@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Add New Card via NFC</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form id="nfc-form" method="post" action="{% url 'add_card' %}">
+            {% csrf_token %}
+            <input type="hidden" name="card_id" id="nfc_id">
+            
+            <div class="mb-6">
+                <div id="card-display" class="hidden text-center text-lg font-semibold text-gray-700 mb-4 p-4 bg-gray-50 rounded-lg">
+                    <!-- Card number will appear here -->
+                </div>
+                
+                <div id="error-message" class="hidden text-center text-red-600 p-4 rounded-lg bg-red-50 mb-4">
+                    <!-- Error messages will appear here -->
+                </div>
+                
+                <button id="add-card-btn" type="submit" 
+                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg opacity-50 cursor-not-allowed"
+                    disabled>
+                    Add Card
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'js/nfc_scan.js' %}"></script>
+{% endblock %} 

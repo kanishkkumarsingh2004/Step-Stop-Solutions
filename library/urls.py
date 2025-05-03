@@ -168,4 +168,7 @@ urlpatterns = [
     path('get-permissions/<int:library_id>/<int:staff_id>/', views.get_permissions, name='get_permissions'),
     path('vendor/<int:library_id>/user/<int:user_id>/', views.library_user_details, name='library_user_details'),
     path('mark-attendance/<int:user_id>/', views.mark_attendance_manual, name='mark_attendance_manual'),
+    path('manage-cards/', views.manage_cards, name='manage_cards'),
+    path('add-card/', views.add_card, name='add_card'),
+    path('check_card_in_admin_db/', views.check_card_in_admin_db, name='check_card_in_admin_db'),
 ]

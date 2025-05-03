@@ -240,7 +240,7 @@ class UserSubscription(models.Model):
     end_date = models.DateField()
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="valid")
 
     def __str__(self):
         return f"{self.user.email} - {self.subscription.name}"
@@ -435,3 +435,10 @@ class VendorSSID(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.library}"
+
+class AdminCard(models.Model):
+    card_id = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Card {self.card_id}"

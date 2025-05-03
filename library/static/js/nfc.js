@@ -38,8 +38,27 @@ class NFCReader {
             this.reader = new NDEFReader();
             await this.reader.scan();
             
-            this.reader.addEventListener("reading", ({ serialNumber }) => {
+            this.reader.addEventListener("reading", async ({ serialNumber }) => {
                 console.log(`NFC card detected: ${serialNumber}`);
+                
+                // Update NFC ID display
+                const nfcIdDisplay = document.getElementById('nfc-id-display');
+                if (nfcIdDisplay) {
+                    nfcIdDisplay.textContent = serialNumber;
+                }
+
+                // Check if card exists in AdminCard DB
+                const cardExists = await checkCardInAdminDB(serialNumber);
+                if (!cardExists) {
+                    addLogMessage('This card is not allocated by us');
+                    if (errorMessageText) {
+                        errorMessageText.textContent = 'This card is not allocated by us';
+                        errorMessageContainer.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                // If card exists, proceed with normal flow
                 this.options.onReading?.(serialNumber);
                 this.options.onLog?.(`NFC card detected: ${serialNumber}`);
             });
@@ -146,6 +165,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorMessageContainer.classList.remove('hidden');
                 errorMessageText.textContent = 'Error checking NFC allocation. Please try again.';
             }
+        }
+    }
+
+    // Add this function to check if card exists in AdminCard DB
+    async function checkCardInAdminDB(nfcSerial) {
+        try {
+            const response = await fetch('/check_card_in_admin_db/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ nfc_serial: nfcSerial })
+            });
+
+            const data = await response.json();
+            return data.exists;
+        } catch (error) {
+            console.error('Error checking card in Admin DB:', error);
+            return false;
         }
     }
 

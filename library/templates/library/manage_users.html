@@ -117,8 +117,9 @@
                             </a>
                             <span class="text-gray-300">|</span>
                             <button onclick="markAttendance('{{ user.id }}')" 
-                                    class="btn text-green-600">
-                                    mark Attendance
+                                    class="btn {% if user.is_checked_in %}text-red-600  {% else %}text-green-600 {% endif %}">
+                                    {% if user.is_checked_in %}Check Out {% else %}Check In{% endif %}
+                            </span>
                             </button>
                         </div>
                     </td>
@@ -173,7 +174,8 @@ function showToast(message, type) {
     
     setTimeout(() => {
         toast.remove();
-    }, 3000);
+    }, 1000);
+    window.location.reload();
 }
 </script>
 {% endblock %}
