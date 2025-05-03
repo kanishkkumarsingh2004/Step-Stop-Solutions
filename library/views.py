@@ -2378,4 +2378,67 @@ def get_permissions(request, library_id, staff_id):
     except Exception as e:
         logger.error(f"Error getting permissions: {str(e)}")
         return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)
-        return JsonResponse({'success': False, 'message': 'An error occurred'}, status=500)
+
+@login_required
+def library_user_details(request, library_id, user_id):
+    library = get_object_or_404(Library, id=library_id)
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    # Check if user has permission to view this user's details
+    if not request.user.has_perm('library.view_user_details'):
+        return redirect('home')
+    
+    return render(request, 'library/user_details.html', {
+        'user': user,
+        'library': library
+    })
+
+@csrf_exempt
+def mark_attendance_manual(request, user_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            library_id = data.get('library_id')
+            
+            user = CustomUser.objects.get(id=user_id)
+            library = Library.objects.get(id=library_id)
+            
+            current_time = timezone.now()
+            latest_attendance = Attendance.objects.filter(
+                user=user,
+                library=library
+            ).order_by('-check_in_time').first()
+            
+            if not latest_attendance or latest_attendance.check_out_time:
+                # New check-in
+                Attendance.objects.create(
+                    user=user,
+                    library=library,
+                    check_in_time=current_time,
+                    check_in_color=0,
+                    check_out_color=0,
+                    nfc_id=user.nfc_id
+                )
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Checked in successfully',
+                    'action': 'checkin'
+                })
+            else:
+                # Check-out
+                latest_attendance.check_out_time = current_time
+                latest_attendance.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Checked out successfully',
+                    'action': 'checkout'
+                })
+                
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User not found'}, status=404)
+        except Library.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Library not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)

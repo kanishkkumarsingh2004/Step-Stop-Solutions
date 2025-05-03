@@ -66,7 +66,15 @@ class Library(models.Model):
 
     @property
     def business_hours(self):
-        return f"{self.opening_time.strftime('%I:%M %p')} - {self.closing_time.strftime('%I:%M %p')}"
+        if self.opening_time == self.closing_time:
+            return "24 hours"
+        else:
+            opening_hour = self.opening_time.hour
+            closing_hour = self.closing_time.hour
+            duration = closing_hour - opening_hour
+            if duration < 0:
+                duration += 24
+            return f"{duration} hours"
 
 class CustomUser(AbstractUser):
     GENDER_CHOICES = [
@@ -119,7 +127,7 @@ class CustomUser(AbstractUser):
         default='GEN',
         help_text="Select your category"
     )
-    ssid = ShortUUIDField(length=5, max_length=5, unique=True, blank=True, null=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZ')
+    ssid = ShortUUIDField(length=5, max_length=5, unique=True, blank=True, null=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz')
     accepted_terms = models.BooleanField(default=False)
     accepted_privacy_policy = models.BooleanField(default=False)
 
@@ -138,6 +146,11 @@ class CustomUser(AbstractUser):
         except Exception as e:
             logger.error(f"Error getting permissions for library: {str(e)}")
             return []
+
+    class Meta:
+        permissions = [
+            ("view_user_details", "Can view user details"),
+        ]
 
 class Institution(models.Model):
     name = models.CharField(max_length=200)

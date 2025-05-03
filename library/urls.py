@@ -167,4 +167,6 @@ urlpatterns = [
     path('remove-permission/<int:library_id>/<int:staff_id>/', views.remove_permission, name='remove_permission'),
     path('manage-permissions/<int:library_id>/<int:staff_id>/', views.manage_permissions, name='manage_permissions'),
     path('get-permissions/<int:library_id>/<int:staff_id>/', views.get_permissions, name='get_permissions'),
+    path('vendor/<int:library_id>/user/<int:user_id>/', views.library_user_details, name='library_user_details'),
+    path('mark-attendance/<int:user_id>/', views.mark_attendance_manual, name='mark_attendance_manual'),
 ]

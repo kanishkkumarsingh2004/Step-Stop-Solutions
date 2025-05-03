@@ -81,15 +81,15 @@
                     <div class="grid grid-cols-3 gap-2 sm:gap-4 bg-gray-100 p-2 sm:p-3 rounded-md">
                         <div class="text-center">
                             <p class="text-[10px] sm:text-xs text-gray-500">Price</p>
-                            <p class="text-sm sm:text-base font-bold text-gray-800">₹{{ subscription.cost }}</p>
+                            <p class="text-sm sm:text-base font-bold text-blue-600">₹{{ subscription.cost }}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-[10px] sm:text-xs text-gray-500">Total Seats</p>
-                            <p class="text-sm sm:text-base font-bold text-gray-800">{{ subscription.library_seats.total_seats }}</p>
+                            <p class="text-sm sm:text-base font-bold text-red-600">{{ subscription.library_seats.total_seats }}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-[10px] sm:text-xs text-gray-500">Available Seats</p>
-                            <p class="text-sm sm:text-base font-bold text-gray-800">{{ subscription.library_seats.available_seats }}</p>
+                            <p class="text-sm sm:text-base font-bold text-green-600">{{ subscription.library_seats.available_seats }}</p>
                         </div>
                     </div>
                     {% endif %}
