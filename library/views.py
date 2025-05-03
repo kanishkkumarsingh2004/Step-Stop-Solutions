@@ -1184,6 +1184,23 @@ def attendance_page(request, library_id):
 @login_required
 @csrf_exempt
 def check_nfc_allocation(request):
+    def is_card_allocated_to_library(nfc_serial, library_id):
+        try:
+            # Get the card and library
+            card = AdminCard.objects.get(card_id=nfc_serial)
+            library = get_object_or_404(Library, id=library_id)
+            
+            # Check if card is allocated to this library
+            if card.library and str(card.library.id) == library_id:
+                return True
+            return False
+            
+        except AdminCard.DoesNotExist:
+            return False
+        except Exception as e:
+            logger.error(f"Error checking card allocation: {str(e)}")
+            return False
+
     if request.method == 'POST':
         try:
             # Validate content type
@@ -1203,19 +1220,16 @@ def check_nfc_allocation(request):
                     status=400,
                     content_type='application/json'
                 )
-                
             nfc_serial = data.get('nfc_serial')
             library_id = data.get('library_id')
-
-            # Check if NFC card is allocated to this library
-            card = AdminCard.objects.get(card_id=nfc_serial)
-            if not card.library or str(card.library.id) != library_id:
+            
+            # Check if NFC card is allocated to this library using helper function
+            if not is_card_allocated_to_library(nfc_serial, library_id):
                 return JsonResponse(
-                    {'error': 'This card  is not alocated to this library or coaching'}, 
+                    {'error': 'This card  is not alocated to this library or coaching\n nfc_serial\n library_id'}, 
                     status=400,
                     content_type='application/json'
                 )
-            
             if not nfc_serial or not isinstance(nfc_serial, str):
                 
                 return JsonResponse(
