@@ -121,50 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ nfc_serial: nfcSerial })
             });
 
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
-            }
-
             const data = await response.json();
             
             if (data.allocated) {
-                // Update UI to show allocated user info
-                const userInfo = document.createElement('div');
-                userInfo.innerHTML = `
-                    <p class="text-sm text-gray-600 mt-2">Allocated to:</p>
-                    <p class="text-lg font-semibold">${data.user_full_name}</p>
-                    <p class="text-sm text-gray-600">${data.user_mobile}</p>
-                `;
-                
-                // Clear previous info and add new
-                const infoContainer = document.getElementById('nfc-user-info');
-                if (infoContainer) {
-                    infoContainer.innerHTML = '';
-                    infoContainer.appendChild(userInfo);
-                }
-                
-                // Show deallocate button
-                deleteButton?.classList.remove('hidden');
-                activateButton?.classList.add('hidden');
+                // Show allocated user info
+                document.getElementById('allocated-user-info').classList.remove('hidden');
+                document.getElementById('allocated-user-name').textContent = data.user_full_name;
             } else {
-                // Clear user info if not allocated
-                const infoContainer = document.getElementById('nfc-user-info');
-                if (infoContainer) infoContainer.innerHTML = '';
-                
-                // Show activate button
-                activateButton?.classList.remove('hidden');
-                deleteButton?.classList.add('hidden');
+                // Hide allocated user info
+                document.getElementById('allocated-user-info').classList.add('hidden');
             }
         } catch (error) {
             console.error('Error checking NFC allocation:', error);
-            // Show error message to user
-            if (errorMessageContainer && errorMessageText) {
-                errorMessageContainer.classList.remove('hidden');
-                errorMessageText.textContent = 'Error checking NFC allocation. Please try again.';
-            }
         }
     }
 

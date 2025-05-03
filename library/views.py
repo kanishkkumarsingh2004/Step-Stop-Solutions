@@ -2533,3 +2533,12 @@ def check_card_in_admin_db(request):
             logger.error(f"Error in check_card_in_admin_db: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def delete_card(request, card_id):
+    try:
+        card = AdminCard.objects.get(id=card_id)
+        card.delete()
+        return redirect('manage_cards')
+    except AdminCard.DoesNotExist:
+        return JsonResponse({'error': 'Card not found'}, status=404)
