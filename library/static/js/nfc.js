@@ -38,37 +38,10 @@ class NFCReader {
             this.reader = new NDEFReader();
             await this.reader.scan();
             
-            this.reader.addEventListener("reading", async ({ serialNumber }) => {
+            this.reader.addEventListener("reading", ({ serialNumber }) => {
                 console.log(`NFC card detected: ${serialNumber}`);
                 this.options.onReading?.(serialNumber);
                 this.options.onLog?.(`NFC card detected: ${serialNumber}`);
-                
-                // Check if card is allocated to current user
-                try {
-                    const response = await fetch('/check_nfc_allocation/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': this.options.csrfToken
-                        },
-                        body: JSON.stringify({
-                            nfc_serial: serialNumber
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.allocated) {
-                        // Card is allocated to a user
-                        this.options.onValidCard?.(serialNumber, data.user_full_name, data.user_mobile);
-                    } else {
-                        // Card is not allocated
-                        this.options.onInvalidCard?.(serialNumber);
-                    }
-                } catch (error) {
-                    console.error('Error checking NFC allocation:', error);
-                    this.options.onError?.('Error checking NFC allocation');
-                }
             });
             
             this.reader.addEventListener("readingerror", (error) => {
@@ -175,46 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
     // Create NFC reader instance with enhanced error handling and UI updates
     const nfcReader = new NFCReader({
-        onReading: async (serialNumber) => {
+        onReading: (serialNumber) => {
             if (nfcIdDisplay) {
                 nfcIdDisplay.textContent = serialNumber;
-                
-                // First check if card exists in admin database
-                try {
-                    const response = await fetch('/check_card_in_admin_db', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ nfc_serial: serialNumber })
-                    });
-
-                    const data = await response.json();
-                    
-                    if (!data.exists) {
-                        // Card not approved - show error
-                        if (errorMessageContainer && errorMessageText) {
-                            errorMessageContainer.classList.remove('hidden');
-                            errorMessageText.textContent = 'This NFC card is not approved for use';
-                        }
-                        return;
-                    }
-
-                    // If card is approved, check allocation
-                    checkNfcAllocation(serialNumber);
-                    if (nfcDetails) {
-                        nfcDetails.classList.remove('hidden');
-                    }
-
-                } catch (error) {
-                    console.error('Error checking card approval:', error);
-                    if (errorMessageContainer && errorMessageText) {
-                        errorMessageContainer.classList.remove('hidden');
-                        errorMessageText.textContent = 'Error checking card approval. Please try again.';
-                    }
+                checkNfcAllocation(serialNumber);
+                if (nfcDetails) {
+                    nfcDetails.classList.remove('hidden');
                 }
             }
         },
@@ -227,17 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nfcIdDisplay.textContent = 'Waiting for card...';
             }
         },
-        onLog: addLogMessage,
-        onValidCard: (nfcId, userName, userMobile) => {
-            document.getElementById('invalid-card-message').classList.add('hidden');
-            document.getElementById('allocated-user-info').classList.remove('hidden');
-            allocatedUserName.textContent = `${userName} (${userMobile})`;
-        },
-        onInvalidCard: (nfcId) => {
-            document.getElementById('allocated-user-info').classList.add('hidden');
-            document.getElementById('invalid-card-message').classList.remove('hidden');
-        },
-        csrfToken: document.querySelector('[name=csrfmiddlewaretoken]').value
+        onLog: addLogMessage
     });
 
     // Start scanning when the button is clicked
