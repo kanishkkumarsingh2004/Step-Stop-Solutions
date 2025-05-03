@@ -164,9 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const nfcReader = new NFCReader({
         onReading: (serialNumber) => {
             if (nfcIdDisplay) {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
                 nfcIdDisplay.textContent = serialNumber;
                 checkNfcAllocation(serialNumber);   
                 if (nfcDetails) {
