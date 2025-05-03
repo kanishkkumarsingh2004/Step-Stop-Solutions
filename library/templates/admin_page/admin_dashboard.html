@@ -2,56 +2,82 @@
 
 {% block content %}
 <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         <!-- Dashboard Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        <div class="text-center mb-8 sm:mb-12">
+            <h1 class="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">Admin Dashboard</h1>
+            <p class="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">
                 Comprehensive platform management tools for efficient administration
             </p>
         </div>
 
         <!-- Statistics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-8 sm:mb-12 px-2 sm:px-0">
             <!-- Total Users Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md sm:shadow-lg p-3 sm:p-6 hover:shadow-lg sm:hover:shadow-xl transition-shadow duration-300">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Total Users</h3>
-                        <p class="text-4xl font-bold text-gray-900">{{ total_users }}</p>
+                        <h3 class="text-sm sm:text-xl font-semibold text-gray-800 mb-1 sm:mb-2">Total Users</h3>
+                        <p class="text-xl sm:text-4xl font-bold text-gray-900">{{ total_users }}</p>
                     </div>
-                    <div class="p-3 bg-blue-50 rounded-lg">
-                        <i class="bi bi-people text-3xl text-blue-600"></i>
+                    <div class="p-2 sm:p-3 bg-blue-50 rounded-md sm:rounded-lg">
+                        <i class="bi bi-people text-xl sm:text-3xl text-blue-600"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Libraries Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md sm:shadow-lg p-3 sm:p-6 hover:shadow-lg sm:hover:shadow-xl transition-shadow duration-300">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Libraries</h3>
-                        <p class="text-4xl font-bold text-gray-900">
+                        <h3 class="text-sm sm:text-xl font-semibold text-gray-800 mb-1 sm:mb-2">Libraries</h3>
+                        <p class="text-xl sm:text-4xl font-bold text-gray-900">
                             {{ approved_libraries }}/{{ total_libraries }}
                         </p>
                     </div>
-                    <div class="p-3 bg-green-50 rounded-lg">
-                        <i class="bi bi-book text-3xl text-green-600"></i>
+                    <div class="p-2 sm:p-3 bg-green-50 rounded-md sm:rounded-lg">
+                        <i class="bi bi-book text-xl sm:text-3xl text-green-600"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Institutions Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md sm:shadow-lg p-3 sm:p-6 hover:shadow-lg sm:hover:shadow-xl transition-shadow duration-300">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Institutions</h3>
-                        <p class="text-4xl font-bold text-gray-900">
+                        <h3 class="text-sm sm:text-xl font-semibold text-gray-800 mb-1 sm:mb-2">Institutions</h3>
+                        <p class="text-xl sm:text-4xl font-bold text-gray-900">
                             {{ approved_institutions }}/{{ total_institutions }}
                         </p>
                     </div>
-                    <div class="p-3 bg-purple-50 rounded-lg">
-                        <i class="bi bi-building text-3xl text-purple-600"></i>
+                    <div class="p-2 sm:p-3 bg-purple-50 rounded-md sm:rounded-lg">
+                        <i class="bi bi-building text-xl sm:text-3xl text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Allocated Cards Card -->
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md sm:shadow-lg p-3 sm:p-6 hover:shadow-lg sm:hover:shadow-xl transition-shadow duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm sm:text-xl font-semibold text-gray-800 mb-1 sm:mb-2">Allocated Cards</h3>
+                        <p class="text-xl sm:text-4xl font-bold text-gray-900">{{ allocated_cards_count }}</p>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-green-50 rounded-md sm:rounded-lg">
+                        <i class="bi bi-check-circle text-xl sm:text-3xl text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Non-Allocated Cards Card -->
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md sm:shadow-lg p-3 sm:p-6 hover:shadow-lg sm:hover:shadow-xl transition-shadow duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm sm:text-xl font-semibold text-gray-800 mb-1 sm:mb-2">Non-Allocated Cards</h3>
+                        <p class="text-xl sm:text-4xl font-bold text-gray-900">{{ non_allocated_cards_count }}</p>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-red-50 rounded-md sm:rounded-lg">
+                        <i class="bi bi-x-circle text-xl sm:text-3xl text-red-600"></i>
                     </div>
                 </div>
             </div>
@@ -59,71 +85,69 @@
 
         <!-- Quick Actions -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <a href="{% url 'all_users' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-8 py-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-4 shadow-lg hover:shadow-xl">
-                <i class="bi bi-people text-2xl"></i>
-                <span class="text-xl font-medium">View All Users</span>
+            <a href="{% url 'all_users' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-center space-x-4 shadow-lg hover:shadow-xl">
+                <i class="bi bi-people text-xl"></i>
+                <span class="text-lg font-medium">View All Users</span>
             </a>
-            <a href="{% url 'all_libraries' %}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-8 py-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-4 shadow-lg hover:shadow-xl">
-                <i class="bi bi-book text-2xl"></i>
-                <span class="text-xl font-medium">View All Libraries</span>
+            <a href="{% url 'all_libraries' %}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-center space-x-4 shadow-lg hover:shadow-xl">
+                <i class="bi bi-book text-xl"></i>
+                <span class="text-lg font-medium">View All Libraries</span>
             </a>
         </div>
 
         <!-- Management Sections -->
         <div class="space-y-8">
             <!-- Admin Actions -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Admin Actions</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <a href="{% url 'manage_libraries' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4 shadow-md hover:shadow-lg">
-                        <i class="bi bi-building-gear text-2xl"></i>
-                        <span class="text-lg font-medium">Manage Libraries</span>
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 md:mb-8 text-center">Admin Actions</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+                    <a href="{% url 'manage_libraries' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4 shadow-md hover:shadow-lg">
+                        <i class="bi bi-building-gear text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Manage Libraries</span>
                     </a>
-                    <a href="{% url 'manage_institutions' %}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4 shadow-md hover:shadow-lg">
-                        <i class="bi bi-building-check text-2xl"></i>
-                        <span class="text-lg font-medium">Manage Institutions</span>
+                    <a href="{% url 'manage_institutions' %}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4 shadow-md hover:shadow-lg">
+                        <i class="bi bi-building-check text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Manage Institutions</span>
                     </a>
                 </div>
             </div>
-
             <!-- Home Page Management -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Home Page Management</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <a href="{% url 'manage_home_banners' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4 shadow-md hover:shadow-lg">
-                        <i class="bi bi-images text-2xl"></i>
-                        <span class="text-lg font-medium">Manage Home Banners</span>
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 md:mb-8 text-center">Home Page Management</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+                    <a href="{% url 'manage_home_banners' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4 shadow-md hover:shadow-lg">
+                        <i class="bi bi-images text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Manage Home Banners</span>
                     </a>
-                    <a href="{% url 'manage_text_banner' %}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4 shadow-md hover:shadow-lg">
-                        <i class="bi bi-text-paragraph text-2xl"></i>
-                        <span class="text-lg font-medium">Manage Text Banner</span>
+                    <a href="{% url 'manage_text_banner' %}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4 shadow-md hover:shadow-lg">
+                        <i class="bi bi-text-paragraph text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Manage Text Banner</span>
                     </a>
-                    <a href="{% url 'manage_banner_counts' %}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4 shadow-md hover:shadow-lg">
-                        <i class="bi bi-image text-2xl"></i>
-                        <span class="text-lg font-medium">Manage Banner Counts</span>
+                    <a href="{% url 'manage_banner_counts' %}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4 shadow-md hover:shadow-lg">
+                        <i class="bi bi-image text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Manage Banner Counts</span>
                     </a>
                 </div>
             </div>
 
             <!-- Card Management -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Card Management</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <a href="{% url 'manage_cards' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4 shadow-md hover:shadow-lg">
-                        <i class="bi bi-credit-card text-2xl"></i>
-                        <span class="text-lg font-medium">Manage Cards</span>
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 md:mb-8 text-center">Card Management</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+                    <a href="{% url 'manage_cards' %}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4 shadow-md hover:shadow-lg">
+                        <i class="bi bi-credit-card text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Manage Cards</span>
                     </a>
-                    <a href="{% url 'add_card' %}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4">
-                        <i class="bi bi-plus-circle text-2xl"></i>
-                        <span class="text-lg font-medium">Add New Card</span>
+                    <a href="{% url 'add_card' %}" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4">
+                        <i class="bi bi-plus-circle text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Add New Card</span>
                     </a>
-                    <a href="{% url 'allocate_card_to_vendor_page' %}" class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white px-6 py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-4 shadow-md hover:shadow-lg">
-                        <i class="bi bi-share text-2xl"></i>
-                        <span class="text-lg font-medium">Allocate Card to Vendor</span>
+                    <a href="{% url 'allocate_card_to_vendor_page' %}" class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 sm:space-x-3 md:space-x-4 shadow-md hover:shadow-lg">
+                        <i class="bi bi-share text-lg sm:text-xl md:text-2xl"></i>
+                        <span class="text-sm sm:text-base md:text-lg font-medium">Allocate Card to Vendor</span>
                     </a>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 {% endblock %}

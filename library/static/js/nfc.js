@@ -38,10 +38,37 @@ class NFCReader {
             this.reader = new NDEFReader();
             await this.reader.scan();
             
-            this.reader.addEventListener("reading", ({ serialNumber }) => {
+            this.reader.addEventListener("reading", async ({ serialNumber }) => {
                 console.log(`NFC card detected: ${serialNumber}`);
                 this.options.onReading?.(serialNumber);
                 this.options.onLog?.(`NFC card detected: ${serialNumber}`);
+                
+                // Check if card is allocated to current user
+                try {
+                    const response = await fetch('/check_nfc_allocation/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.options.csrfToken
+                        },
+                        body: JSON.stringify({
+                            nfc_serial: serialNumber
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.allocated) {
+                        // Card is allocated to a user
+                        this.options.onValidCard?.(serialNumber, data.user_full_name, data.user_mobile);
+                    } else {
+                        // Card is not allocated
+                        this.options.onInvalidCard?.(serialNumber);
+                    }
+                } catch (error) {
+                    console.error('Error checking NFC allocation:', error);
+                    this.options.onError?.('Error checking NFC allocation');
+                }
             });
             
             this.reader.addEventListener("readingerror", (error) => {
@@ -200,7 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 nfcIdDisplay.textContent = 'Waiting for card...';
             }
         },
-        onLog: addLogMessage
+        onLog: addLogMessage,
+        onValidCard: (nfcId, userName, userMobile) => {
+            document.getElementById('invalid-card-message').classList.add('hidden');
+            document.getElementById('allocated-user-info').classList.remove('hidden');
+            allocatedUserName.textContent = `${userName} (${userMobile})`;
+        },
+        onInvalidCard: (nfcId) => {
+            document.getElementById('allocated-user-info').classList.add('hidden');
+            document.getElementById('invalid-card-message').classList.remove('hidden');
+        },
+        csrfToken: document.querySelector('[name=csrfmiddlewaretoken]').value
     });
 
     // Start scanning when the button is clicked
