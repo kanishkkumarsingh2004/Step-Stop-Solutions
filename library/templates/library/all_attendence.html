@@ -64,15 +64,9 @@
                             {% endif %}
                         </td>
                         <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-center">
-                            {% if attendance.check_out_time %}
-                                {% if attendance.duration_color == 0 %}
-                                    <span class="text-green-600">{{ attendance.duration }}</span>
-                                {% else %}
-                                    <span class="text-red-600">{{ attendance.duration }}</span>
-                                {% endif %}
-                            {% else %}
-                                -
-                            {% endif %}
+                            <div class="{% if attendance.duration_color == 1 %}text-red-600{% else %}text-green-600{% endif %}">
+                                {{ attendance.duration }}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

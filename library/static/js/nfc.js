@@ -111,6 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
             if (data.allocated) {
                 // Update UI to show allocated user info
                 const userInfo = document.createElement('div');
@@ -144,7 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show error message to user
             if (errorMessageContainer && errorMessageText) {
                 errorMessageContainer.classList.remove('hidden');
-                errorMessageText.textContent = 'Error checking NFC allocation. Please try again.';
+                errorMessageText.textContent = error.message || 'Error checking NFC allocation. Please try again.';
+            }
+            // Hide card details if there's an error
+            if (nfcDetails) {
+                nfcDetails.classList.add('hidden');
+            }
+            if (nfcIdDisplay) {
+                nfcIdDisplay.textContent = 'Waiting for card...';
             }
         }
     }
@@ -153,11 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const nfcReader = new NFCReader({
         onReading: (serialNumber) => {
             if (nfcIdDisplay) {
-                nfcIdDisplay.textContent = serialNumber;
-                checkNfcAllocation(serialNumber);
-                if (nfcDetails) {
-                    nfcDetails.classList.remove('hidden');
+                if (data.error) {
+                    throw new Error(data.error);
                 }
+                else
+                    nfcIdDisplay.textContent = serialNumber;
+                    checkNfcAllocation(serialNumber);   
+                    if (nfcDetails) {
+                        nfcDetails.classList.remove('hidden');
+                    }
             }
         },
         onError: (error) => {
@@ -167,6 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (nfcIdDisplay) {
                 nfcIdDisplay.textContent = 'Waiting for card...';
+            }
+            if (nfcDetails) {
+                nfcDetails.classList.add('hidden');
             }
         },
         onLog: addLogMessage
@@ -230,9 +248,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 deleteButton.classList.add('hidden');
                 activateButton.classList.remove('hidden');
             } else {
+                throw new Error(data.error || 'Failed to deallocate user');
             }
         } catch (error) {
             console.error('Error:', error);
+            if (errorMessageContainer && errorMessageText) {
+                errorMessageContainer.classList.remove('hidden');
+                errorMessageText.textContent = error.message;
+            }
         } finally {
             // Re-enable button
             deleteButton.textContent = 'Deallocate User';

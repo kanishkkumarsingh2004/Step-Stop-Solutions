@@ -474,9 +474,7 @@ def all_attendance(request, vendor_id):
     
     # Get all attendance records for this library
     attendances = Attendance.objects.filter(library=library).order_by('-check_in_time')
-    paginator = Paginator(attendances, 25)  # Show 25 attendances per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)  # This ensures page_obj is always defined
+      # This ensures page_obj is always defined
     
     # Add search functionality
     search_query = request.GET.get('search')
@@ -504,16 +502,19 @@ def all_attendance(request, vendor_id):
                 subscription_duration = subscription.subscription.duration_in_hours * 3600
                 # Set duration_color to 1 if exceeded, 0 if within limit
                 attendance.duration_color = 1 if total_seconds > subscription_duration else 0
-                attendance.save()
             
-            # Format duration string
+            # Format duration string correctly
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
-            attendance.duration = f"{hours}h:{minutes}m:{seconds}s"
+            attendance.duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
         else:
-            attendance.duration = "0h:0m:0s"
+            attendance.duration = "00h:00m:00s"
             attendance.duration_color = 0
+            
+    paginator = Paginator(attendances, 25)  # Show 25 attendances per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
     return render(request, 'library/all_attendence.html', {
         'attendances': page_obj,
