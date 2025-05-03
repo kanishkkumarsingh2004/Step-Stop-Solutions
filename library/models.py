@@ -438,7 +438,8 @@ class VendorSSID(models.Model):
 
 class AdminCard(models.Model):
     card_id = models.CharField(max_length=100, unique=True)
+    library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='admin_cards')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Card {self.card_id}"
+        return f"{self.card_id} - {self.library.name}"

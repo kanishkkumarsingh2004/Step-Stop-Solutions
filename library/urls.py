@@ -172,4 +172,6 @@ urlpatterns = [
     path('add-card/', views.add_card, name='add_card'),
     path('check_card_in_admin_db/', views.check_card_in_admin_db, name='check_card_in_admin_db'),
     path('delete-card/<int:card_id>/', views.delete_card, name='delete_card'),
+    path('allocate-card-to-vendor-page/', views.allocate_card_to_library_page, name='allocate_card_to_vendor_page'),
+    path('allocate-card-to-library/', views.allocate_card_to_library, name='allocate_card_to_library'),
 ]

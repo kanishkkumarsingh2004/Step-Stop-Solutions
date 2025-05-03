@@ -148,15 +148,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
     // Create NFC reader instance with enhanced error handling and UI updates
     const nfcReader = new NFCReader({
-        onReading: (serialNumber) => {
+        onReading: async (serialNumber) => {
             if (nfcIdDisplay) {
                 nfcIdDisplay.textContent = serialNumber;
-                checkNfcAllocation(serialNumber);
-                if (nfcDetails) {
-                    nfcDetails.classList.remove('hidden');
+                
+                // First check if card exists in admin database
+                try {
+                    const response = await fetch('/check_card_in_admin_db', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ nfc_serial: serialNumber })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (!data.exists) {
+                        // Card not approved - show error
+                        if (errorMessageContainer && errorMessageText) {
+                            errorMessageContainer.classList.remove('hidden');
+                            errorMessageText.textContent = 'This NFC card is not approved for use';
+                        }
+                        return;
+                    }
+
+                    // If card is approved, check allocation
+                    checkNfcAllocation(serialNumber);
+                    if (nfcDetails) {
+                        nfcDetails.classList.remove('hidden');
+                    }
+
+                } catch (error) {
+                    console.error('Error checking card approval:', error);
+                    if (errorMessageContainer && errorMessageText) {
+                        errorMessageContainer.classList.remove('hidden');
+                        errorMessageText.textContent = 'Error checking card approval. Please try again.';
+                    }
                 }
             }
         },
