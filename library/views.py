@@ -2625,7 +2625,7 @@ def allocate_card_to_library(request):
 @csrf_exempt
 def allocate_card_to_library_page(request):
     libraries = Library.objects.all()
-    admin_cards = AdminCard.objects.filter(library__isnull=False) # Only unallocated cards
+    admin_cards = AdminCard.objects.filter(library__isnull=True) # Only unallocated cards
     return render(request, 'admin_page/allocate_card_to_library.html', {
         'libraries': libraries,
         'admin_cards': admin_cards
