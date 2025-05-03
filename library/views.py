@@ -1202,6 +1202,7 @@ def check_nfc_allocation(request):
             nfc_serial = data.get('nfc_serial')
             
             if not nfc_serial or not isinstance(nfc_serial, str):
+                
                 return JsonResponse(
                     {'error': 'Valid NFC serial is required'}, 
                     status=400,
@@ -2494,7 +2495,7 @@ def add_card(request):
         card_id = request.POST.get('card_id')
         if card_id:
             AdminCard.objects.create(card_id=card_id)
-            return redirect('manage_cards')
+            return redirect('add_card')
     return render(request, 'admin_page/add_card.html')
 
 def allocate_card(request):
