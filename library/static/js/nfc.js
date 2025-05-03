@@ -167,12 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                else
-                    nfcIdDisplay.textContent = serialNumber;
-                    checkNfcAllocation(serialNumber);   
-                    if (nfcDetails) {
-                        nfcDetails.classList.remove('hidden');
-                    }
+            nfcIdDisplay.textContent = serialNumber;
+            checkNfcAllocation(serialNumber);   
+            if (nfcDetails) {
+                nfcDetails.classList.remove('hidden');
+            }
             }
         },
         onError: (error) => {
