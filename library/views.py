@@ -2544,3 +2544,22 @@ def delete_card(request, card_id):
         return redirect('manage_cards')
     except AdminCard.DoesNotExist:
         return JsonResponse({'error': 'Card not found'}, status=404)
+
+@login_required
+@csrf_exempt
+def check_card_in_admin_db(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get('nfc_serial')
+            
+            if not nfc_serial:
+                return JsonResponse({'error': 'NFC serial is required'}, status=400)
+            
+            exists = AdminCard.objects.filter(card_id=nfc_serial).exists()
+            return JsonResponse({'exists': exists})
+            
+        except Exception as e:
+            logger.error(f"Error in check_card_in_admin_db: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
