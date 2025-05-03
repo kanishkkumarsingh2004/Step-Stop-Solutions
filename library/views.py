@@ -2486,9 +2486,24 @@ def mark_attendance_manual(request, user_id):
     
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
+@login_required
 def manage_cards(request):
-    cards = AdminCard.objects.all()
-    return render(request, 'admin_page/manage_cards.html', {'cards': cards})
+    cards = AdminCard.objects.all().select_related('library')
+    
+    search_query = request.GET.get('search')
+    if search_query:
+        cards = cards.filter(
+            Q(card_id__icontains=search_query) |
+            Q(library__venue_name__icontains=search_query)
+        )
+    
+    paginator = Paginator(cards, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'admin_page/manage_cards.html', {
+        'cards': page_obj
+    })
 
 def add_card(request):
     if request.method == 'POST':
@@ -2630,3 +2645,15 @@ def allocate_card_to_library_page(request):
         'libraries': libraries,
         'admin_cards': admin_cards
     })
+
+@login_required
+def deallocate_card(request, card_id):
+    if request.method == 'POST':
+        try:
+            card = AdminCard.objects.get(id=card_id)
+            card.library = None
+            card.save()
+            messages.success(request, 'Card deallocated successfully')
+        except AdminCard.DoesNotExist:
+            messages.error(request, 'Card not found')
+        return redirect('manage_cards')

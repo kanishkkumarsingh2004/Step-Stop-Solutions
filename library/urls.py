@@ -174,4 +174,5 @@ urlpatterns = [
     path('delete-card/<int:card_id>/', views.delete_card, name='delete_card'),
     path('allocate-card-to-vendor-page/', views.allocate_card_to_library_page, name='allocate_card_to_vendor_page'),
     path('allocate-card-to-library/', views.allocate_card_to_library, name='allocate_card_to_library'),
+    path('deallocate-card/<int:card_id>/', views.deallocate_card, name='deallocate_card'),
 ]
