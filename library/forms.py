@@ -61,6 +61,7 @@ class LibraryRegistrationForm(forms.ModelForm):
             'equipment_available': forms.Textarea(attrs={'rows': 3}),
             'additional_services': forms.Textarea(attrs={'rows': 3}),
         }
+        exclude = ['owner']
 
 class SubscriptionForm(forms.ModelForm):
     class Meta:

@@ -601,7 +601,8 @@ def register_library(request):
         form = LibraryRegistrationForm(request.POST)
         if form.is_valid():
             library = form.save(commit=False)
-            library.owner = request.user
+            library.owner = request.user  # Use the correct field name here
+            library.user = request.user
             library.business_type = 'Library'
             library.save()
             messages.success(request, "Library registered successfully!")
@@ -618,7 +619,7 @@ def register_coaching(request):
         form = LibraryRegistrationForm(request.POST)
         if form.is_valid():
             coaching = form.save(commit=False)
-            coaching.owner = request.user
+            coaching.user = request.user
             coaching.business_type = 'Coaching'
             coaching.save()
             return redirect('register_venders_shop')
