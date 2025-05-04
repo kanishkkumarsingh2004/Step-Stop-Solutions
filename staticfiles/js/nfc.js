@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userSelect = document.getElementById('user-select');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const libraryId = document.getElementById('library_id').value;
+    const userInfo = document.createElement('div');
 
     // Function to add log messages
     const addLogMessage = (message) => {
@@ -111,14 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
+
             if (data.allocated) {
                 // Update UI to show allocated user info
-                const userInfo = document.createElement('div');
                 nfcIdDisplay.textContent = serialNumber;
                 userInfo.innerHTML = `
                     <p class="text-sm text-gray-600 mt-2">Allocated to:</p>
@@ -138,13 +134,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 activateButton?.classList.add('hidden');
             } else {
                 // Clear user info if not allocated
-                const infoContainer = document.getElementById('nfc-user-info');
-                if (infoContainer) infoContainer.innerHTML = '';
-                
-                // Show activate button
-                activateButton?.classList.remove('hidden');
-                deleteButton?.classList.add('hidden');
-            }
+                if (data.error) {
+                    throw new Error(data.error); // If there is an error, execution jumps to catch block
+                }
+                else {
+                    const infoContainer = document.getElementById('nfc-user-info');
+                    if (infoContainer) infoContainer.innerHTML = ''; // Clear user info if element exists
+                    if (nfcDetails) {
+                        nfcDetails.classList.remove('hidden'); // Show the NFC details section
+                    }
+                    // Show activate button
+                    activateButton?.classList.remove('hidden');
+                    deleteButton?.classList.add('hidden');
+                }
+            }            
         } catch (error) {
             console.error('Error checking NFC allocation:', error);
             // Show error message to user
@@ -166,10 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nfcReader = new NFCReader({
         onReading: (serialNumber) => {
             if (nfcIdDisplay) {
-                checkNfcAllocation(serialNumber);   
-                if (nfcDetails) {
-                    nfcDetails.classList.remove('hidden');
-                }
+                checkNfcAllocation(serialNumber);
             }
         },
         onError: (error) => {
