@@ -12,8 +12,6 @@ class NFCReader {
             ? 'Web NFC API is supported in this browser.'
             : 'Web NFC API is not supported in this browser.';
         
-        console[this.nfcSupported ? 'log' : 'warn'](message);
-        this.options.onLog?.(message);
         if (!this.nfcSupported) this.options.onError?.(message);
         
         return this.nfcSupported;
@@ -22,15 +20,12 @@ class NFCReader {
     async startReading() {
         if (!this.nfcSupported) {
             const message = 'NFC is not supported in this browser.';
-            console.warn(message);
             this.options.onError?.(message);
             return false;
         }
 
         if (this.isReading) {
             const message = 'NFC reader is already active.';
-            console.warn(message);
-            this.options.onLog?.(message);
             return true;
         }
 
@@ -39,32 +34,23 @@ class NFCReader {
             await this.reader.scan();
             
             this.reader.addEventListener("reading", ({ serialNumber }) => {
-                console.log(`NFC card detected: ${serialNumber}`);
                 this.options.onReading?.(serialNumber);
-                this.options.onLog?.(`NFC card detected: ${serialNumber}`);
             });
             
             this.reader.addEventListener("readingerror", (error) => {
-                console.error(`Error reading NFC card: ${error}`);
                 this.options.onError?.(error.message || 'Error reading NFC card');
-                this.options.onLog?.(`Error reading NFC card: ${error.message}`);
             });
             
             this.isReading = true;
-            this.options.onLog?.('NFC reader started. Waiting for card...');
             return true;
         } catch (error) {
-            console.error(`Error starting NFC reader: ${error}`);
             this.options.onError?.(error.message || 'Error starting NFC reader');
-            this.options.onLog?.(`Error starting NFC reader: ${error.message}`);
             return false;
         }
     }
 
     stopReading() {
         this.isReading = false;
-        console.log('NFC reader stopped.');
-        this.options.onLog?.('NFC reader stopped.');
     }
 }
 
@@ -75,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMessageText = errorMessageContainer?.querySelector('p');
     const scanButton = document.getElementById('nfc-scan-button');
     const nfcDetails = document.getElementById('nfc-details');
-    const logContainer = document.getElementById('nfc-log');
     const activationStatus = document.getElementById('activation-status');
     const activateButton = document.getElementById('activate-user-button');
     const deleteButton = document.getElementById('delete-user-button');
@@ -83,15 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const libraryId = document.getElementById('library_id').value;
     const userInfo = document.createElement('div');
-
-    // Function to add log messages
-    const addLogMessage = (message) => {
-        if (!logContainer) return;
-        const logEntry = document.createElement('p');
-        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        logContainer.appendChild(logEntry);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    };
 
     async function checkNfcAllocation(nfcSerial) {
         try {
@@ -104,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ nfc_serial: nfcSerial, library_id: libraryId })
             });
 
-            // Check if response is JSON
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 const text = await response.text();
@@ -114,10 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.allocated) {
-                // Update UI to show allocated user info
                 nfcIdDisplay.textContent = nfcSerial;
                 if (nfcDetails) {
-                    nfcDetails.classList.remove('hidden'); // Show the NFC details section
+                    nfcDetails.classList.remove('hidden');
                 }
                 userInfo.innerHTML = `
                     <p class="text-sm text-gray-600 mt-2">Allocated to:</p>
@@ -125,40 +99,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="text-sm text-gray-600">${data.user_mobile}</p>
                 `;
                 
-                // Clear previous info and add new
                 const infoContainer = document.getElementById('nfc-user-info');
                 if (infoContainer) {
                     infoContainer.innerHTML = '';
                     infoContainer.appendChild(userInfo);
                 }
                 
-                // Show deallocate button
                 deleteButton?.classList.remove('hidden');
                 activateButton?.classList.add('hidden');
             } else {
-                // Clear user info if not allocated
                 if (data.error) {
-                    throw new Error(data.error); // If there is an error, execution jumps to catch block
+                    throw new Error(data.error);
                 }
                 else {
                     const infoContainer = document.getElementById('nfc-user-info');
-                    if (infoContainer) infoContainer.innerHTML = ''; // Clear user info if element exists
+                    if (infoContainer) infoContainer.innerHTML = '';
                     if (nfcDetails) {
-                        nfcDetails.classList.remove('hidden'); // Show the NFC details section
+                        nfcDetails.classList.remove('hidden');
                     }
-                    // Show activate button
                     activateButton?.classList.remove('hidden');
                     deleteButton?.classList.add('hidden');
                 }
             }            
         } catch (error) {
-            console.error('Error checking NFC allocation:', error);
-            // Show error message to user
             if (errorMessageContainer && errorMessageText) {
                 errorMessageContainer.classList.remove('hidden');
                 errorMessageText.textContent = error.message || 'Error checking NFC allocation. Please try again.';
             }
-            // Hide card details if there's an error
             if (nfcDetails) {
                 nfcDetails.classList.add('hidden');
             }
@@ -168,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Create NFC reader instance with enhanced error handling and UI updates
     const nfcReader = new NFCReader({
         onReading: (serialNumber) => {
             if (nfcIdDisplay) {
@@ -186,32 +152,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (nfcDetails) {
                 nfcDetails.classList.add('hidden');
             }
-        },
-        onLog: addLogMessage
+        }
     });
 
-    // Start scanning when the button is clicked
-    if (scanButton) {
-        scanButton.addEventListener('click', async () => {
-            const started = await nfcReader.startReading();
-            if (started) {
-                scanButton.textContent = 'Scanning Active';
-                scanButton.disabled = true;
-                scanButton.classList.replace('bg-blue-600', 'bg-green-600');
-                if (activationStatus) {
-                    activationStatus.textContent = 'Scanning for NFC card...';
-                }
-            }
-        });
-    }
-
-    // Check NFC support on page load
-    if (!nfcReader.nfcSupported) {
-        if (scanButton) {
-            scanButton.disabled = true;
-            scanButton.textContent = 'NFC Not Supported';
-            scanButton.classList.replace('bg-blue-600', 'bg-gray-600');
+    // Start scanning automatically when window loads
+    window.addEventListener('load', async () => {
+        const started = await nfcReader.startReading();
+        if (started && activationStatus) {
+            activationStatus.textContent = 'Scanning for NFC card...';
         }
+    });
+
+    if (!nfcReader.nfcSupported) {
         if (activationStatus) {
             activationStatus.textContent = 'NFC Not Supported';
         }
@@ -221,9 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Add click handler for delete button
     deleteButton.addEventListener('click', async () => {
-        // Disable button and change text
         deleteButton.textContent = 'Delocating...';
         deleteButton.disabled = true;
         deleteButton.classList.remove('bg-red-600', 'hover:bg-red-700');
@@ -243,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             if (response.ok) {
-                // Reset UI
                 nfcIdDisplay.textContent = 'Waiting for card...';
                 deleteButton.classList.add('hidden');
                 activateButton.classList.remove('hidden');
@@ -251,13 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error || 'Failed to deallocate user');
             }
         } catch (error) {
-            console.error('Error:', error);
             if (errorMessageContainer && errorMessageText) {
                 errorMessageContainer.classList.remove('hidden');
                 errorMessageText.textContent = error.message;
             }
         } finally {
-            // Re-enable button
             deleteButton.textContent = 'Deallocate User';
             deleteButton.disabled = false;
             deleteButton.classList.remove('bg-gray-600');
@@ -267,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (activateButton && userSelect) {
         activateButton.addEventListener('click', async () => {
-            // Disable button and change text
             activateButton.textContent = 'Allocating...';
             activateButton.disabled = true;
             activateButton.classList.remove('bg-green-600', 'hover:bg-green-700');
@@ -277,8 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const userId = userSelect.value.trim();
     
             if (nfcSerial === 'Waiting for card...' || !nfcSerial) {
-                addLogMessage('Please scan an NFC card first');
-                // Re-enable button
                 activateButton.textContent = 'Activate User';
                 activateButton.disabled = false;
                 activateButton.classList.remove('bg-gray-600');
@@ -287,8 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
     
             if (!userId) {
-                addLogMessage('Please select a user');
-                // Re-enable button
                 activateButton.textContent = 'Activate User';
                 activateButton.disabled = false;
                 activateButton.classList.remove('bg-gray-600');
@@ -297,8 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
     
             if (!csrfToken) {
-                addLogMessage('CSRF token not found. Please refresh the page and try again.');
-                // Re-enable button
                 activateButton.textContent = 'Activate User';
                 activateButton.disabled = false;
                 activateButton.classList.remove('bg-gray-600');
