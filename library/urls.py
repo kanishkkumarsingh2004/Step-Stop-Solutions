@@ -175,4 +175,8 @@ urlpatterns = [
     path('allocate-card-to-vendor-page/', views.allocate_card_to_library_page, name='allocate_card_to_vendor_page'),
     path('allocate-card-to-library/', views.allocate_card_to_library, name='allocate_card_to_library'),
     path('deallocate-card/<int:card_id>/', views.deallocate_card, name='deallocate_card'),
+   path('allocate-card-count/', views.allocate_card_count, name='allocate_card_count'),
+
+    # Admin Graphs
+    path('admin-graphs/', views.admin_graphs, name='admin_graphs'),
 ]

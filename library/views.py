@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, Http404
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied
@@ -2665,3 +2665,48 @@ def deallocate_card(request, card_id):
         except AdminCard.DoesNotExist:
             messages.error(request, 'Card not found')
         return redirect('manage_cards')
+    
+@login_required
+def allocate_card_count(request):
+    libraries = Library.objects.annotate(
+        allocated_cards_count=Count('admin_cards', distinct=True)
+    ).order_by('venue_name')
+    
+    library_data = []
+    for library in libraries:
+        library_data.append({
+            'venue_name': library.venue_name,
+            'allocated_cards_count': library.allocated_cards_count,
+            'owner': library.owner  # Add owner information
+        })
+    
+    return render(request, 'admin_page/allocate_card_count.html', {
+        'libraries': library_data
+    })
+
+@login_required
+def admin_graphs(request):
+    if not request.user.is_staff:
+        raise PermissionDenied
+    
+    # Data for charts
+    libraries = Library.objects.annotate(
+        allocated_cards_count=Count('admin_cards')
+    ).order_by('-allocated_cards_count')[:10]  # Top 10 libraries
+    
+    user_counts = {
+        'total': CustomUser.objects.count(),
+        'active': CustomUser.objects.filter(is_active=True).count(),
+        'inactive': CustomUser.objects.filter(is_active=False).count()
+    }
+    
+    subscription_data = {
+        'active': UserSubscription.objects.filter(end_date__gte=timezone.now().date()).count(),
+        'expired': UserSubscription.objects.filter(end_date__lt=timezone.now().date()).count()
+    }
+    
+    return render(request, 'admin_page/admin_graphs.html', {
+        'libraries': libraries,
+        'user_counts': user_counts,
+        'subscription_data': subscription_data
+    })
