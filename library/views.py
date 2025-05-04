@@ -601,7 +601,7 @@ def register_library(request):
         form = LibraryRegistrationForm(request.POST)
         if form.is_valid():
             library = form.save(commit=False)
-            library.owner = request.user  # Use the correct field name here
+            library.owner = request.user
             library.user = request.user
             library.business_type = 'Library'
             library.save()
