@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const cardDisplay = document.getElementById('card-display');
     const addCardBtn = document.getElementById('add-card-btn');
     const errorMessage = document.getElementById('error-message');
-    let lastScannedCard = null;
 
     if (!('NDEFReader' in window)) {
         errorMessage.textContent = 'NFC is not supported in this browser.';
@@ -26,21 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     nfcReader.onreading = (event) => {
+        const decoder = new TextDecoder();
         const serialNumber = event.serialNumber;
-        
-        // Check for duplicate scan
-        if (lastScannedCard === serialNumber) {
-            errorMessage.textContent = 'This card has already been scanned. Please scan a different card.';
-            errorMessage.classList.remove('hidden');
-            return;
-        }
-        
-        // Update last scanned card
-        lastScannedCard = serialNumber;
-        
-        // Clear any previous error messages
-        errorMessage.textContent = '';
-        errorMessage.classList.add('hidden');
         
         // Display the card number
         cardDisplay.textContent = `Card Number: ${serialNumber}`;
@@ -66,6 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle form submission
     nfcForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
+        e.preventDefault
     });
-});
+}); 
