@@ -27,13 +27,15 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card ID</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input type="checkbox" id="select-all" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {% for card in admin_cards %}
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                                     <label for="card-{{ card.id }}">{{ card.card_id }}</label>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -52,46 +54,6 @@
         </form>
     </div>
 </div>
+<script src="{% static 'js/scripts.js' %}"></script>
 
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('allocate-form');
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const libraryId = document.getElementById('library').value;
-        const selectedCards = Array.from(document.querySelectorAll('input[name="nfc_serials"]:checked'))
-            .map(checkbox => checkbox.value);
-
-        if (!libraryId || selectedCards.length === 0) {
-            alert('Please select a library and at least one card.');
-            return;
-        }
-
-        try {
-            const response = await fetch("{% url 'allocate_card_to_library' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    library_id: libraryId,
-                    nfc_serials: selectedCards
-                })
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                alert('Cards allocated successfully!');
-                window.location.reload();
-            } else {
-                throw new Error(data.error || 'Failed to allocate cards');
-            }
-        } catch (error) {
-            alert(error.message);
-        }
-    });
-});
-</script>
 {% endblock %}
