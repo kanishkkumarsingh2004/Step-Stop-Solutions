@@ -2,105 +2,142 @@
 {% load static %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <!-- Page Header -->
-        <div class="text-center mb-4 sm:mb-8">
-            <h1 class="text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">Manage Admin Expenses</h1>
-            <p class="text-xs sm:text-base text-gray-600 max-w-2xl mx-auto px-2">
-                Comprehensive expense management tools for efficient administration
-            </p>
-        </div>
-
-        <!-- Messages -->
-        {% if messages %}
-        <div class="mb-4 sm:mb-6">
-            {% for message in messages %}
-            <div class="{% if message.tags == 'success' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %} p-2 sm:p-3 rounded-md mb-2 sm:mb-3 text-sm sm:text-base">
-                {{ message }}
+<div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Add Expense Form -->
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Expense</h2>
+                <form method="POST" action="{% url 'Manage_Admin_Expenss' %}">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="expense_name" class="block text-sm font-medium text-gray-700 mb-1">Expense Name</label>
+                            <input type="text" id="expense_name" name="expense_name" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                            <input type="number" id="amount" name="amount" step="0.01" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-700 mb-极1">Date</label>
+                            <input type="date" id="date" name="date" max="{{ today|date:'Y-m-d' }}" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="description极" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea id="description" name="description" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition duration-200">
+                        Add Expense
+                    </button>
+                </form>
             </div>
-            {% endfor %}
-        </div>
-        {% endif %}
 
-        <!-- Expense Management Content -->
-        <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 lg:p-6">
-            <div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
-                <!-- Add Expense Form -->
-                <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                    <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Add New Expense</h2>
-                    <form method="post" class="space-y-3 sm:space-y-4">
-                        {% csrf_token %}
-                        <div class="space-y-2 sm:space-y-3">
-                            <div>
-                                <label for="expense_name" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Expense Name</label>
-                                <input type="text" id="expense_name" name="expense_name" 
-                                       class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm sm:text-base"
-                                       required>
-                            </div>
-                            <div>
-                                <label for="amount" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Amount</label>
-                                <input type="number" id="amount" name="amount" step="0.01"
-                                       class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm sm:text-base"
-                                       required>
-                            </div>
-                            <div>
-                                <label for="date" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Date</label>
-                                <input type="date" id="date" name="date"
-                                       class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm sm:text-base"
-                                       max="{{ today|date:'Y-m-d' }}"
-                                       required>
-                            </div>
-                            <div>
-                                <label for="description" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Description</label>
-                                <textarea id="description" name="description" rows="2" class="w-full px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm sm:text-base"></textarea>
-                            </div>
-                            <button type="submit" 
-                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 sm:px-6 sm:py-2 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm sm:text-base">
-                                Add Expense
-                            </button>
-                        </div>
-                    </form>
+            <!-- Expense List -->
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Expense List</h2>
+                    <div class="bg-blue-50 px-3 py-1.5 rounded-lg text-center sm:px-4 sm:py-2">
+                        <p class="text-xs sm:text-sm font-semib极old text-blue-700">
+                            Total: ₹{{ total_expenses|floatformat:2 }}
+                        </p>
+                    </div>
                 </div>
-
-                <!-- Expense List -->
-                <div class="bg-gray-50 p-6 rounded-lg">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Expense List</h2>
-                        <div class="bg-blue-50 px-3 py-1.5 rounded-lg text-center sm:px-4 sm:py-2">
-                            <p class="text-xs sm:text-sm font-semibold text-blue-700">
-                                Total: ₹{{ total_expenses|floatformat:2 }}
-                            </p>
+                <div class="space-y-4">
+                    {% for expense in expenses %}
+                    <div class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">{{ expense.name }}</p>
+                                <p class="text-xs text-gray-500">{{ expense.date }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-red-600">₹{{ expense.amount }}</p>
+                                <p class="text-xs text-gray-500">Added by: {{ expense.created_by.get_full_name|default:"Admin" }}</p>
+                            </div>
+                        </div>
+                        {% if expense.description %}
+                        <div class="mt-2 pt-2 border-t border-gray-100">
+                            <p class="text-xs text-gray-600">{{ expense.description }}</p>
+                        </div>
+                        {% endif %}
+                        <div class="mt-2 pt-2 border-t border-gray-100 flex justify-end space-x-2">
+                            <a href="#" 
+                               data-expense-id="{{ expense.id }}"
+                               data-expense-name="{{ expense.name }}"
+                               data-expense-amount="{{ expense.amount }}"
+                               data-expense-date="{{ expense.date|date:'Y-m-d' }}"
+                               data-expense-description="{{ expense.description }}"
+                               class="edit-expense-btn text-blue-600 hover:text-blue-800">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                            </a>
+                            <form action="{% url 'delete_admin_expense' expense.id %}" method="POST" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-600 hover:text-red-800" onclick="return confirm('Are you sure you want to delete this expense?')">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
                         </div>
                     </div>
-                    <div class="space-y-4">
-                        {% for expense in expenses %}
-                        <div class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-800">{{ expense.name }}</p>
-                                    <p class="text-xs text-gray-500">{{ expense.date }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-semibold text-red-600">₹{{ expense.amount }}</p>
-                                    <p class="text-xs text-gray-500">Added by: {{ expense.created_by.get_full_name|default:"Admin" }}</p>
-                                </div>
-                            </div>
-                            {% if expense.description %}
-                            <div class="mt-2 pt-2 border-t border-gray-100">
-                                <p class="text-xs text-gray-600">{{ expense.description }}</p>
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% empty %}
-                        <div class="text-center text-gray-500 py-4">
-                            No expenses recorded yet
-                        </div>
-                        {% endfor %}
+                    {% empty %}
+                    <div class="text-center text-gray-500 py-4">
+                        No expenses recorded yet
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Edit Modal -->
+<div id="editExpenseModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-lg font-semibold">Edit Expense</h3>
+            <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <form id="editExpenseForm" method="POST" class="p-4 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="expense_id" id="editExpenseId">
+            <div>
+                <label for="editExpenseName" class="block text-sm font-medium text-gray-700">Expense Name</label>
+                <input type="text" id="editExpenseName" name="expense_name" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+            </div>
+            <div>
+                <label for="editAmount" class="block text-sm font-medium text-gray-700">Amount</label>
+                <input type="number" id="editAmount" name="amount" step="0.01" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+            </div>
+            <div>
+                <label for="editDate" class="block text-sm font-medium text-gray-700">Date</label>
+                <input type="date" id="editDate" name="date" required max="{{ today|date:'Y-m-d' }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+            </div>
+            <div>
+                <label for="editDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea id="editDescription" name="description" rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                Update Expense
+            </button>
+        </form>
+    </div>
+</div>
+<script src="{% static 'js/admin_expenses.js' %}"></script> 
 {% endblock %}

@@ -2755,3 +2755,29 @@ def Manage_Admin_Expenss(request):
         'today': now().date()  # Add today's date to context
     }
     return render(request, 'admin_page/manage_admin_expenses.html', context)
+
+@login_required
+def EditAdminExpense(request, expense_id):
+    expense = get_object_or_404(AdminExpense, id=expense_id)
+    if request.method == 'POST':
+        try:
+            expense.name = request.POST.get('expense_name')
+            expense.amount = request.POST.get('amount')
+            expense.date = request.POST.get('date')
+            expense.description = request.POST.get('description')
+            expense.save()
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            logger.error(f"Error updating expense: {str(e)}")
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+@login_required
+def DeleteAdminExpense(request, expense_id):
+    expense = get_object_or_404(AdminExpense, id=expense_id)
+    try:
+        expense.delete()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        logger.error(f"Error deleting expense: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
