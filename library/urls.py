@@ -179,4 +179,5 @@ urlpatterns = [
 
     # Admin Graphs
     path('admin-graphs/', views.admin_graphs, name='admin_graphs'),
+    path('manage-admin-expenses/', views.Manage_Admin_Expenss, name='Manage_Admin_Expenss'),
 ]

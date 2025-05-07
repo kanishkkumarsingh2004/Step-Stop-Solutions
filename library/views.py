@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.contrib.admin.models import LogEntry
 import logging
 from django.core.paginator import Paginator
+from django.utils.timezone import now
 
 
 # Set up logging
@@ -36,6 +37,7 @@ from .models import (
     Review,
     VendorSSID,
     AdminCard,
+    AdminExpense,
 )
 # Python standard library imports
 import json
@@ -2711,3 +2713,45 @@ def admin_graphs(request):
         'user_counts': user_counts,
         'subscription_data': subscription_data
     })
+
+@login_required
+def Manage_Admin_Expenss(request):
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('expense_name')
+            amount = request.POST.get('amount')
+            date = request.POST.get('date')
+            description = request.POST.get('description')
+            
+            # Basic validation
+            if not all([name, amount, date]):
+                messages.error(request, 'All fields are required')
+                return redirect('Manage_Admin_Expenss')
+            
+            # Create new expense
+            AdminExpense.objects.create(
+                name=name,
+                amount=amount,
+                date=date,
+                description=description,
+                created_by=request.user
+            )
+            messages.success(request, 'Expense added successfully')
+            return redirect('Manage_Admin_Expenss')
+            
+        except Exception as e:
+            logger.error(f"Error adding expense: {str(e)}")
+            messages.error(request, 'An error occurred while adding the expense')
+            return redirect('Manage_Admin_Expenss')
+
+    # Get all expenses for display
+    expenses = AdminExpense.objects.all().order_by('-date')
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
+    
+    context = {
+        'page_title': 'Manage Admin Expenses',
+        'expenses': expenses,
+        'total_expenses': total_expenses,
+        'today': now().date()  # Add today's date to context
+    }
+    return render(request, 'admin_page/manage_admin_expenses.html', context)
