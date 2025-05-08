@@ -13,19 +13,22 @@
         </div>
     </div>
 
-    <!-- User Status Chart -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">User Status</h2>
-        <div class="chart-container" style="position: relative; height: 400px; width: 100%">
-            <canvas id="userStatusChart"></canvas>
+    <!-- Grid for User Status and Subscription Status Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- User Status Chart -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">User Status</h2>
+            <div class="chart-container" style="position: relative; height: 400px; width: 100%">
+                <canvas id="userStatusChart"></canvas>
+            </div>
         </div>
-    </div>
 
-    <!-- Subscription Status Chart -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">Subscription Status</h2>
-        <div class="chart-container" style="position: relative; height: 400px; width: 100%">
-            <canvas id="subscriptionChart"></canvas>
+        <!-- Subscription Status Chart -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Subscription Status</h2>
+            <div class="chart-container" style="position: relative; height: 400px; width: 100%">
+                <canvas id="subscriptionChart"></canvas>
+            </div>
         </div>
     </div>
 </div>

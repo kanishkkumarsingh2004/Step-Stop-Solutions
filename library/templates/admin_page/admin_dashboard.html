@@ -7,7 +7,7 @@
         <div class="text-center mb-8 sm:mb-12">
             <h1 class="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">Admin Dashboard</h1>
             <p class="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">
-                Comprehensive platform management tools for efficient administration
+                Welcome back, Admin! Here's your comprehensive dashboard for managing the platform efficiently.
             </p>
         </div>
 
@@ -140,10 +140,6 @@
                     <h2 class="text-base sm:text-lg font-semibold text-gray-700">Cards</h2>
                 </div>
                 <div class="space-y-2">
-                    <a href="{% url 'manage_cards' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                        <span>Manage Cards</span>
-                        <i class="bi bi-credit-card-2-front text-blue-600 text-lg"></i>
-                    </a>
                     <a href="{% url 'add_card' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Add New Card</span>
                         <i class="bi bi-plus-square text-green-600 text-lg"></i>
@@ -151,6 +147,10 @@
                     <a href="{% url 'allocate_card_to_vendor_page' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Allocate Card to Vendor</span>
                         <i class="bi bi-share text-purple-600 text-lg"></i>
+                    </a>
+                    <a href="{% url 'manage_cards' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Manage Cards</span>
+                        <i class="bi bi-credit-card-2-front text-blue-600 text-lg"></i>
                     </a>
                     <a href="{% url 'allocate_card_count' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Allocate Card count</span>

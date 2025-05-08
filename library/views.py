@@ -2775,9 +2775,15 @@ def EditAdminExpense(request, expense_id):
 @login_required
 def DeleteAdminExpense(request, expense_id):
     expense = get_object_or_404(AdminExpense, id=expense_id)
-    try:
-        expense.delete()
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        logger.error(f"Error deleting expense: {str(e)}")
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    if request.method == 'POST':
+        try:
+            expense.delete()
+            messages.success(request, 'Expense deleted successfully')
+            return redirect('Manage_Admin_Expenss')
+        except Exception as e:
+            logger.error(f"Error deleting expense: {str(e)}")
+            messages.error(request, 'An error occurred while deleting the expense')
+            return redirect('Manage_Admin_Expenss')
+    else:
+        messages.error(request, 'Invalid request method')
+        return redirect('Manage_Admin_Expenss')
