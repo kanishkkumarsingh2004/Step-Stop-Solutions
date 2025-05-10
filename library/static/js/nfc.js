@@ -93,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (nfcDetails) {
                     nfcDetails.classList.remove('hidden');
                 }
-                nfcIdDisplay.textContent = serialNumber;
                 userInfo.innerHTML = `
                     <p class="text-sm text-gray-600 mt-2">Allocated to:</p>
                     <p class="text-lg font-semibold">${data.user_full_name}</p>
@@ -118,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (nfcDetails) {
                         nfcDetails.classList.remove('hidden');
                     }
-                    nfcIdDisplay.textContent = serialNumber;
+                    nfcIdDisplay.textContent = nfcSerial;
                     activateButton?.classList.remove('hidden');
                     deleteButton?.classList.add('hidden');
                 }
