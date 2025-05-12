@@ -60,17 +60,24 @@ def home(request):
         'text_banners': text_banners,
         'image_banners': image_banners
     })
-
 def dashboard(request):
-    # Get all libraries
-    libraries = Library.objects.all()
-    
     # Get subscriptions for the current user with library details
     subscriptions = UserSubscription.objects.filter(user=request.user).select_related('subscription__library')
     
     # Process subscriptions and add library seat details
     subscriptions_with_details = []
     for subscription in subscriptions:
+        # Check if subscription is expired or valid based on end date
+        if subscription.end_date and subscription.end_time:
+            end_datetime = datetime.combine(subscription.end_date, subscription.end_time)
+            end_datetime = timezone.make_aware(end_datetime)
+            if end_datetime < timezone.now():
+                subscription.status = 'expired'
+                subscription.save()
+            else:
+                subscription.status = 'valid'
+                subscription.save()
+
         # Get latest transaction for this subscription
         latest_transaction = Transaction.objects.filter(
             subscription=subscription.subscription,
@@ -93,9 +100,8 @@ def dashboard(request):
         available_seats = library.available_seats if library else 0
         
         # Get subscription status from UserSubscription
-        subscription_status = 'active' if subscription.status  == 'valid' else 'expired'
+        subscription_status = 'active' if subscription.status == 'valid' and subscription.end_date >= timezone.now().date() else 'expired'
         status_color = 'green' if subscription_status == 'active' else 'red'
-        
         # Add processed data to subscription
         subscription.latest_transaction = latest_transaction
         subscription.payment_status = {'status': status, 'color': color}
@@ -2675,13 +2681,11 @@ def allocate_card_count(request):
         allocated_cards_count=Count('admin_cards', distinct=True)
     ).order_by('venue_name')
     
-    library_data = []
-    for library in libraries:
-        library_data.append({
-            'venue_name': library.venue_name,
-            'allocated_cards_count': library.allocated_cards_count,
-            'owner': library.owner  # Add owner information
-        })
+    library_data = [{
+        'venue_name': library.venue_name,
+        'allocated_cards_count': library.allocated_cards_count,
+        'owner': library.owner
+    } for library in libraries]
     
     return render(request, 'admin_page/allocate_card_count.html', {
         'libraries': library_data
@@ -2715,7 +2719,7 @@ def admin_graphs(request):
     })
 
 @login_required
-def Manage_Admin_Expenss(request):
+def Manage_Admin_loss(request):
     if request.method == 'POST':
         try:
             name = request.POST.get('expense_name')
@@ -2728,12 +2732,13 @@ def Manage_Admin_Expenss(request):
                 messages.error(request, 'All fields are required')
                 return redirect('Manage_Admin_Expenss')
             
-            # Create new expense
+            # Create new expense with type set to Loss
             AdminExpense.objects.create(
                 name=name,
                 amount=amount,
                 date=date,
                 description=description,
+                type='Loss',  # Set type to Loss
                 created_by=request.user
             )
             messages.success(request, 'Expense added successfully')
@@ -2744,8 +2749,8 @@ def Manage_Admin_Expenss(request):
             messages.error(request, 'An error occurred while adding the expense')
             return redirect('Manage_Admin_Expenss')
 
-    # Get all expenses for display
-    expenses = AdminExpense.objects.all().order_by('-date')
+    # Get all expenses for display, filtering for Loss type
+    expenses = AdminExpense.objects.filter(type='Loss').order_by('-date')
     total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
     
     context = {
@@ -2754,18 +2759,30 @@ def Manage_Admin_Expenss(request):
         'total_expenses': total_expenses,
         'today': now().date()  # Add today's date to context
     }
-    return render(request, 'admin_page/manage_admin_expenses.html', context)
+    return render(request, 'admin_page/manage_admin_loss.html', context)
 
 @login_required
-def EditAdminExpense(request, expense_id):
-    expense = get_object_or_404(AdminExpense, id=expense_id)
+def EditAdminExpense_loss(request, expense_id):
+    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')  # Ensure we're only editing Loss type expenses
     if request.method == 'POST':
         try:
-            expense.name = request.POST.get('expense_name')
-            expense.amount = request.POST.get('amount')
-            expense.date = request.POST.get('date')
-            expense.description = request.POST.get('description')
+            # Get form data
+            name = request.POST.get('expense_name')
+            amount = request.POST.get('amount')
+            date = request.POST.get('date')
+            description = request.POST.get('description')
+            
+            # Basic validation
+            if not all([name, amount, date]):
+                return JsonResponse({'status': 'error', 'message': 'All fields are required'}, status=400)
+            
+            # Update expense
+            expense.name = name
+            expense.amount = amount
+            expense.date = date
+            expense.description = description
             expense.save()
+            
             return JsonResponse({'status': 'success'})
         except Exception as e:
             logger.error(f"Error updating expense: {str(e)}")
@@ -2773,8 +2790,8 @@ def EditAdminExpense(request, expense_id):
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
 @login_required
-def DeleteAdminExpense(request, expense_id):
-    expense = get_object_or_404(AdminExpense, id=expense_id)
+def DeleteAdminExpense_loss(request, expense_id):
+    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')  # Ensure we're only deleting Loss type expenses
     if request.method == 'POST':
         try:
             expense.delete()
@@ -2787,3 +2804,70 @@ def DeleteAdminExpense(request, expense_id):
     else:
         messages.error(request, 'Invalid request method')
         return redirect('Manage_Admin_Expenss')
+    
+
+@login_required
+def Manage_Admin_profit(request):
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('expense_name')
+            amount = request.POST.get('amount')
+            date = request.POST.get('date')
+            description = request.POST.get('description')
+            
+            # Basic validation
+            if not all([name, amount, date]):
+                messages.error(request, 'All fields are required')
+                return redirect('Manage_Admin_Profit')
+            
+            # Create new expense with type set to Profit
+            AdminExpense.objects.create(
+                name=name,
+                amount=amount,
+                date=date,
+                description=description,
+                type='Profit',  # Set type to Profit
+                created_by=request.user
+            )
+            messages.success(request, 'Profit added successfully')
+            return redirect('Manage_Admin_Profit')
+            
+        except Exception as e:
+            logger.error(f"Error adding profit: {str(e)}")
+            messages.error(request, 'An error occurred while adding the profit')
+            return redirect('Manage_Admin_Profit')
+
+    # Get all profits for display, filtering for Profit type
+    profits = AdminExpense.objects.filter(type='Profit').order_by('-date')
+    total_profits = profits.aggregate(total=Sum('amount'))['total'] or 0
+    
+    context = {
+        'page_title': 'Manage Admin Profits',
+        'profits': profits,
+        'total_profits': total_profits,
+        'today': now().date()
+    }
+    return render(request, 'admin_page/manage_admin_profit.html', context)
+
+
+@login_required
+def balance_sheet(request):
+    # Get all profits and losses
+    profits = AdminExpense.objects.filter(type='Profit').order_by('-date')
+    losses = AdminExpense.objects.filter(type='Loss').order_by('-date')
+    Expenses = AdminExpense.objects.all().order_by('-date')
+    
+    # Calculate totals
+    total_profits = profits.aggregate(total=Sum('amount'))['total'] or 0
+    total_losses = losses.aggregate(total=Sum('amount'))['total'] or 0
+    net_balance = total_profits - total_losses
+    
+    context = {
+        'page_title': 'Balance Sheet',
+        'Expenses': Expenses,
+        'total_profits': total_profits,
+        'total_losses': total_losses,
+        'net_balance': net_balance,
+        'today': now().date()
+    }
+    return render(request, 'admin_page/balance_sheet.html', context)

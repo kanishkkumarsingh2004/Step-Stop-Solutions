@@ -445,8 +445,14 @@ class AdminCard(models.Model):
         return f"{self.card_id} - {self.library.name}"
     
 class AdminExpense(models.Model):
+    TYPE_CHOICES = [
+        ('Profit', 'Profit'),
+        ('Loss', 'Loss'),
+    ]
+    
     name = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='Loss')
     date = models.DateField()
     description = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
@@ -454,4 +460,4 @@ class AdminExpense(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} - ${self.amount} - {self.date}"
+        return f"{self.name} - ₹{self.amount} ({self.get_type_display()}) - {self.date}"

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Add Profit Form -->
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Profit</h2>
+                <form method="POST" action="{% url 'Manage_Admin_Profit' %}">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="expense_name" class="block text-sm font-medium text-gray-700 mb-1">Profit Name</label>
+                            <input type="text" id="expense_name" name="expense_name" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                            <input type="number" id="amount" name="amount" step="0.01" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="date" name="date" max="{{ today|date:'Y-m-d' }}" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea id="description" name="description" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition duration-200">
+                        Add Profit
+                    </button>
+                </form>
+            </div>
+
+            <!-- Profit List -->
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Profit List</h2>
+                    <div class="bg-green-50 px-3 py-1.5 rounded-lg text-center sm:px-4 sm:py-2">
+                        <p class="text-xs sm:text-sm font-semibold text-green-700">
+                            Total: ₹{{ total_profits|floatformat:2 }}
+                        </p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    {% for profit in profits %}
+                    <div class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">{{ profit.name }}</p>
+                                <p class="text-xs text-gray-500">{{ profit.date }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-green-600">₹{{ profit.amount }}</p>
+                                <p class="text-xs text-gray-500">Added by: {{ profit.created_by.get_full_name|default:"Admin" }}</p>
+                            </div>
+                        </div>
+                        {% if profit.description %}
+                        <div class="mt-2 pt-2 border-t border-gray-100">
+                            <p class="text-xs text-gray-600">{{ profit.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-gray-500 py-4">
+                        No profits recorded yet
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

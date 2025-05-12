@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nfcDetails.classList.add('hidden');
             }
         }
-    });
+    }); 
 
     // Start scanning automatically when window loads
     window.addEventListener('load', async () => {

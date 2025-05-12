@@ -166,9 +166,17 @@
                     <h2 class="text-base sm:text-lg font-semibold text-gray-700">Analytics</h2>
                 </div>
                 <div class="space-y-2">
-                    <a href="{% url 'Manage_Admin_Expenss' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                        <span>Manage Admin Expenses</span>
-                        <i class="bi bi-cash-coin text-teal-600 text-lg"></i>
+                    <a href="{% url 'Manage_Admin_Loss' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Manage Admin Loss</span>
+                        <i class="bi bi-cash-stack text-red-600 text-lg"></i>
+                    </a>
+                    <a href="{% url 'Manage_Admin_Profit' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Manage Admin Profit</span>
+                        <i class="bi bi-cash-stack text-green-600 text-lg"></i>
+                    </a>
+                    <a href="{% url 'balance_sheet' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Balance Sheet</span>
+                        <i class="bi bi-file-earmark-bar-graph text-purple-600 text-lg"></i>
                     </a>
                     <a href="{% url 'admin_graphs' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Graphs</span>

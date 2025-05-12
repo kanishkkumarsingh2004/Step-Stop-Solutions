@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Balance Sheet</h1>
+            <p class="text-xs sm:text-sm text-gray-500">Overview of all profits and losses</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <!-- Total Profits -->
+            <div class="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-500">Total Profits</p>
+                        <p class="text-xl sm:text-2xl font-bold text-green-600">₹{{ total_profits|floatformat:2 }}</p>
+                    </div>
+                    <i class="bi bi-graph-up-arrow text-green-500 text-xl sm:text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Total Losses -->
+            <div class="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-500">Total Losses</p>
+                        <p class="text-xl sm:text-2xl font-bold text-red-600">₹{{ total_losses|floatformat:2 }}</p>
+                    </div>
+                    <i class="bi bi-graph-down-arrow text-red-500 text-xl sm:text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Net Balance -->
+            <div class="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-500">Net Balance</p>
+                        <p class="text-xl sm:text-2xl font-bold {% if net_balance >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                            ₹{{ net_balance|floatformat:2 }}
+                        </p>
+                    </div>
+                    <i class="bi bi-cash-stack text-blue-500 text-xl sm:text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Combined Profit and Loss Table -->
+        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Profit & Loss Transactions</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm sm:text-base">
+                    <thead>
+                        <tr class="text-left border-b">
+                            <th class="py-1 sm:py-2">Date</th>
+                            <th class="py-1 sm:py-2">Name</th>
+                            <th class="py-1 sm:py-2 text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for Expens in Expenses %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-1 sm:py-2">{{ Expens.date|date:"Y-m-d" }}</td>
+                            <td class="py-1 sm:py-2">{{ Expens.name }}</td>
+                            <td class="py-1 sm:py-2 text-right {% if Expens.type == 'Profit' %}text-green-600{% else %}text-red-600{% endif %}">₹{{ Expens.amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
