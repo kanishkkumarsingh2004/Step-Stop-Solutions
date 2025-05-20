@@ -71,7 +71,7 @@ DATABASES = {
         'NAME': os.environ['NAME'],
         'USER': "postgres.nswagajowuojntnhkyqv",
         'PASSWORD': os.environ['PASSWORD'],
-        'PORT': os.environ['PORT'],
+        'PORT': os.environ['DB_PORT'],
     }
 }
 
