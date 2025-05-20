@@ -139,3 +139,7 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Welcome to The Cognito Club Admin Panel",
     "copyright": "The Cognito Club",
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://stepstopsolutions.onrender.com',
+]
