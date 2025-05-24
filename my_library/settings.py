@@ -132,14 +132,10 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 JAZZMIN_SETTINGS = {
-    "site_title": "The Cognito Club",
-    "site_header": "The Cognito Club",
-    "site_brand": "The Cognito Club",
+    "site_title": "Step Stop Solutions",
+    "site_header": "Step Stop Solutions",
+    "site_brand": "Step Stop Solutions",
     # "site_logo": "images/cognito_logo_dark.svg",
-    "welcome_sign": "Welcome to The Cognito Club Admin Panel",
-    "copyright": "The Cognito Club",
+    "welcome_sign": "Welcome to Step Stop Solutions Admin Panel",
+    "copyright": "Step Stop Solutions",
 }
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://stepstopsolutions.onrender.com',
-]

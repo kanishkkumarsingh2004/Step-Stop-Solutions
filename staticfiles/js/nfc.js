@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (nfcDetails) {
                         nfcDetails.classList.remove('hidden');
                     }
+                    nfcIdDisplay.textContent = nfcSerial;
                     activateButton?.classList.remove('hidden');
                     deleteButton?.classList.add('hidden');
                 }
@@ -153,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nfcDetails.classList.add('hidden');
             }
         }
-    });
+    }); 
 
     // Start scanning automatically when window loads
     window.addEventListener('load', async () => {
