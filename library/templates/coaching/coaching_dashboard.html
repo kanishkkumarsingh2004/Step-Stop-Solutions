@@ -14,14 +14,27 @@
         <div class="flex flex-col md:flex-row items-center justify-between">
             <!-- Image at top on mobile, right on desktop -->
             <div class="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-lg shadow-md flex items-center justify-center mb-4 md:mb-0 md:ml-4 overflow-hidden border-4 border-white/20 ring-2 ring-blue-200/50 relative group order-first md:order-last">
-                {% if institution.image %}
-                <img src="https://drive.google.com/thumbnail?id={{ institution.image.google_drive_id }}&sz=s800" 
+                {% if primary_image %}
+                <img src="https://drive.google.com/thumbnail?id={{ primary_image.google_drive_id }}&sz=s800" 
                      alt="{{ institution.name }} logo" 
                      class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center space-x-2">
+                    <button onclick="openImageEditModal()" class="p-1.5 bg-blue-500 hover:bg-blue-600 rounded-full text-white transition-colors duration-200">
+                        <i class="bi bi-pencil-fill text-sm"></i>
+                    </button>
+                    <button onclick="removeProfileImage()" class="p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors duration-200">
+                        <i class="bi bi-trash-fill text-sm"></i>
+                    </button>
+                </div>
                 {% else %}
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full text-gray-400">
                     <path d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
+                <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                    <button onclick="openImageEditModal()" class="p-1.5 bg-blue-500 hover:bg-blue-600 rounded-full text-white transition-colors duration-200">
+                        <i class="bi bi-plus-lg text-sm"></i>
+                    </button>
+                </div>
                 {% endif %}
             </div>
 
@@ -48,7 +61,7 @@
     </div>
 
     <!-- Navigation Buttons -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-4 md:mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 md:mb-8">
         <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
             <i class="bi bi-people-fill text-sm sm:text-lg"></i>
             <span>Manage Users</span>
@@ -60,6 +73,10 @@
         <a href="{% url 'manage_institution_coupons' institution.uid %}" class="bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
             <i class="bi bi-ticket-perforated-fill text-sm sm:text-lg"></i>
             <span>Manage Coupons</span>
+        </a>
+        <a href="{% url 'institution_reviews' institution.uid %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
+            <i class="bi bi-star-fill text-sm sm:text-lg"></i>
+            <span>View Rates & Reviews</span>
         </a>
     </div>
 
@@ -98,6 +115,34 @@
                     </a>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- UPI Payment Details Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="bi bi-wallet2 text-green-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">UPI Payment Details</h2>
+                </div>
+                <button onclick="openUPIEditModal()" class="text-sm sm:text-base text-green-600 hover:text-green-700 flex items-center space-x-1">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Edit</span>
+                </button>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">UPI ID</span>
+                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ institution.upi_id|default:"Not set" }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Recipient Name</span>
+                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ institution.recipient_name|default:"Not set" }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Thank You Message</span>
+                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ institution.thank_you_message|default:"Not set" }}</span>
+                </div>
             </div>
         </div>
 
@@ -167,4 +212,353 @@
         {% endif %}
     </div>
 </div>
+
+<!-- UPI Edit Modal -->
+<div id="upiEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit UPI Payment Details</h3>
+            <form id="upiEditForm" method="post" action="{% url 'edit_upi_details' institution.uid %}" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="upi_id" class="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
+                    <input type="text" name="upi_id" id="upi_id" value="{{ institution.upi_id|default:'' }}"
+                           class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-gray-300 transition-all duration-200 ease-in-out"
+                           placeholder="Enter your UPI ID">
+                </div>
+                <div>
+                    <label for="recipient_name" class="block text-sm font-medium text-gray-700 mb-1">Recipient Name</label>
+                    <input type="text" name="recipient_name" id="recipient_name" value="{{ institution.recipient_name|default:'' }}"
+                           class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-gray-300 transition-all duration-200 ease-in-out"
+                           placeholder="Enter recipient name">
+                </div>
+                <div>
+                    <label for="thank_you_message" class="block text-sm font-medium text-gray-700 mb-1">Thank You Message</label>
+                    <textarea name="thank_you_message" id="thank_you_message" rows="3"
+                              class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-gray-300 transition-all duration-200 ease-in-out resize-none"
+                              placeholder="Enter thank you message">{{ institution.thank_you_message|default:'' }}</textarea>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeUPIEditModal()"
+                            class="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200 ease-in-out">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-medium rounded-lg shadow-sm hover:from-green-500 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200 ease-in-out">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Image Edit Modal -->
+<div id="imageEditModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="min-h-screen px-4 text-center">
+        <div class="fixed inset-0" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+        <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">
+                    Add New Image
+                </h3>
+                <button onclick="closeImageEditModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form id="imageUploadForm" method="post" class="space-y-4">
+                {% csrf_token %}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Google Drive Image Link</label>
+                    <input type="url" name="drive_link" required
+                           class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out"
+                           placeholder="Enter Google Drive image link">
+                    <p class="text-xs text-gray-500 mt-1">
+                        Please provide a Google Drive link to your image. Make sure the link is publicly accessible.
+                    </p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeImageEditModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200">
+                        Add Image
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function openUPIEditModal() {
+    document.getElementById('upiEditModal').classList.remove('hidden');
+    // Add animation class
+    const modal = document.querySelector('#upiEditModal > div');
+    modal.classList.add('animate-fade-in');
+}
+
+function closeUPIEditModal() {
+    const modal = document.querySelector('#upiEditModal > div');
+    modal.classList.remove('animate-fade-in');
+    modal.classList.add('animate-fade-out');
+    setTimeout(() => {
+        document.getElementById('upiEditModal').classList.add('hidden');
+        modal.classList.remove('animate-fade-out');
+    }, 200);
+}
+
+// Close modal when clicking outside
+document.getElementById('upiEditModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeUPIEditModal();
+    }
+});
+
+// Handle form submission
+document.getElementById('upiEditForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Disable submit button and show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Saving...
+    `;
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the displayed values
+            document.querySelector('[data-field="upi_id"]').textContent = data.upi_id || 'Not set';
+            document.querySelector('[data-field="recipient_name"]').textContent = data.recipient_name || 'Not set';
+            document.querySelector('[data-field="thank_you_message"]').textContent = data.thank_you_message || 'Not set';
+            
+            // Show success message
+            const successMessage = document.createElement('div');
+            successMessage.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+            successMessage.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="h-5 w-5 text-green-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    <span>UPI details updated successfully!</span>
+                </div>
+            `;
+            document.body.appendChild(successMessage);
+            
+            // Remove success message after 3 seconds
+            setTimeout(() => {
+                successMessage.classList.add('animate-fade-out');
+                setTimeout(() => successMessage.remove(), 200);
+            }, 3000);
+            
+            // Close the modal
+            closeUPIEditModal();
+        } else {
+            // Show error message
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+            errorMessage.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="h-5 w-5 text-red-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span>${data.message}</span>
+                </div>
+            `;
+            document.body.appendChild(errorMessage);
+            
+            // Remove error message after 3 seconds
+            setTimeout(() => {
+                errorMessage.classList.add('animate-fade-out');
+                setTimeout(() => errorMessage.remove(), 200);
+            }, 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Show error message
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+        errorMessage.innerHTML = `
+            <div class="flex items-center">
+                <svg class="h-5 w-5 text-red-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span>An error occurred while updating UPI details</span>
+            </div>
+        `;
+        document.body.appendChild(errorMessage);
+        
+        // Remove error message after 3 seconds
+        setTimeout(() => {
+            errorMessage.classList.add('animate-fade-out');
+            setTimeout(() => errorMessage.remove(), 200);
+        }, 3000);
+    })
+    .finally(() => {
+        // Reset submit button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    });
+});
+
+function openImageEditModal() {
+    document.getElementById('imageEditModal').classList.remove('hidden');
+}
+
+function closeImageEditModal() {
+    document.getElementById('imageEditModal').classList.add('hidden');
+}
+
+function removeProfileImage() {
+    if (confirm('Are you sure you want to remove the profile image?')) {
+        const formData = new FormData();
+        formData.append('image_id', '{{ primary_image.id }}');
+        
+        fetch(`{% url 'remove_institution_image' institution.uid %}`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                showToast('error', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'An error occurred. Please try again.');
+        });
+    }
+}
+
+function removeImage(imageId) {
+    if (confirm('Are you sure you want to remove this image?')) {
+        const formData = new FormData();
+        formData.append('image_id', imageId);
+        
+        fetch(`{% url 'remove_institution_image' institution.uid %}`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                showToast('error', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'An error occurred. Please try again.');
+        });
+    }
+}
+
+// Handle image form submission
+document.getElementById('imageUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Disable submit button and show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Adding...
+    `;
+    
+    fetch(`{% url 'update_institution_image' institution.uid %}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast('success', 'Image added successfully!');
+            closeImageEditModal();
+            window.location.reload();
+        } else {
+            showToast('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'An error occurred. Please try again.');
+    })
+    .finally(() => {
+        // Reset submit button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    });
+});
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in ${
+        type === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 
+        'bg-red-100 border border-red-400 text-red-700'
+    }`;
+    
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <svg class="h-5 w-5 mr-2 ${type === 'success' ? 'text-green-500' : 'text-red-500'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                ${type === 'success' ? 
+                    '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />' :
+                    '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />'
+                }
+            </svg>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Remove toast after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('animate-fade-out');
+        setTimeout(() => toast.remove(), 200);
+    }, 3000);
+}
+</script>
+{% endblock %}
+
 {% endblock %} 

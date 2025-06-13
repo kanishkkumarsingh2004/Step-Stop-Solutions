@@ -3,11 +3,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 import logging
 from django.utils.timezone import now
-from .forms import InstitutionRegistrationForm, InstitutionCouponForm
+from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
+from django.db import models
+import re
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -28,11 +31,14 @@ def coaching_dashboard(request, uid):
         total_coupons_count = institution.coupons.count()
         expired_coupons_count = institution.coupons.filter(status='EXPIRED').count()
         
+        # Get the first institution image
+        first_image = institution.images.first()
         return render(request, 'coaching/coaching_dashboard.html', {
             'institution': institution,
             'active_coupons_count': active_coupons_count,
             'total_coupons_count': total_coupons_count,
             'expired_coupons_count': expired_coupons_count,
+            'primary_image': first_image  # Keep the variable name for template compatibility
         })
     except Institution.DoesNotExist:
         messages.error(request, "Institution not found.")
@@ -333,3 +339,217 @@ def delete_institution_coupon(request, uid, coupon_id):
         messages.error(request, "An error occurred while deleting the coupon. Please try again.")
     
     return redirect('manage_institution_coupons', uid=institution.uid)
+
+@login_required
+def institution_reviews(request, uid):
+    """Display all reviews for an institution"""
+    institution = get_object_or_404(Institution, uid=uid)
+    
+    # Check if the user is the owner of the institution
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to view these reviews.")
+        return redirect('coaching_dashboard')
+    
+    reviews = institution.reviews.all().order_by('-created_at')
+    total_reviews = reviews.count()
+    average_rating = institution.average_rating()
+    
+    # Pagination
+    paginator = Paginator(reviews, 10)  # Show 10 reviews per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'coaching/institution_reviews.html', {
+        'institution': institution,
+        'reviews': page_obj,
+        'total_reviews': total_reviews,
+        'average_rating': average_rating,
+        'page_obj': page_obj
+    })
+
+@login_required
+@require_POST
+def submit_institution_review(request, uid):
+    """Submit a review for an institution"""
+    institution = get_object_or_404(Institution, uid=uid)
+    
+    try:
+        # Check if user has already reviewed this institution
+        existing_review = InstitutionReview.objects.filter(
+            institution=institution,
+            user=request.user
+        ).first()
+        
+        if existing_review:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'You have already reviewed this institution.'
+            }, status=400)
+        
+        # Create new review
+        rating = int(request.POST.get('rating', 0))
+        comment = request.POST.get('comment', '').strip()
+        
+        if not 1 <= rating <= 5:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid rating value.'
+            }, status=400)
+        
+        review = InstitutionReview.objects.create(
+            institution=institution,
+            user=request.user,
+            rating=rating,
+            comment=comment
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Review submitted successfully.',
+            'review': {
+                'user_name': review.user.get_full_name(),
+                'rating': review.rating,
+                'comment': review.comment,
+                'created_at': review.created_at.strftime('%B %d, %Y')
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error submitting review: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'An error occurred while submitting your review.'
+        }, status=500)
+
+@login_required
+def edit_upi_details(request, uid):
+    institution = get_object_or_404(Institution, uid=uid)
+    
+    # Check if the user is the owner of the institution
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to edit this institution's UPI details.")
+        return redirect('coaching_dashboard', uid=institution.uid)
+    
+    if request.method == 'POST':
+        form = UPIForm(request.POST, instance=institution)
+        if form.is_valid():
+            form.save()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'success',
+                    'upi_id': institution.upi_id,
+                    'recipient_name': institution.recipient_name,
+                    'thank_you_message': institution.thank_you_message
+                })
+            messages.success(request, "UPI details updated successfully!")
+            return redirect('coaching_dashboard', uid=institution.uid)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'error',
+                    'message': ' '.join([f"{field}: {', '.join(errors)}" for field, errors in form.errors.items()])
+                })
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = UPIForm(instance=institution)
+    
+    return render(request, 'coaching/edit_upi_details.html', {'form': form, 'institution': institution})
+
+@login_required
+@require_POST
+def update_institution_image(request, uid):
+    """Update institution profile image using Google Drive link."""
+    try:
+        institution = get_object_or_404(Institution, uid=uid)
+        
+        # Check if user is the owner
+        if request.user != institution.owner:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'You do not have permission to update this institution\'s image.'
+            }, status=403)
+        
+        # Get the Google Drive link
+        drive_link = request.POST.get('drive_link')
+        if not drive_link:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Please provide a Google Drive link.'
+            }, status=400)
+        
+        # Extract file ID from Google Drive link
+        file_id = None
+        patterns = [
+            r'/file/d/([^/]+)',
+            r'/open\?id=([^&]+)',
+            r'/uc\?id=([^&]+)',
+            r'/uc\?export=view&id=([^&]+)'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, drive_link)
+            if match:
+                file_id = match.group(1)
+                break
+        
+        if not file_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid Google Drive link format. Please provide a valid link.'
+            }, status=400)
+        
+        # Create new image
+        InstitutionImage.objects.create(
+            institution=institution,
+            google_drive_link=drive_link,
+            google_drive_id=file_id
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Image added successfully!'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating institution image: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'An error occurred while updating the image.'
+        }, status=500)
+
+@login_required
+@require_POST
+def remove_institution_image(request, uid):
+    """Remove institution image"""
+    institution = get_object_or_404(Institution, uid=uid)
+    
+    # Check if the user is the owner of the institution
+    if request.user != institution.owner:
+        return JsonResponse({
+            'status': 'error',
+            'message': "You don't have permission to remove this institution's image."
+        }, status=403)
+    
+    try:
+        image_id = request.POST.get('image_id')
+        if not image_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No image ID provided.'
+            }, status=400)
+        
+        # Get the image and delete it
+        image = get_object_or_404(InstitutionImage, id=image_id, institution=institution)
+        image.delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Image removed successfully.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error removing institution image: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'An error occurred while removing the image.'
+        }, status=500)

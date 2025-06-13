@@ -6,15 +6,29 @@
         <!-- Header Section -->
         <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-200">
             <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-                <!-- Institute Name -->
+                <!-- Institution Name -->
                 <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
                     {{ institution.name }}
                 </h1>
                 
-                <!-- Status Badge -->
-                <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm bg-green-100 text-green-800">
-                    Approved
-                </span>
+                <!-- Review Button -->
+                {% if user.is_authenticated %}
+                <button onclick="openReviewModal()" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                    Write a Review
+                </button>
+                {% else %}
+                <a href="{% url 'login' %}?next={{ request.path }}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                    Login to Review
+                </a>
+                {% endif %}
             </div>
         </div>
 
@@ -30,12 +44,6 @@
 
             <!-- Details Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-                <!-- Owner Card -->
-                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
-                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">👤 Owner</h2>
-                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ institution.owner.get_full_name }}</p>
-                </div>
-
                 <!-- Address Card -->
                 <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
                     <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">📍 Address</h2>
@@ -46,6 +54,12 @@
                 <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
                     <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">📞 Contact</h2>
                     <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ institution.contact_phone }}</p>
+                </div>
+
+                <!-- Email Card -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">✉️ Email</h2>
+                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ institution.contact_email }}</p>
                 </div>
             </div>
 
@@ -73,25 +87,190 @@
                 <p class="text-gray-600 text-base sm:text-lg">{{ institution.additional_services }}</p>
             </div>
             {% endif %}
-        </div>
 
-        <!-- Contact Info Footer -->
-        <div class="px-6 sm:px-10 py-6 sm:py-8 border-t border-gray-100 bg-gray-50">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-2xl p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">📧 Email</h3>
-                    <p class="text-gray-600">{{ institution.contact_email }}</p>
+            <!-- Reviews Card -->
+            <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-5 gap-3 sm:gap-0">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">🌟 Reviews</h2>
+                    {% if institution.average_rating %}
+                    <div class="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-full">
+                        <div class="text-yellow-400 text-sm sm:text-base">
+                            {% for i in "12345" %}
+                                {% if i|add:0 <= institution.average_rating|floatformat:0|add:0 %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="text-xs sm:text-sm text-gray-600">
+                            {{ institution.average_rating|floatformat:1 }} ({{ institution.reviews.count }})
+                        </span>
+                    </div>
+                    {% endif %}
                 </div>
-                {% if institution.website_url %}
-                <div class="bg-white rounded-2xl p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">🌐 Website</h3>
-                    <a href="{{ institution.website_url }}" class="text-blue-600 hover:text-blue-800" target="_blank">
-                        {{ institution.website_url }}
-                    </a>
+                <div class="space-y-4">
+                    {% for review in institution.reviews.all %}
+                    <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                            <div class="flex items-center space-x-2">
+                                <div class="text-yellow-400 text-sm sm:text-base">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="text-xs sm:text-sm text-gray-600">{{ review.user.get_full_name }}</span>
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-500">{{ review.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        {% if review.comment %}
+                        <p class="mt-2 text-xs sm:text-sm text-gray-700">{{ review.comment }}</p>
+                        {% endif %}
+                        {% if review.reply %}
+                        <div class="mt-2 pl-4 border-l-2 border-gray-200">
+                            <p class="text-xs sm:text-sm font-medium text-gray-900">Response from {{ institution.name }}</p>
+                            <p class="text-xs sm:text-sm text-gray-600">{{ review.reply }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-sm sm:text-base text-gray-600">No reviews yet. Be the first to review!</p>
+                    {% endfor %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<!-- Review Modal -->
+{% if user.is_authenticated %}
+<div id="reviewModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden" style="z-index: 50;">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Write a Review</h3>
+                    <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="reviewForm" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Rating</label>
+                        <div class="mt-2 flex items-center space-x-2">
+                            {% for i in "12345" %}
+                            <button type="button" 
+                                    onclick="setRating('{{ i }}')"
+                                    class="text-2xl text-gray-300 hover:text-yellow-400 focus:outline-none rating-star"
+                                    data-rating="{{ i }}">
+                                ★
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="comment" class="block text-sm font-medium text-gray-700">Your Review</label>
+                        <textarea id="comment" name="comment" rows="4" 
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  placeholder="Share your experience with this institution..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" 
+                                onclick="closeReviewModal()"
+                                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Submit Review
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+let selectedRating = 0;
+
+function openReviewModal() {
+    document.getElementById('reviewModal').classList.remove('hidden');
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+    // Reset form
+    selectedRating = 0;
+    document.getElementById('comment').value = '';
+    updateStars();
+}
+
+function setRating(rating) {
+    selectedRating = rating;
+    updateStars();
+}
+
+function updateStars() {
+    const stars = document.querySelectorAll('.rating-star');
+    stars.forEach(star => {
+        const rating = parseInt(star.dataset.rating);
+        if (rating <= selectedRating) {
+            star.classList.remove('text-gray-300');
+            star.classList.add('text-yellow-400');
+        } else {
+            star.classList.remove('text-yellow-400');
+            star.classList.add('text-gray-300');
+        }
+    });
+}
+
+document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (selectedRating === 0) {
+        alert('Please select a rating');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('rating', selectedRating);
+    formData.append('comment', document.getElementById('comment').value);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    try {
+        const response = await fetch('{% url "submit_institution_review" institution.uid %}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(data.message);
+            closeReviewModal();
+            // Optionally refresh the page to show the new review
+            window.location.reload();
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while submitting your review. Please try again.');
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

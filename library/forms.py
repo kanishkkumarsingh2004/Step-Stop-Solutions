@@ -309,3 +309,13 @@ class InstitutionCouponForm(forms.ModelForm):
             raise ValidationError("Percentage discount cannot be more than 100%.")
 
         return cleaned_data
+
+class UPIForm(forms.ModelForm):
+    class Meta:
+        model = Institution
+        fields = ['upi_id', 'recipient_name', 'thank_you_message']
+        widgets = {
+            'upi_id': forms.TextInput(attrs={'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'}),
+            'recipient_name': forms.TextInput(attrs={'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'}),
+            'thank_you_message': forms.Textarea(attrs={'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out', 'rows': 3}),
+        }

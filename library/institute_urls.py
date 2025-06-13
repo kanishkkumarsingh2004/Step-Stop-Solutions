@@ -18,4 +18,11 @@ urlpatterns = [
    path('institution/<str:uid>/create-coupon/', institute_view.create_institution_coupon, name='create_institution_coupon'),
    path('institution/<str:uid>/edit-coupon/<int:coupon_id>/', institute_view.edit_institution_coupon, name='edit_institution_coupon'),
    path('institution/<str:uid>/delete-coupon/<int:coupon_id>/', institute_view.delete_institution_coupon, name='delete_institution_coupon'),
+   # Reviews URL
+   path('institution/<str:uid>/reviews/', institute_view.institution_reviews, name='institution_reviews'),
+   path('institution/<str:uid>/submit-review/', institute_view.submit_institution_review, name='submit_institution_review'),
+   path('institution/<str:uid>/edit-upi/', institute_view.edit_upi_details, name='edit_upi_details'),
+   # Image management URLs
+   path('institution/<str:uid>/update-image/', institute_view.update_institution_image, name='update_institution_image'),
+   path('institution/<str:uid>/remove-image/', institute_view.remove_institution_image, name='remove_institution_image'),
 ]

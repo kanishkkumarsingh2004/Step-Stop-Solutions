@@ -169,6 +169,9 @@ class Institution(models.Model):
     is_approved = models.BooleanField(default=False, help_text="Approval status of the application")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    upi_id = models.CharField(max_length=255, blank=True, null=True, help_text="UPI ID for receiving payments")
+    recipient_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of the UPI payment recipient")
+    thank_you_message = models.TextField(blank=True, null=True, help_text="Message to show after successful payment")
 
     def __str__(self):
         return self.name
@@ -177,6 +180,12 @@ class Institution(models.Model):
     def total_capacity(self):
         """Calculate total capacity from all classrooms"""
         return sum(classroom.get('capacity', 0) for classroom in self.classrooms.values())
+
+    def get_reviews(self):
+        return self.reviews.all().order_by('-created_at')
+
+    def average_rating(self):
+        return self.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
 
 class SubscriptionPlan(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, help_text="The vendor who created this subscription plan")
@@ -526,3 +535,52 @@ class InstitutionCoupon(models.Model):
             self.save()
             return True
         return False
+
+class InstitutionReview(models.Model):
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    comment = models.TextField(blank=True, null=True)
+    reply = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['institution', 'user']  # Ensure one review per user per institution
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.rating} stars"
+
+class InstitutionImage(models.Model):
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='images')
+    google_drive_link = models.URLField(max_length=500)
+    google_drive_id = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Image for {self.institution.name}"
+
+    def save(self, *args, **kwargs):
+        # Extract Google Drive ID from link if provided
+        if self.google_drive_link:
+            self.google_drive_id = self.extract_file_id(self.google_drive_link)
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def extract_file_id(url):
+        patterns = [
+            r'/file/d/([^/]+)',
+            r'/open\?id=([^&]+)',
+            r'/uc\?id=([^&]+)',
+            r'/uc\?export=view&id=([^&]+)'
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return None

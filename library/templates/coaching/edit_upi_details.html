@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="mb-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex-1">
+                    <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                        Edit UPI Payment Details
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Update your UPI payment information for receiving payments
+                    </p>
+                </div>
+                <div class="mt-6 md:mt-0 md:ml-6">
+                    <a href="{% url 'coaching_dashboard' %}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition duration-150 ease-in-out">
+                        <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Messages Section -->
+        {% if messages %}
+        <div class="mb-8 space-y-4">
+            {% for message in messages %}
+            <div class="rounded-lg p-4 {% if message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-blue-50 text-blue-800{% endif %} shadow-sm">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        {% if message.tags == 'error' %}
+                        <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                        {% elif message.tags == 'success' %}
+                        <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        {% else %}
+                        <svg class="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">{{ message }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Form Section -->
+        <div class="bg-white shadow-xl rounded-xl overflow-hidden">
+            <form method="post" class="space-y-8 p-8">
+                {% csrf_token %}
+                
+                <!-- UPI ID -->
+                <div>
+                    <label for="upi_id" class="block text-sm font-semibold text-gray-700">UPI ID</label>
+                    <div class="mt-2 relative">
+                        {{ form.upi_id }}
+                    </div>
+                    {% if form.upi_id.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.upi_id.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Recipient Name -->
+                <div>
+                    <label for="recipient_name" class="block text-sm font-semibold text-gray-700">Recipient Name</label>
+                    <div class="mt-2 relative">
+                        {{ form.recipient_name }}
+                    </div>
+                    {% if form.recipient_name.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.recipient_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Thank You Message -->
+                <div>
+                    <label for="thank_you_message" class="block text-sm font-semibold text-gray-700">Thank You Message</label>
+                    <div class="mt-2 relative">
+                        {{ form.thank_you_message }}
+                    </div>
+                    {% if form.thank_you_message.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.thank_you_message.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit" 
+                            class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition duration-200 ease-in-out">
+                        Update UPI Details
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 
