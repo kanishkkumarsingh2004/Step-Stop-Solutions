@@ -70,6 +70,7 @@
                                     {% if user.is_superuser %}
                                         <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Admin Dashboard</a>
                                     {% endif %}
+                                    <a href="{% url 'coaching_dashboard' %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Coaching Dashboard</a>
                                     <a href="/dashboard/" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Dashboard</a>
                                     {% if user.libraries_staffed.all %}
                                         {% for library in user.libraries_staffed.all %}
@@ -189,7 +190,7 @@
                     <h3 class="text-lg font-bold mb-3 sm:mb-4">Quick Links</h3>
                     <ul class="space-y-2">
                         <li><a href="/" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Home</a></li>
-                        <li><a href="{% url 'register_venders_shop' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Libraries</a></li>
+                        <li><a href="{% url 'register_lib' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">Libraries</a></li>
                         <li><a href="{% url 'about_us' %}" class="text-sm text-gray-300 hover:text-white transition-colors duration-200">About Us</a></li>
                     </ul>
                 </div>

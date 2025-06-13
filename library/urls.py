@@ -17,10 +17,11 @@ urlpatterns = [
    path('library/<int:library_id>/edit/', views.edit_library_profile, name='edit_library_profile'),
    
    # User Management
-path('vendor/<int:library_id>/manage-users/', views.manage_users, name='manage_users'),    
+   path('vendor/<int:library_id>/manage-users/', views.manage_users, name='manage_users'),    
    # Library Management
    path('register-library/', views.register_library, name='register_library'),
-   path('register-vendors-shop/', views.register_venders_shop, name='register_venders_shop'),
+   path('registered-lib/', views.register_venders_shop, name='register_lib'),
+   path('registered-institute/', views.register_institute, name='register_institute'),
    path('manage-libraries/', views.manage_libraries, name='manage_libraries'),
    path('toggle-library-approval/<int:library_id>/', views.toggle_library_approval, name='toggle_library_approval'),
    path('manage-institutions/', views.manage_institutions, name='manage_institutions'),
@@ -159,7 +160,6 @@ path('vendor/<int:library_id>/manage-users/', views.manage_users, name='manage_u
    path('apply-vendor/', views.apply_vendor, name='apply_vendor'),
    # Registration Views
    path('apply-vendor/apply-for-vendor/library/', views.register_library, name='register_library'),
-   path('apply-vendor/apply-for-vendor/coaching/', views.register_coaching, name='register_coaching'),
    path('apply-vendor/apply-for-vendor/', views.apply_for_vendor, name='apply_for_vendor'),
    path('about-us/', views.about_us, name='about_us'),
    path('add-permission/<int:library_id>/<int:staff_id>/', views.add_permission, name='add_permission'),

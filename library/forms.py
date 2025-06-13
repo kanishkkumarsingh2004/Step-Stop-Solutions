@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review
+from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -181,3 +181,59 @@ class ReviewForm(forms.ModelForm):
             'rating': forms.NumberInput(attrs={'min': 1, 'max': 5}),
             'comment': forms.Textarea(attrs={'rows': 3})
         }
+
+class InstitutionRegistrationForm(forms.ModelForm):
+    num_classrooms = forms.IntegerField(
+        min_value=1,
+        max_value=20,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Number of Classrooms',
+            'id': 'num-classrooms'
+        })
+    )
+
+    class Meta:
+        model = Institution
+        fields = ['name', 'address', 'description', 'institution_type', 'website_url', 
+                 'contact_email', 'contact_phone', 'facilities_available', 
+                 'additional_services']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Institution Name'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Full Address'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description'}),
+            'institution_type': forms.Select(attrs={'class': 'form-control'}),
+            'website_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Website URL'}),
+            'contact_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Contact Email'}),
+            'contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Phone'}),
+            'facilities_available': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Available Facilities'}),
+            'additional_services': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Additional Services'}),
+        }
+
+    def clean_contact_phone(self):
+        phone = self.cleaned_data.get('contact_phone')
+        if not phone.isdigit():
+            raise forms.ValidationError("Phone number should contain only digits.")
+        if len(phone) < 10 or len(phone) > 15:
+            raise forms.ValidationError("Phone number should be between 10 to 15 digits.")
+        return phone
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Get classroom data from form data
+        classrooms = {}
+        num_classrooms = self.cleaned_data.get('num_classrooms', 1)
+        
+        for i in range(1, num_classrooms + 1):
+            capacity = self.data.get(f'classroom_{i}_capacity')
+            if capacity:
+                classrooms[f'classroom_{i}'] = {
+                    'capacity': int(capacity),
+                    'name': f'Classroom {i}'
+                }
+        
+        instance.classrooms = classrooms
+        
+        if commit:
+            instance.save()
+        return instance

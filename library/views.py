@@ -620,30 +620,29 @@ def register_library(request):
     
     return render(request, 'vender/register_library.html', {'form': form})
 
-@login_required
-def register_coaching(request):
-    """Handle coaching center registration"""
-    if request.method == 'POST':
-        form = LibraryRegistrationForm(request.POST)
-        if form.is_valid():
-            coaching = form.save(commit=False)
-            coaching.user = request.user
-            coaching.business_type = 'Coaching'
-            coaching.save()
-            return redirect('register_venders_shop')
-    else:
-        form = LibraryRegistrationForm()
-    return render(request, 'library/register_library.html', {'form': form})
-
 def register_venders_shop(request):
     if not request.user.is_authenticated:
         return redirect('login')
     query = request.GET.get('q', '')
     libraries = Library.objects.filter(Q(venue_name__icontains=query) | Q(address__icontains=query) | Q(city__icontains=query) | Q(state__icontains=query) | Q(pincode__icontains=query))
-    institutions = Institution.objects.filter()
-    items = list(libraries) + list(institutions)
+    items = list(libraries)
     
     return render(request, 'users_pages/register_venders_shop.html', {'items': items})
+
+def register_institute(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    query = request.GET.get('q', '')
+    institutions = Institution.objects.filter(
+        Q(name__icontains=query) | 
+        Q(address__icontains=query) | 
+        Q(contact_email__icontains=query) | 
+        Q(contact_phone__icontains=query) | 
+        Q(website_url__icontains=query)
+    )
+    items = list(institutions)
+    
+    return render(request, 'users_pages/register_institute.html', {'items': items})
 
 @login_required
 def admin_library_details(request, library_id):

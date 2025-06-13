@@ -23,10 +23,7 @@ class Library(models.Model):
     description = models.TextField()
     venue_location = models.TextField(help_text="Detailed location of the venue")
     venue_name = models.CharField(max_length=200, help_text="Name of the venue")
-    business_type = models.CharField(max_length=50, choices=[
-        ('Library', 'Library'),
-        ('Coaching', 'Coaching')
-    ])
+    business_type = models.CharField(max_length=50)
     max_banners = models.PositiveIntegerField(default=2, help_text="Maximum number of banners allowed")
     social_media_links = models.TextField(blank=True, null=True, help_text="Comma separated list of social media links")
     capacity = models.PositiveIntegerField(help_text="Maximum capacity of the venue")
@@ -161,7 +158,8 @@ class Institution(models.Model):
     website_url = models.URLField(blank=True, null=True)
     contact_email = models.EmailField()
     contact_phone = models.CharField(max_length=15)
-    capacity = models.PositiveIntegerField(help_text="Maximum capacity of the institution")
+    business_type = models.CharField(max_length=50)
+    classrooms = models.JSONField(default=dict, help_text="JSON containing classroom information with capacities")
     facilities_available = models.TextField(blank=True, null=True, help_text="List of available facilities")
     additional_services = models.TextField(blank=True, null=True, help_text="Any additional services offered")
     is_approved = models.BooleanField(default=False, help_text="Approval status of the application")
@@ -170,6 +168,11 @@ class Institution(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def total_capacity(self):
+        """Calculate total capacity from all classrooms"""
+        return sum(classroom.get('capacity', 0) for classroom in self.classrooms.values())
 
 class SubscriptionPlan(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, help_text="The vendor who created this subscription plan")

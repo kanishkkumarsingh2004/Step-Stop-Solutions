@@ -7,13 +7,27 @@
     <section class="text-center mb-6 sm:mb-10 lg:mb-12">
         <h1 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-2 sm:mb-3 md:mb-4">Welcome to Step Stop Solutions</h1>
         <p class="text-sm xs:text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2 sm:px-0">Your trusted partner in innovative business solutions. We help businesses grow through technology and strategy.</p>
-        <div class="mt-4 sm:mt-6 lg:mt-8 flex flex-col space-y-3 sm:space-y-0 sm:flex-row justify-center sm:space-x-4 px-2 sm:px-0">
-            <a href="{% url 'register_venders_shop' %}" class="bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
+        <div class="mt-4 sm:mt-6 lg:mt-8 flex flex-col sm:flex-row flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 px-2 sm:px-0">
+            <a href="{% url 'register_lib' %}" class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
                 <i class="bi bi-book"></i>
                 <span>Browse Library</span>
             </a>
+            <a href="{% url 'register_institute' %}" class="w-full sm:w-auto bg-purple-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-purple-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
+                <i class="bi bi-building"></i>
+                <span>Browse Institute</span>
+            </a>
+            <a href="#" class="w-full sm:w-40 bg-green-600 text-white px-4 py-2 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"></path>
+                </svg>
+                <span>Gim</span>
+            </a>
+            <a href="#" class="w-full sm:w-40 bg-red-600 text-white px-4 py-2 sm:py-3 rounded-lg hover:bg-red-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
+                <i class="bi bi-cup-straw"></i>
+                <span>Caffee</span>
+            </a>
             {% if not user.is_authenticated %}
-            <a href="{% url 'signup' %}" class="bg-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
+            <a href="{% url 'signup' %}" class="w-full sm:w-40 bg-green-600 text-white px-4 py-2 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base lg:text-lg font-semibold flex items-center justify-center space-x-2">
                 <i class="bi bi-person-plus"></i>
                 <span>Join Now</span>
             </a>
@@ -103,7 +117,7 @@
         <div class="max-w-2xl mx-auto">
             <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Business?</h2>
             <p class="text-base sm:text-lg md:text-xl mb-6">Let us help you take your business to the next level.</p>
-            <a href="{% url 'register_venders_shop' %}" class="inline-block bg-white text-blue-600 px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-gray-50 transition duration-300 text-lg font-semibold shadow-lg hover:shadow-xl">
+            <a href="{% url 'register_lib' %}" class="inline-block bg-white text-blue-600 px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-gray-50 transition duration-300 text-lg font-semibold shadow-lg hover:shadow-xl">
                 Get Started Now
             </a>
         </div>
