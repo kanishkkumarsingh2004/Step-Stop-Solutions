@@ -185,11 +185,15 @@ class ReviewForm(forms.ModelForm):
 class InstitutionRegistrationForm(forms.ModelForm):
     class Meta:
         model = Institution
-        fields = ['name', 'address', 'description', 'website_url', 
+        fields = ['name', 'address', 'pincode', 'state', 'city', 'district', 'description', 'website_url', 
                  'contact_email', 'contact_phone', 'additional_services']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Institution Name'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Full Address'}),
+            'pincode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '6-digit Postal Code', 'maxlength': '6'}),
+            'state': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State', 'readonly': 'readonly'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City', 'readonly': 'readonly'}),
+            'district': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'District', 'readonly': 'readonly'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description'}),
             'website_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Website URL'}),
             'contact_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Contact Email'}),
@@ -212,6 +216,14 @@ class InstitutionRegistrationForm(forms.ModelForm):
         if len(description) < 10:
             raise forms.ValidationError("Description must be at least 10 characters long.")
         return description
+
+    def clean_pincode(self):
+        pincode = self.cleaned_data.get('pincode')
+        if not pincode:
+            raise forms.ValidationError("Pincode is required.")
+        if not pincode.isdigit() or len(pincode) != 6:
+            raise forms.ValidationError("Pincode must be a 6-digit number.")
+        return pincode
 
     def clean_contact_email(self):
         email = self.cleaned_data.get('contact_email')

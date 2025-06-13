@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header Section -->
-        <div class="mb-8">
-            <div class="md:flex md:items-center md:justify-between">
-                <div class="flex-1 min-w-0">
-                    <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+        <div class="mb-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex-1">
+                    <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
                         {% if coupon %}Edit Coupon{% else %}Create New Coupon{% endif %}
                     </h2>
-                    <p class="mt-1 text-sm text-gray-500">
+                    <p class="mt-2 text-sm text-gray-600">
                         {% if coupon %}Update the details of your existing coupon{% else %}Create a new coupon for your institution{% endif %}
                     </p>
                 </div>
-                <div class="mt-4 flex md:mt-0 md:ml-4">
+                <div class="mt-6 md:mt-0 md:ml-6">
                     <a href="{% url 'manage_institution_coupons' institution.uid %}" 
-                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition duration-150 ease-in-out">
                         <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
@@ -28,21 +28,21 @@
 
         <!-- Error Messages Section -->
         {% if messages %}
-        <div class="mb-6">
+        <div class="mb-8 space-y-4">
             {% for message in messages %}
-            <div class="rounded-md p-4 {% if message.tags == 'error' %}bg-red-50 text-red-700{% elif message.tags == 'success' %}bg-green-50 text-green-700{% else %}bg-blue-50 text-blue-700{% endif %}">
-                <div class="flex">
+            <div class="rounded-lg p-4 {% if message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-blue-50 text-blue-800{% endif %} shadow-sm">
+                <div class="flex items-center">
                     <div class="flex-shrink-0">
                         {% if message.tags == 'error' %}
-                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                         </svg>
                         {% elif message.tags == 'success' %}
-                        <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
                         {% else %}
-                        <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                         </svg>
                         {% endif %}
@@ -57,17 +57,18 @@
         {% endif %}
 
         <!-- Form Section -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-            <form method="post" class="space-y-6 p-6">
+        <div class="bg-white shadow-xl rounded-xl overflow-hidden">
+            <form method="post" class="space-y-8 p-8">
                 {% csrf_token %}
                 
                 <!-- Coupon Code -->
                 <div>
-                    <label for="code" class="block text-sm font-medium text-gray-700">Coupon Code</label>
-                    <div class="mt-1">
+                    <label for="code" class="block text-sm font-semibold text-gray-700">Coupon Code</label>
+                    <div class="mt-2 relative">
                         <input type="text" name="code" id="code" 
                                value="{{ form.code.value|default:'' }}"
-                               class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.code.errors %}border-red-300{% endif %}"
+                               class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out {% if form.code.errors %}border-red-500 focus:ring-red-500 focus:border-red-500{% endif %}"
+                               placeholder="Enter coupon code"
                                required>
                     </div>
                     {% if form.code.errors %}
@@ -78,14 +79,19 @@
                 <!-- Discount Type and Value -->
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
-                        <label for="discount_type" class="block text-sm font-medium text-gray-700">Discount Type</label>
-                        <div class="mt-1">
+                        <label for="discount_type" class="block text-sm font-semibold text-gray-700">Discount Type</label>
+                        <div class="mt-2 relative">
                             <select name="discount_type" id="discount_type" 
-                                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.discount_type.errors %}border-red-300{% endif %}"
+                                    class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out appearance-none {% if form.discount_type.errors %}border-red-500 focus:ring-red-500 focus:border-red-500{% endif %}"
                                     required>
                                 <option value="PERCENTAGE" {% if form.discount_type.value == 'PERCENTAGE' %}selected{% endif %}>Percentage</option>
                                 <option value="FIXED" {% if form.discount_type.value == 'FIXED' %}selected{% endif %}>Fixed Amount</option>
                             </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
                         </div>
                         {% if form.discount_type.errors %}
                         <p class="mt-2 text-sm text-red-600">{{ form.discount_type.errors.0 }}</p>
@@ -93,12 +99,13 @@
                     </div>
 
                     <div>
-                        <label for="discount_value" class="block text-sm font-medium text-gray-700">Discount Value</label>
-                        <div class="mt-1">
+                        <label for="discount_value" class="block text-sm font-semibold text-gray-700">Discount Value</label>
+                        <div class="mt-2 relative">
                             <input type="number" name="discount_value" id="discount_value" 
                                    value="{{ form.discount_value.value|default:'' }}"
                                    min="0" step="0.01"
-                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.discount_value.errors %}border-red-300{% endif %}"
+                                   class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out {% if form.discount_value.errors %}border-red-500 focus:ring-red-500 focus:border-red-500{% endif %}"
+                                   placeholder="Enter discount value"
                                    required>
                         </div>
                         {% if form.discount_value.errors %}
@@ -110,11 +117,11 @@
                 <!-- Validity Period -->
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
-                        <label for="valid_from" class="block text-sm font-medium text-gray-700">Valid From</label>
-                        <div class="mt-1">
+                        <label for="valid_from" class="block text-sm font-semibold text-gray-700">Valid From</label>
+                        <div class="mt-2 relative">
                             <input type="date" name="valid_from" id="valid_from" 
                                    value="{{ form.valid_from.value|date:'Y-m-d'|default:'' }}"
-                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.valid_from.errors %}border-red-300{% endif %}"
+                                   class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out {% if form.valid_from.errors %}border-red-500 focus:ring-red-500 focus:border-red-500{% endif %}"
                                    required>
                         </div>
                         {% if form.valid_from.errors %}
@@ -123,11 +130,11 @@
                     </div>
 
                     <div>
-                        <label for="valid_to" class="block text-sm font-medium text-gray-700">Valid To</label>
-                        <div class="mt-1">
+                        <label for="valid_to" class="block text-sm font-semibold text-gray-700">Valid To</label>
+                        <div class="mt-2 relative">
                             <input type="date" name="valid_to" id="valid_to" 
                                    value="{{ form.valid_to.value|date:'Y-m-d'|default:'' }}"
-                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.valid_to.errors %}border-red-300{% endif %}"
+                                   class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out {% if form.valid_to.errors %}border-red-500 focus:ring-red-500 focus:border-red-500{% endif %}"
                                    required>
                         </div>
                         {% if form.valid_to.errors %}
@@ -138,12 +145,13 @@
 
                 <!-- Usage Limits -->
                 <div>
-                    <label for="max_usage" class="block text-sm font-medium text-gray-700">Maximum Usage</label>
-                    <div class="mt-1">
+                    <label for="max_usage" class="block text-sm font-semibold text-gray-700">Maximum Usage</label>
+                    <div class="mt-2 relative">
                         <input type="number" name="max_usage" id="max_usage" 
                                value="{{ form.max_usage.value|default:'' }}"
                                min="1"
-                               class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.max_usage.errors %}border-red-300{% endif %}"
+                               class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out {% if form.max_usage.errors %}border-red-500 focus:ring-red-500 focus:border-red-500{% endif %}"
+                               placeholder="Enter max usage"
                                required>
                     </div>
                     {% if form.max_usage.errors %}
@@ -153,14 +161,19 @@
 
                 <!-- Status -->
                 <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                    <div class="mt-1">
+                    <label for="status" class="block text-sm font-semibold text-gray-700">Status</label>
+                    <div class="mt-2 relative">
                         <select name="status" id="status" 
-                                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.status.errors %}border-red-300{% endif %}"
+                                class="block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out appearance-none {% if form.status.errors %}border-red-500 focus:ring-red-500 focus:border-red-500{% endif %}"
                                 required>
                             <option value="ACTIVE" {% if form.status.value == 'ACTIVE' %}selected{% endif %}>Active</option>
                             <option value="INACTIVE" {% if form.status.value == 'INACTIVE' %}selected{% endif %}>Inactive</option>
                         </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
                     </div>
                     {% if form.status.errors %}
                     <p class="mt-2 text-sm text-red-600">{{ form.status.errors.0 }}</p>
@@ -170,7 +183,7 @@
                 <!-- Submit Button -->
                 <div class="flex justify-end">
                     <button type="submit" 
-                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition duration-200 ease-in-out">
                         {% if coupon %}Update Coupon{% else %}Create Coupon{% endif %}
                     </button>
                 </div>
@@ -196,4 +209,4 @@
     });
 </script>
 {% endblock %}
-{% endblock %} 
+{% endblock %}
