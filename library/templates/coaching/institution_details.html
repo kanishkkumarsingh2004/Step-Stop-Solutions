@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-6 py-4">
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">{{ institution.name }}</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Basic Information -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Basic Information</h2>
+                    <div>
+                        <p class="text-sm text-gray-600">Owner</p>
+                        <p class="text-gray-900">{{ institution.owner.get_full_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Address</p>
+                        <p class="text-gray-900">{{ institution.address }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Description</p>
+                        <p class="text-gray-900">{{ institution.description }}</p>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Contact Information</h2>
+                    <div>
+                        <p class="text-sm text-gray-600">Email</p>
+                        <p class="text-gray-900">{{ institution.contact_email }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Phone</p>
+                        <p class="text-gray-900">{{ institution.contact_phone }}</p>
+                    </div>
+                    {% if institution.website_url %}
+                    <div>
+                        <p class="text-sm text-gray-600">Website</p>
+                        <a href="{{ institution.website_url }}" class="text-blue-600 hover:text-blue-800" target="_blank">
+                            {{ institution.website_url }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Classroom Information -->
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Classroom Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for classroom_id, classroom in institution.classrooms.items %}
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Classroom {{ forloop.counter }}</p>
+                        <p class="text-gray-900">Capacity: {{ classroom.capacity }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-600">Total Capacity</p>
+                    <p class="text-gray-900 font-semibold">{{ institution.total_capacity }}</p>
+                </div>
+            </div>
+
+            <!-- Additional Services -->
+            {% if institution.additional_services %}
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Additional Services</h2>
+                <p class="text-gray-900">{{ institution.additional_services }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Status -->
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Status</h2>
+                <span id="status-badge" class="px-3 py-1 text-sm font-semibold rounded-full {% if institution.is_approved %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                    {% if institution.is_approved %}Approved{% else %}Pending Approval{% endif %}
+                </span>
+            </div>
+
+            <!-- Approve/Unapprove Button -->
+            <div class="mt-8 flex justify-start">
+                {% csrf_token %}
+                {% if not institution.is_approved %}
+                <button onclick="approveInstitution('{{ institution.uid }}')" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    Approve Institution
+                </button>
+                {% else %}
+                <button onclick="unapproveInstitution('{{ institution.uid }}')" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    Unapprove Institution
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white ${
+        type === 'success' ? 'bg-green-600' : 'bg-red-600'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function updateStatusBadge(isApproved) {
+    const badge = document.getElementById('status-badge');
+    if (isApproved) {
+        badge.className = 'px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800';
+        badge.textContent = 'Approved';
+    } else {
+        badge.className = 'px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800';
+        badge.textContent = 'Pending Approval';
+    }
+}
+
+function approveInstitution(uid) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    fetch(`/institution/${uid}/approve/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification(data.message);
+            updateStatusBadge(true);
+            // Update the button
+            const buttonContainer = document.querySelector('.mt-8.flex.justify-start');
+            buttonContainer.innerHTML = `
+                {% csrf_token %}
+                <button onclick="unapproveInstitution('${uid}')" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    Unapprove Institution
+                </button>
+            `;
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while approving the institution', 'error');
+    });
+}
+
+function unapproveInstitution(uid) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    fetch(`/institution/${uid}/unapprove/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification(data.message);
+            updateStatusBadge(false);
+            // Update the button
+            const buttonContainer = document.querySelector('.mt-8.flex.justify-start');
+            buttonContainer.innerHTML = `
+                {% csrf_token %}
+                <button onclick="approveInstitution('${uid}')" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    Approve Institution
+                </button>
+            `;
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while unapproving the institution', 'error');
+    });
+}
+</script>
+{% endblock %}
+{% endblock %} 

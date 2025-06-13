@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution
+from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -183,57 +183,117 @@ class ReviewForm(forms.ModelForm):
         }
 
 class InstitutionRegistrationForm(forms.ModelForm):
-    num_classrooms = forms.IntegerField(
-        min_value=1,
-        max_value=20,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Number of Classrooms',
-            'id': 'num-classrooms'
-        })
-    )
-
     class Meta:
         model = Institution
-        fields = ['name', 'address', 'description', 'institution_type', 'website_url', 
-                 'contact_email', 'contact_phone', 'facilities_available', 
-                 'additional_services']
+        fields = ['name', 'address', 'description', 'website_url', 
+                 'contact_email', 'contact_phone', 'additional_services']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Institution Name'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Full Address'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description'}),
-            'institution_type': forms.Select(attrs={'class': 'form-control'}),
             'website_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Website URL'}),
             'contact_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Contact Email'}),
             'contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Phone'}),
-            'facilities_available': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Available Facilities'}),
             'additional_services': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Additional Services'}),
         }
 
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if not name:
+            raise forms.ValidationError("Institution name is required.")
+        if len(name) < 3:
+            raise forms.ValidationError("Institution name must be at least 3 characters long.")
+        return name
+
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if not description:
+            raise forms.ValidationError("Description is required.")
+        if len(description) < 10:
+            raise forms.ValidationError("Description must be at least 10 characters long.")
+        return description
+
+    def clean_contact_email(self):
+        email = self.cleaned_data.get('contact_email')
+        if not email:
+            raise forms.ValidationError("Contact email is required.")
+        if not '@' in email or not '.' in email:
+            raise forms.ValidationError("Please enter a valid email address.")
+        return email
+
     def clean_contact_phone(self):
         phone = self.cleaned_data.get('contact_phone')
-        if not phone.isdigit():
-            raise forms.ValidationError("Phone number should contain only digits.")
+        if not phone:
+            raise forms.ValidationError("Contact phone number is required.")
+        # Remove any non-digit characters
+        phone = ''.join(filter(str.isdigit, phone))
         if len(phone) < 10 or len(phone) > 15:
-            raise forms.ValidationError("Phone number should be between 10 to 15 digits.")
+            raise forms.ValidationError("Phone number must be between 10 and 15 digits.")
         return phone
+
+    def clean_address(self):
+        address = self.cleaned_data.get('address')
+        if not address:
+            raise forms.ValidationError("Address is required.")
+        if len(address) < 10:
+            raise forms.ValidationError("Please provide a complete address.")
+        return address
+
+    def clean_website_url(self):
+        url = self.cleaned_data.get('website_url')
+        if url:  # Website URL is optional
+            if not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            if not '.' in url:
+                raise forms.ValidationError("Please enter a valid website URL.")
+        return url
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Add any cross-field validation here if needed
+        return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # Get classroom data from form data
-        classrooms = {}
-        num_classrooms = self.cleaned_data.get('num_classrooms', 1)
-        
-        for i in range(1, num_classrooms + 1):
-            capacity = self.data.get(f'classroom_{i}_capacity')
-            if capacity:
-                classrooms[f'classroom_{i}'] = {
-                    'capacity': int(capacity),
-                    'name': f'Classroom {i}'
-                }
-        
-        instance.classrooms = classrooms
-        
         if commit:
             instance.save()
         return instance
+
+class InstitutionCouponForm(forms.ModelForm):
+    class Meta:
+        model = InstitutionCoupon
+        fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 
+                 'max_usage', 'status']
+        widgets = {
+            'valid_from': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'valid_to': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'discount_value': forms.NumberInput(attrs={'min': '0', 'step': '0.01'}),
+            'max_usage': forms.NumberInput(attrs={'min': '1'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        institution_id = kwargs.pop('institution_id', None)
+        super().__init__(*args, **kwargs)
+        if institution_id:
+            self.fields['code'].validators.append(self.validate_unique_code(institution_id))
+
+    def validate_unique_code(self, institution_id):
+        def validator(value):
+            if InstitutionCoupon.objects.filter(code=value, institution_id=institution_id).exists():
+                raise ValidationError('This coupon code already exists for this institution.')
+        return validator
+
+    def clean(self):
+        cleaned_data = super().clean()
+        valid_from = cleaned_data.get('valid_from')
+        valid_to = cleaned_data.get('valid_to')
+        discount_value = cleaned_data.get('discount_value')
+        discount_type = cleaned_data.get('discount_type')
+
+        if valid_from and valid_to and valid_from >= valid_to:
+            raise ValidationError("Valid from date must be before valid to date.")
+
+        if discount_type == 'PERCENTAGE' and discount_value > 100:
+            raise ValidationError("Percentage discount cannot be more than 100%.")
+
+        return cleaned_data

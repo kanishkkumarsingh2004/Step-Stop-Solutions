@@ -45,13 +45,13 @@
                     {% for institution in institutions %}
                     <tr>
                         <td class="px=3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">{{ institution.owner.get_full_name }}</td>
-                        <td class="px=3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">
-                            <span class="px=2 py-1 text-2xs sm:text-xs font-semibold rounded-full {% if institution.is_approved %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">
+                            <span class="px-2 py-1 text-2xs sm:text-xs font-semibold rounded-full {% if institution.is_approved %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
                                 {% if institution.is_approved %}Approved{% else %}Pending{% endif %}
                             </span>
                         </td>
                         <td class="px=3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
-                            <a href="{% url 'institution_details' institution.id %}" class="text-blue-600 hover:text-blue-900 text-xs">
+                            <a href="{% url 'institution_details' institution.uid %}" class="text-blue-600 hover:text-blue-900 text-xs">
                                 View Details
                             </a>
                         </td>

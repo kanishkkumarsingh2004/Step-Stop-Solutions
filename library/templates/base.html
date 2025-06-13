@@ -70,7 +70,11 @@
                                     {% if user.is_superuser %}
                                         <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Admin Dashboard</a>
                                     {% endif %}
-                                    <a href="{% url 'coaching_dashboard' %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Coaching Dashboard</a>
+                                    {% if user.owned_institutions.all %}
+                                        {% with first_institution=user.owned_institutions.first %}
+                                            <a href="{% url 'coaching_dashboard' first_institution.uid %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Coaching Dashboard</a>
+                                        {% endwith %}
+                                    {% endif %}
                                     <a href="/dashboard/" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Dashboard</a>
                                     {% if user.libraries_staffed.all %}
                                         {% for library in user.libraries_staffed.all %}

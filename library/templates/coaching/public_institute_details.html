@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:shadow-3xl">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-200">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <!-- Institute Name -->
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                    {{ institution.name }}
+                </h1>
+                
+                <!-- Status Badge -->
+                <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm bg-green-100 text-green-800">
+                    Approved
+                </span>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="p-6 sm:p-10 space-y-8 sm:space-y-10">
+            <!-- About Card -->
+            <div class="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 sm:p-8 shadow-lg">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">About Us</h2>
+                <p class="text-gray-600 leading-relaxed text-base sm:text-lg">
+                    {{ institution.description }}
+                </p>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <!-- Owner Card -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">👤 Owner</h2>
+                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ institution.owner.get_full_name }}</p>
+                </div>
+
+                <!-- Address Card -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">📍 Address</h2>
+                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ institution.address }}</p>
+                </div>
+
+                <!-- Contact Card -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">📞 Contact</h2>
+                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ institution.contact_phone }}</p>
+                </div>
+            </div>
+
+            <!-- Classroom Information -->
+            <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">🏫 Classroom Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for classroom_id, classroom in institution.classrooms.items %}
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Classroom {{ forloop.counter }}</p>
+                        <p class="text-gray-900">Capacity: {{ classroom.capacity }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-600">Total Capacity</p>
+                    <p class="text-gray-900 font-semibold">{{ institution.total_capacity }}</p>
+                </div>
+            </div>
+
+            <!-- Additional Services -->
+            {% if institution.additional_services %}
+            <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">✨ Additional Services</h2>
+                <p class="text-gray-600 text-base sm:text-lg">{{ institution.additional_services }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Contact Info Footer -->
+        <div class="px-6 sm:px-10 py-6 sm:py-8 border-t border-gray-100 bg-gray-50">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">📧 Email</h3>
+                    <p class="text-gray-600">{{ institution.contact_email }}</p>
+                </div>
+                {% if institution.website_url %}
+                <div class="bg-white rounded-2xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">🌐 Website</h3>
+                    <a href="{{ institution.website_url }}" class="text-blue-600 hover:text-blue-800" target="_blank">
+                        {{ institution.website_url }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

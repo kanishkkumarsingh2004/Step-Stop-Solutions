@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                        {% if coupon %}Edit Coupon{% else %}Create New Coupon{% endif %}
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-500">
+                        {% if coupon %}Update the details of your existing coupon{% else %}Create a new coupon for your institution{% endif %}
+                    </p>
+                </div>
+                <div class="mt-4 flex md:mt-0 md:ml-4">
+                    <a href="{% url 'manage_institution_coupons' institution.uid %}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Back to Coupons
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Messages Section -->
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div class="rounded-md p-4 {% if message.tags == 'error' %}bg-red-50 text-red-700{% elif message.tags == 'success' %}bg-green-50 text-green-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        {% if message.tags == 'error' %}
+                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                        {% elif message.tags == 'success' %}
+                        <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        {% else %}
+                        <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">{{ message }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Form Section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <form method="post" class="space-y-6 p-6">
+                {% csrf_token %}
+                
+                <!-- Coupon Code -->
+                <div>
+                    <label for="code" class="block text-sm font-medium text-gray-700">Coupon Code</label>
+                    <div class="mt-1">
+                        <input type="text" name="code" id="code" 
+                               value="{{ form.code.value|default:'' }}"
+                               class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.code.errors %}border-red-300{% endif %}"
+                               required>
+                    </div>
+                    {% if form.code.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.code.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Discount Type and Value -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        <label for="discount_type" class="block text-sm font-medium text-gray-700">Discount Type</label>
+                        <div class="mt-1">
+                            <select name="discount_type" id="discount_type" 
+                                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.discount_type.errors %}border-red-300{% endif %}"
+                                    required>
+                                <option value="PERCENTAGE" {% if form.discount_type.value == 'PERCENTAGE' %}selected{% endif %}>Percentage</option>
+                                <option value="FIXED" {% if form.discount_type.value == 'FIXED' %}selected{% endif %}>Fixed Amount</option>
+                            </select>
+                        </div>
+                        {% if form.discount_type.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.discount_type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="discount_value" class="block text-sm font-medium text-gray-700">Discount Value</label>
+                        <div class="mt-1">
+                            <input type="number" name="discount_value" id="discount_value" 
+                                   value="{{ form.discount_value.value|default:'' }}"
+                                   min="0" step="0.01"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.discount_value.errors %}border-red-300{% endif %}"
+                                   required>
+                        </div>
+                        {% if form.discount_value.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.discount_value.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Validity Period -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        <label for="valid_from" class="block text-sm font-medium text-gray-700">Valid From</label>
+                        <div class="mt-1">
+                            <input type="date" name="valid_from" id="valid_from" 
+                                   value="{{ form.valid_from.value|date:'Y-m-d'|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.valid_from.errors %}border-red-300{% endif %}"
+                                   required>
+                        </div>
+                        {% if form.valid_from.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.valid_from.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="valid_to" class="block text-sm font-medium text-gray-700">Valid To</label>
+                        <div class="mt-1">
+                            <input type="date" name="valid_to" id="valid_to" 
+                                   value="{{ form.valid_to.value|date:'Y-m-d'|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.valid_to.errors %}border-red-300{% endif %}"
+                                   required>
+                        </div>
+                        {% if form.valid_to.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.valid_to.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Usage Limits -->
+                <div>
+                    <label for="max_usage" class="block text-sm font-medium text-gray-700">Maximum Usage</label>
+                    <div class="mt-1">
+                        <input type="number" name="max_usage" id="max_usage" 
+                               value="{{ form.max_usage.value|default:'' }}"
+                               min="1"
+                               class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.max_usage.errors %}border-red-300{% endif %}"
+                               required>
+                    </div>
+                    {% if form.max_usage.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.max_usage.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                    <div class="mt-1">
+                        <select name="status" id="status" 
+                                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.status.errors %}border-red-300{% endif %}"
+                                required>
+                            <option value="ACTIVE" {% if form.status.value == 'ACTIVE' %}selected{% endif %}>Active</option>
+                            <option value="INACTIVE" {% if form.status.value == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                    {% if form.status.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.status.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% if coupon %}Update Coupon{% else %}Create Coupon{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Set minimum date for valid_from to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('valid_from').min = today;
+    
+    // Ensure valid_to is after valid_from
+    document.getElementById('valid_from').addEventListener('change', function() {
+        document.getElementById('valid_to').min = this.value;
+    });
+    
+    // Ensure valid_from is before valid_to
+    document.getElementById('valid_to').addEventListener('change', function() {
+        document.getElementById('valid_from').max = this.value;
+    });
+</script>
+{% endblock %}
+{% endblock %} 

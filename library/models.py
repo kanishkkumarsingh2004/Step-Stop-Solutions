@@ -150,11 +150,11 @@ class CustomUser(AbstractUser):
         ]
 
 class Institution(models.Model):
+    uid = ShortUUIDField(length=20, max_length=20, unique=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz')
     name = models.CharField(max_length=200)
     address = models.TextField()
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='owned_institutions')
     description = models.TextField()
-    institution_type = models.CharField(max_length=100, help_text="Type of institution")
     website_url = models.URLField(blank=True, null=True)
     contact_email = models.EmailField()
     contact_phone = models.CharField(max_length=15)
@@ -464,3 +464,61 @@ class AdminExpense(models.Model):
 
     def __str__(self):
         return f"{self.name} - ₹{self.amount} ({self.get_type_display()}) - {self.date}"
+
+class InstitutionCoupon(models.Model):
+    DISCOUNT_TYPE_CHOICES = [
+        ('PERCENTAGE', 'Percentage'),
+        ('FIXED', 'Fixed Amount'),
+    ]
+
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('INACTIVE', 'Inactive'),
+        ('EXPIRED', 'Expired'),
+    ]
+
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='coupons')
+    code = models.CharField(max_length=20, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    max_usage = models.PositiveIntegerField(default=1)
+    current_usage = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ACTIVE')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.code} - {self.institution.name}"
+
+    def is_valid(self):
+        now = timezone.now()
+        return (
+            self.status == 'ACTIVE' and
+            self.valid_from <= now <= self.valid_to and
+            self.current_usage < self.max_usage
+        )
+
+    def apply_discount(self, amount):
+        if not self.is_valid():
+            return amount
+        
+        if self.discount_type == 'PERCENTAGE':
+            discount = (amount * self.discount_value) / 100
+        else:  # FIXED
+            discount = self.discount_value
+        
+        return max(0, amount - discount)
+
+    def use_coupon(self):
+        if self.is_valid():
+            self.current_usage += 1
+            if self.current_usage >= self.max_usage:
+                self.status = 'INACTIVE'
+            self.save()
+            return True
+        return False
