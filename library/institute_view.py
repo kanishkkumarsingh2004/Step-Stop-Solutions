@@ -3,14 +3,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 import logging
 from django.utils.timezone import now
-from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm
+from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db import models
 import re
+from django.db import transaction
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -137,7 +138,7 @@ def edit_institution_profile(request, uid):
     # Check if the user is the owner of the institution
     if request.user != institution.owner:
         messages.error(request, "You don't have permission to edit this institution.")
-        return redirect('coaching_dashboard')
+        return redirect('coaching_dashboard', uid=institution.uid)
     
     if request.method == 'POST':
         form = InstitutionRegistrationForm(request.POST, instance=institution)
@@ -194,14 +195,27 @@ def edit_institution_profile(request, uid):
                 
                 # Update the classrooms field
                 institution.classrooms = classrooms
-                institution.save()
                 
-                messages.success(request, "Institution profile updated successfully!")
-                return redirect('coaching_dashboard')
+                # Save all changes in a transaction
+                with transaction.atomic():
+                    institution.save()
+                    messages.success(request, "Institution profile updated successfully!")
+                    return redirect('coaching_dashboard', uid=institution.uid)
+                    
             except Exception as e:
                 logger.error(f"Error updating institution: {str(e)}")
-                messages.error(request, "An error occurred while updating the institution. Please try again.")
+                # Clear any existing messages to prevent mixed messages
+                storage = messages.get_messages(request)
+                storage.used = True
+                messages.error(request, f"An error occurred while updating the institution: {str(e)}")
+                return render(request, 'coaching/edit_institution_profile.html', {
+                    'form': form,
+                    'institution': institution
+                })
         else:
+            # Clear any existing messages to prevent mixed messages
+            storage = messages.get_messages(request)
+            storage.used = True
             # Form validation failed
             for field, errors in form.errors.items():
                 for error in errors:
@@ -553,3 +567,51 @@ def remove_institution_image(request, uid):
             'status': 'error',
             'message': 'An error occurred while removing the image.'
         }, status=500)
+
+@login_required
+def manage_institution_banner(request, uid):
+    """Manage banners for an institution."""
+    institution = get_object_or_404(Institution, uid=uid)
+    
+    # Check if user has permission to manage banners
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to manage banners for this institution.")
+        return redirect('home')
+    
+    banners = institution.banners.order_by('-created_at')
+    
+    if request.method == 'POST':
+        form = InstitutionBannerForm(request.POST)
+        if form.is_valid():
+            banner = form.save(commit=False)
+            banner.institution = institution
+            banner.save()
+            messages.success(request, 'Banner added successfully!')
+            return redirect('manage_institution_banner', uid=institution.uid)
+        else:
+            messages.error(request, 'Invalid banner data. Please check the form.')
+    else:
+        form = InstitutionBannerForm()
+    
+    context = {
+        'institution': institution,
+        'banners': banners,
+        'form': form,
+    }
+    
+    return render(request, 'coaching/manage_institution_banner.html', context)
+
+@login_required
+def delete_institution_banner(request, banner_id):
+    """Delete an institution banner."""
+    banner = get_object_or_404(InstitutionBanner, id=banner_id)
+    institution = banner.institution
+    
+    # Check if user has permission to delete the banner
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to delete this banner.")
+        return redirect('home')
+    
+    banner.delete()
+    messages.success(request, 'Banner deleted successfully!')
+    return redirect('manage_institution_banner', uid=institution.uid)

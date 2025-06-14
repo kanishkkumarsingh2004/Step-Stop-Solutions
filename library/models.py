@@ -172,6 +172,7 @@ class Institution(models.Model):
     upi_id = models.CharField(max_length=255, blank=True, null=True, help_text="UPI ID for receiving payments")
     recipient_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of the UPI payment recipient")
     thank_you_message = models.TextField(blank=True, null=True, help_text="Message to show after successful payment")
+    max_banners = models.PositiveIntegerField(default=2, help_text="Maximum number of banners allowed")
 
     def __str__(self):
         return self.name
@@ -584,3 +585,31 @@ class InstitutionImage(models.Model):
             if match:
                 return match.group(1)
         return None
+
+class InstitutionBanner(models.Model):
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='banners')
+    google_drive_link = models.CharField(max_length=1000)
+    google_drive_id = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.google_drive_link:
+            self.google_drive_id = self.extract_file_id(self.google_drive_link)
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def extract_file_id(url):
+        patterns = [
+            r'/file/d/([^/]+)',
+            r'/open\?id=([^&]+)',
+            r'/uc\?id=([^&]+)',
+            r'/uc\?export=view&id=([^&]+)'
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return None
+
+    def __str__(self):
+        return f"Banner for {self.institution.name}"

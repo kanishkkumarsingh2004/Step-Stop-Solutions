@@ -25,4 +25,7 @@ urlpatterns = [
    # Image management URLs
    path('institution/<str:uid>/update-image/', institute_view.update_institution_image, name='update_institution_image'),
    path('institution/<str:uid>/remove-image/', institute_view.remove_institution_image, name='remove_institution_image'),
+   # Banner management URLs
+   path('institution/<str:uid>/manage-banner/', institute_view.manage_institution_banner, name='manage_institution_banner'),
+   path('institution/banner/<int:banner_id>/delete/', institute_view.delete_institution_banner, name='delete_institution_banner'),
 ]

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon
+from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon, InstitutionBanner
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
@@ -158,6 +158,11 @@ class BannerForm(forms.ModelForm):
             raise forms.ValidationError("Could not extract file ID from the provided link")
             
         return link
+
+class InstitutionBannerForm(forms.ModelForm):
+    class Meta:
+        model = InstitutionBanner
+        fields = ['google_drive_link']
 
 class LibraryImageForm(forms.ModelForm):
     class Meta:

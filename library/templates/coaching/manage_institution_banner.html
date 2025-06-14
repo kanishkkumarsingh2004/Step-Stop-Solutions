@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Banners for {{ institution.name }}</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <!-- Banner Limit Info -->
+        <div class="mb-6 bg-blue-50 p-4 rounded-lg">
+            <p class="text-sm text-blue-800">
+                You can add up to {{ institution.max_banners }} banners
+            </p>
+            <p class="text-sm text-blue-800 mt-2">
+                Note: First upload your image to Google Drive, then provide us the link. Make sure to set the sharing permission to "Anyone with the link".
+            </p>
+        </div>
+
+        <!-- Banner Forms -->
+        <div class="space-y-4">
+            {% if banners.count < institution.max_banners %}
+            <div class="p-4 border rounded-lg flex gap-6">
+                <form method="post" class="space-y-4 flex-1">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Google Drive Link</label>
+                        <input type="url" name="google_drive_link" 
+                               class="w-full px-3 py-2 border rounded-lg" 
+                               placeholder="Enter Google Drive link (make sure sharing is enabled)" 
+                               pattern="https://drive\.google\.com/.*">
+                        <p class="text-xs text-gray-500 mt-1">Upload to Google Drive first and set sharing to "Anyone with the link"</p>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" 
+                                class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                            Add Banner
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if banners.count >= institution.max_banners %}
+            <div class="p-4 bg-yellow-50 rounded-lg">
+                <p class="text-sm text-yellow-800">
+                    You've reached your banner limit of {{ institution.max_banners }}. 
+                    <a href="#" class="text-blue-600 hover:text-blue-800">Subscribe to our plans</a> 
+                    to add more banners. (Coming soon)
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Existing Banners -->
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Current Banners</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {% for banner in banners %}
+                <div class="relative group">
+                    <div class="w-full h-48 bg-white rounded-lg shadow-md overflow-hidden">
+                        <img src="https://drive.google.com/thumbnail?id={{ banner.google_drive_id }}&sz=s800" 
+                             alt="Banner for {{ institution.name }}" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center space-x-2">
+                        <form method="post" action="{% url 'delete_institution_banner' banner.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-transparent hover:bg-transparent text-red-500 hover:text-red-600 px-2 py-1 rounded-md">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500">No banners found.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

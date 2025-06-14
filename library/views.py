@@ -2181,14 +2181,22 @@ def manage_banner_counts(request):
     if request.method == 'POST':
         library_id = request.POST.get('library_id')
         max_banners = request.POST.get('max_banners')
-        library = get_object_or_404(Library, id=library_id)
-        library.max_banners = max_banners
-        library.save()
-        messages.success(request, 'Banner count updated successfully!')
+        if library_id:
+            library = get_object_or_404(Library, id=library_id)
+            library.max_banners = max_banners
+            library.save()
+            messages.success(request, 'Library banner count updated successfully!')
+        else:
+            institution_id = request.POST.get('institution_id')
+            institution = get_object_or_404(Institution, id=institution_id)
+            institution.max_banners = max_banners
+            institution.save()
+            messages.success(request, 'Institution banner count updated successfully!')
         return redirect('manage_banner_counts')
     
     search_query = request.GET.get('search', '')
     libraries = Library.objects.all()
+    institutions = Institution.objects.all()
     
     if search_query:
         libraries = libraries.filter(
@@ -2196,9 +2204,15 @@ def manage_banner_counts(request):
             Q(owner__last_name__icontains=search_query) |
             Q(venue_name__icontains=search_query)
         )
+        institutions = institutions.filter(
+            Q(owner__first_name__icontains=search_query) |
+            Q(owner__last_name__icontains=search_query) |
+            Q(name__icontains=search_query)
+        )
     
     return render(request, 'admin_page/manage_banner_counts.html', {
         'libraries': libraries,
+        'institutions': institutions,
         'search_query': search_query
     })
 

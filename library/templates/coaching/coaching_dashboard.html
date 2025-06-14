@@ -210,6 +210,20 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- Manage Banners Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-images text-blue-500 text-lg sm:text-xl"></i>
+                <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Manage Banners</h2>
+            </div>
+            <div class="space-y-2">
+                <a href="{% url 'manage_institution_banner' institution.uid %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Manage Banners</span>
+                    <i class="bi bi-images text-gray-500 text-sm sm:text-base"></i>
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -34,12 +34,50 @@
 
         <!-- Main Content Section -->
         <div class="p-6 sm:p-10 space-y-8 sm:space-y-10">
-            <!-- About Card -->
-            <div class="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 sm:p-8 shadow-lg">
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">About Us</h2>
-                <p class="text-gray-600 leading-relaxed text-base sm:text-lg">
-                    {{ institution.description }}
-                </p>
+            <!-- About and Banners Section -->
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 sm:p-8 shadow-lg w-full md:w-2/5">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">About Us</h2>
+                    <p class="text-gray-600 leading-relaxed text-base sm:text-lg">
+                        {{ institution.description }}
+                    </p>
+                </div>
+                {% if institution.banners.all %}
+                <div class="bg-white rounded-2xl p-6 shadow-lg overflow-hidden w-full md:w-3/5" style="height: 100%;">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">📢 Photo Gallery</h3>
+                    <div class="relative w-full aspect-[16/9] overflow-hidden rounded-lg h-51 sm:h-auto">
+                        <!-- Navigation Arrows -->
+                        <button class="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-white/50 hover:bg-white/75 rounded-full p-1.5 sm:p-2 z-10 transition-all duration-200" onclick="prevSlide()">
+                            <svg class="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <button class="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-white/50 hover:bg-white/75 rounded-full p-1.5 sm:p-2 z-10 transition-all duration-200" onclick="nextSlide()">
+                            <svg class="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+
+                        <!-- Slides Container -->
+                        <div class="absolute inset-0 flex transition-transform duration-500 ease-in-out" id="slides-container">
+                            {% for banner in institution.banners.all %}
+                            <div class="w-full h-full flex-shrink-0">
+                                <img src="https://drive.google.com/thumbnail?id={{ banner.google_drive_id }}&sz=s800" 
+                                     alt="Institution Banner" 
+                                     class="w-full h-full object-cover">
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination Dots -->
+                        <div class="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1 sm:space-x-2">
+                            {% for banner in institution.banners.all %}
+                            <button class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white/50 hover:bg-white/75 transition-all duration-200" onclick="goToSlide('{{ forloop.counter0 }}')" id="dot-{{ forloop.counter0 }}"></button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Details Grid -->
@@ -204,6 +242,57 @@
 
 {% block extra_js %}
 <script>
+let currentSlide = 0;
+const totalSlides = '{{ institution.banners.all|length }}';
+let autoSlideInterval;
+
+function showSlide(index) {
+    const slidesContainer = document.getElementById('slides-container');
+    const offset = -index * 100;
+    slidesContainer.style.transform = `translateX(${offset}%)`;
+    
+    // Update active dot
+    document.querySelectorAll('[id^="dot-"]').forEach(dot => {
+        dot.classList.remove('bg-white');
+        dot.classList.add('bg-white/50');
+    });
+    document.getElementById(`dot-${index}`).classList.remove('bg-white/50');
+    document.getElementById(`dot-${index}`).classList.add('bg-white');
+}
+
+function nextSlide() {
+    currentSlide = (currentSlide + 1) % totalSlides;
+    showSlide(currentSlide);
+    resetAutoSlide();
+}
+
+function prevSlide() {
+    currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+    showSlide(currentSlide);
+    resetAutoSlide();
+}
+
+function goToSlide(index) {
+    currentSlide = index;
+    showSlide(currentSlide);
+    resetAutoSlide();
+}
+
+function startAutoSlide() {
+    autoSlideInterval = setInterval(nextSlide, 3000);
+}
+
+function resetAutoSlide() {
+    clearInterval(autoSlideInterval);
+    startAutoSlide();
+}
+
+// Initialize
+if (totalSlides > 0) {
+    showSlide(0);
+    startAutoSlide();
+}
+
 let selectedRating = 0;
 
 function openReviewModal() {
