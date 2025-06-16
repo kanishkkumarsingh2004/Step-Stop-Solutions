@@ -500,6 +500,7 @@ class InstitutionCoupon(models.Model):
     max_usage = models.PositiveIntegerField(default=1)
     current_usage = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ACTIVE')
+    applicable_plans = models.ManyToManyField('InstitutionSubscriptionPlan', blank=True, help_text="Subscription plans this coupon can be applied to")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -516,6 +517,15 @@ class InstitutionCoupon(models.Model):
             self.valid_from <= now <= self.valid_to and
             self.current_usage < self.max_usage
         )
+
+    def is_applicable_to_plan(self, subscription_plan):
+        """
+        Check if this coupon is applicable to a specific subscription plan.
+        If no plans are specified in applicable_plans, the coupon applies to all plans.
+        """
+        if not self.applicable_plans.exists():
+            return True
+        return subscription_plan in self.applicable_plans.all()
 
     def apply_discount(self, amount):
         if not self.is_valid():
@@ -640,4 +650,38 @@ class InstitutionSubscriptionPlan(models.Model):
     class Meta:
         verbose_name = "Institution Subscription Plan"
         verbose_name_plural = "Institution Subscription Plans"
+        ordering = ['-created_at']
+
+class InstitutionSubscription(models.Model):
+    STATUS_CHOICES = [
+        ('valid', 'Valid'),
+        ('expired', 'Expired'),
+    ]
+    
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='institution_subscriptions')
+    subscription_plan = models.ForeignKey(InstitutionSubscriptionPlan, on_delete=models.CASCADE, related_name='subscriptions')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='valid')
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_id = models.CharField(max_length=100, unique=True)
+    coupon_applied = models.ForeignKey(InstitutionCoupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='applied_subscriptions')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.subscription_plan.name}"
+
+    def save(self, *args, **kwargs):
+        # Update status based on end date
+        today = timezone.now().date()
+        if self.end_date < today:
+            self.status = 'expired'
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Institution Subscription"
+        verbose_name_plural = "Institution Subscriptions"
         ordering = ['-created_at']

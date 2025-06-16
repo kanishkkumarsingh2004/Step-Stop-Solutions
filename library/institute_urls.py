@@ -35,4 +35,7 @@ urlpatterns = [
    path('update-subscription/<int:subscription_id>/', institute_view.update_subscription, name='update_subscription'),
    path('institute-details/<str:uid>/subscriptions/', institute_view.public_institute_subscriptions, name='public_institute_subscriptions'),
    path('subscription/<int:subscription_id>/apply-coupon/', institute_view.apply_subscription_coupon, name='apply_subscription_coupon'),
+   path('institution/<str:uid>/subscription/<int:subscription_id>/payment/', institute_view.institute_subscription_payment, name='institute_subscription_payment'),
+   path('institution/<str:uid>/subscription/<int:subscription_id>/process-payment/', institute_view.process_subscription_payment, name='process_subscription_payment'),
+   path('institution/<str:uid>/subscription/<int:subscription_id>/details/', institute_view.institute_subscription_details, name='institute_subscription_details'),
 ]

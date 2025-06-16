@@ -5,7 +5,7 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, UserSubscription
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription   
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
@@ -18,6 +18,10 @@ from django.db.models import Q
 import json
 from decimal import Decimal
 import decimal
+import base64
+from io import BytesIO
+from datetime import timedelta
+import qrcode
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -323,7 +327,14 @@ def edit_institution_coupon(request, uid, coupon_id):
         form = InstitutionCouponForm(request.POST, instance=coupon, institution_id=institution.id)
         if form.is_valid():
             try:
-                form.save()
+                # Save the coupon first
+                coupon = form.save(commit=False)
+                coupon.institution = institution
+                coupon.save()
+                
+                # Save the many-to-many relationships
+                form.save_m2m()
+                
                 messages.success(request, "Coupon updated successfully!")
                 return redirect('manage_institution_coupons', uid=institution.uid)
             except Exception as e:
@@ -774,6 +785,16 @@ def apply_subscription_coupon(request, subscription_id):
                 'success': False,
                 'error': 'Coupon has expired or reached maximum usage'
             })
+            
+        # Check if coupon is applicable to this subscription plan
+        if coupon.applicable_plans.exists():
+            if subscription not in coupon.applicable_plans.all():
+                # Get the list of applicable plans for better error message
+                applicable_plans = [plan.name for plan in coupon.applicable_plans.all()]
+                return JsonResponse({
+                    'success': False,
+                    'error': f'This coupon is not applicable to the "{subscription.name}" plan. It can only be used for: {", ".join(applicable_plans)}'
+                })
         
         # Calculate discounted price
         try:
@@ -787,7 +808,8 @@ def apply_subscription_coupon(request, subscription_id):
                 discounted_price = current_price - discount_amount
             else:  # FIXED amount
                 # Apply fixed discount
-                discounted_price = current_price - discount_value
+                discount_amount = discount_value
+                discounted_price = current_price - discount_amount
             
             # Ensure discounted price doesn't go below 0
             discounted_price = max(discounted_price, Decimal('0'))
@@ -798,21 +820,46 @@ def apply_subscription_coupon(request, subscription_id):
             # Round all values to 2 decimal places
             discounted_price = discounted_price.quantize(Decimal('0.01'))
             savings = savings.quantize(Decimal('0.01'))
+            discount_amount = discount_amount.quantize(Decimal('0.01'))
+            
+            # Store all necessary data in session
+            session_key = f'subscription_{subscription_id}'
+            request.session[session_key] = {
+                'coupon_code': coupon_code,
+                'original_price': float(current_price),
+                'discount_amount': float(discount_amount),
+                'final_price': float(discounted_price),
+                'discount_type': coupon.discount_type,
+                'discount_value': float(coupon.discount_value),
+                'subscription_name': subscription.name,
+                'subscription_id': subscription.id,
+                'institution_uid': subscription.institution.uid,
+                'course_duration': subscription.course_duration,
+                'start_time': subscription.start_time.strftime('%H:%M'),
+                'end_time': subscription.end_time.strftime('%H:%M'),
+                'start_date': subscription.start_date.strftime('%Y-%m-%d')
+            }
+            
             
             return JsonResponse({
                 'success': True,
-                'discounted_price': float(discounted_price),
-                'original_price': float(current_price),
-                'discount_amount': float(savings),
-                'coupon_code': coupon.code
+                'message': 'Coupon applied successfully',
+                'discounted_price': str(discounted_price),
+                'discount_amount': str(discount_amount),
+                'original_price': str(current_price),
+                'coupon_code': coupon_code,
+                'applicable_plans': [plan.name for plan in coupon.applicable_plans.all()] if coupon.applicable_plans.exists() else ['All Plans'],
+                'discount_type': coupon.discount_type,
+                'discount_value': str(coupon.discount_value)
             })
             
         except (ValueError, TypeError, decimal.InvalidOperation) as e:
+            logger.error(f"Error calculating discount: {str(e)}")
             return JsonResponse({
                 'success': False,
                 'error': 'Error calculating discount. Please try again.'
             })
-        
+            
     except InstitutionSubscriptionPlan.DoesNotExist:
         return JsonResponse({
             'success': False,
@@ -824,7 +871,183 @@ def apply_subscription_coupon(request, subscription_id):
             'error': 'Invalid request data'
         })
     except Exception as e:
+        logger.error(f"Unexpected error in apply_subscription_coupon: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': 'An unexpected error occurred. Please try again.'
         })
+
+@login_required
+def institute_subscription_payment(request, uid, subscription_id):
+    try:
+        institution = Institution.objects.get(uid=uid)
+        subscription_plan = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
+        
+        # Get stored session data
+        session_key = f'subscription_{subscription_id}'
+        session_data = request.session.get(session_key, {})
+        
+        if not session_data:
+            # If no session data exists, use default values
+            current_price = subscription_plan.new_price
+            applied_coupon = None
+            discount_amount = 0
+            original_price = subscription_plan.old_price
+        else:
+            # Use stored session data
+            current_price = Decimal(str(session_data.get('final_price', subscription_plan.new_price)))
+            applied_coupon = session_data.get('coupon_code')
+            discount_amount = Decimal(str(session_data.get('discount_amount', 0)))
+            original_price = Decimal(str(session_data.get('original_price', subscription_plan.old_price)))
+        
+        # Generate UPI payment URL
+        upi_url = f"upi://pay?pa={institution.upi_id}&pn={institution.recipient_name}&am={float(current_price)}&cu=INR&tn=Subscription Payment"
+        
+        # Generate QR code for UPI payment
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(upi_url)
+        qr.make(fit=True)
+        qr_image = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convert QR code to base64 for display
+        buffer = BytesIO()
+        qr_image.save(buffer, format='PNG')
+        qr_image_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        context = {
+            'institution': institution,
+            'subscription_plan': subscription_plan,
+            'current_price': current_price,
+            'applied_coupon': applied_coupon,
+            'upi_url': upi_url,
+            'qr_code': qr_image_base64,
+            'upi_id': institution.upi_id,
+            'recipient_name': institution.recipient_name,
+            'original_price': original_price,
+            'discount_amount': discount_amount,
+            'final_price': current_price,
+        }
+        
+        return render(request, 'coaching/institute_subscription_payment.html', context)
+        
+    except Institution.DoesNotExist:
+        messages.error(request, 'Institution not found.')
+        return redirect('home')
+    except InstitutionSubscriptionPlan.DoesNotExist:
+        messages.error(request, 'Subscription plan not found.')
+        return redirect('home')
+    except Exception as e:
+        logger.error(f"Error in institute_subscription_payment: {str(e)}")
+        messages.error(request, 'An error occurred while processing your request.')
+        return redirect('home')
+
+@login_required
+def process_subscription_payment(request, institution_id, subscription_id):
+    try:
+        institution = Institution.objects.get(id=institution_id)
+        subscription = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
+        
+        # Get the final price and coupon from session
+        session_price = request.session.get(f'subscription_{subscription_id}_price')
+        coupon_code = request.session.get(f'subscription_{subscription_id}_coupon')
+        
+        # Get the current price
+        current_price = Decimal(str(session_price)) if session_price is not None else subscription.new_price
+        
+        # Get the applied coupon if any
+        applied_coupon = None
+        if coupon_code:
+            try:
+                applied_coupon = InstitutionCoupon.objects.get(
+                    code=coupon_code,
+                    institution=institution,
+                    status='ACTIVE'
+                )
+                if not applied_coupon.is_valid():
+                    applied_coupon = None
+            except InstitutionCoupon.DoesNotExist:
+                applied_coupon = None
+        
+        # Calculate the final price
+        if applied_coupon:
+            if applied_coupon.discount_type == 'PERCENTAGE':
+                discount_amount = (current_price * applied_coupon.discount_value) / Decimal('100')
+            else:  # FIXED
+                discount_amount = applied_coupon.discount_value
+            current_price = max(current_price - discount_amount, Decimal('0'))
+            current_price = current_price.quantize(Decimal('0.01'))
+        
+        # Get transaction ID from form
+        transaction_id = request.POST.get('transaction_id')
+        if not transaction_id:
+            messages.error(request, 'Transaction ID is required')
+            return redirect('institute_subscription_payment', uid=institution.uid, subscription_id=subscription_id)
+        
+        # Create the subscription
+        subscription = InstitutionSubscription.objects.create(
+            user=request.user,
+            subscription_plan=subscription,
+            start_date=subscription.start_date,
+            end_date=subscription.start_date + timedelta(days=30 * subscription.course_duration),
+            start_time=subscription.start_time,
+            end_time=subscription.end_time,
+            amount_paid=current_price,
+            transaction_id=transaction_id,
+            coupon_applied=applied_coupon
+        )
+        
+        # Use the coupon if it was applied
+        if applied_coupon:
+            applied_coupon.use_coupon()
+        
+        # Clear session data
+        request.session.pop(f'subscription_{subscription_id}_price', None)
+        request.session.pop(f'subscription_{subscription_id}_coupon', None)
+        
+        messages.success(request, 'Subscription purchased successfully!')
+        return redirect('institute_subscription_details', uid=institution.uid, subscription_id=subscription.id)
+        
+    except Institution.DoesNotExist:
+        messages.error(request, 'Institution not found')
+        return redirect('home')
+    except InstitutionSubscriptionPlan.DoesNotExist:
+        messages.error(request, 'Subscription plan not found')
+        return redirect('home')
+    except Exception as e:
+        logger.error(f"Error in process_subscription_payment: {str(e)}")
+        messages.error(request, 'An error occurred while processing your payment')
+        return redirect('institute_subscription_payment', uid=institution.uid, subscription_id=subscription_id)
+
+@login_required
+def institute_subscription_details(request, uid, subscription_id):
+    try:
+        institution = Institution.objects.get(uid=uid)
+        subscription = InstitutionSubscription.objects.get(
+            id=subscription_id,
+            user=request.user,
+            subscription_plan__institution=institution
+        )
+        
+        context = {
+            'institution': institution,
+            'subscription': subscription,
+            'subscription_plan': subscription.subscription_plan,
+            'has_coupon': subscription.coupon_applied is not None,
+            'coupon': subscription.coupon_applied,
+            'original_price': subscription.subscription_plan.old_price,
+            'discount_amount': subscription.subscription_plan.old_price - subscription.amount_paid if subscription.coupon_applied else 0,
+            'final_price': subscription.amount_paid
+        }
+        
+        return render(request, 'coaching/institute_subscription_details.html', context)
+        
+    except Institution.DoesNotExist:
+        messages.error(request, 'Institution not found')
+        return redirect('home')
+    except InstitutionSubscription.DoesNotExist:
+        messages.error(request, 'Subscription not found')
+        return redirect('home')
+    except Exception as e:
+        logger.error(f"Error in institute_subscription_details: {str(e)}")
+        messages.error(request, 'An error occurred while loading subscription details')
+        return redirect('home')

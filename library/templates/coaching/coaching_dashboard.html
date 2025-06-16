@@ -153,19 +153,14 @@
                 <h2 class="text-base sm:text-lg font-semibold text-gray-700">Statistics</h2>
             </div>
             <div class="space-y-2">
+                <!-- Classroom Statistics -->
                 <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
                     <span class="text-xs sm:text-sm text-gray-600">Total Classrooms</span>
-                    <span class="font-semibold text-blue-600 text-base sm:text-lg">{{ institution.classrooms|length }}</span>
+                    <span class="font-semibold text-blue-600 text-base sm:text-lg">{{ classroom_stats.total_classrooms }}</span>
                 </div>
                 <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
                     <span class="text-xs sm:text-sm text-gray-600">Total Capacity</span>
-                    <span class="font-semibold text-green-600 text-base sm:text-lg">{{ institution.total_capacity }}</span>
-                </div>
-                <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <span class="text-xs sm:text-sm text-gray-600">Status</span>
-                    <span class="font-semibold {% if institution.is_approved %}text-green-600{% else %}text-yellow-600{% endif %} text-base sm:text-lg">
-                        {% if institution.is_approved %}Approved{% else %}Pending{% endif %}
-                    </span>
+                    <span class="font-semibold text-green-600 text-base sm:text-lg">{{ classroom_stats.total_capacity }}</span>
                 </div>
             </div>
         </div>
@@ -316,6 +311,17 @@
         </div>
     </div>
 </div>
+
+<!-- Error Messages -->
+{% if messages %}
+<div class="fixed top-4 right-4 z-50 space-y-2">
+    {% for message in messages %}
+    <div class="{% if message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% else %}bg-green-100 border-green-400 text-green-700{% endif %} border px-4 py-3 rounded relative animate-fade-in" role="alert">
+        <span class="block sm:inline">{{ message }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 {% block extra_js %}
 <script>

@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Edit Coupon</h1>
+            <p class="text-gray-600">Update your coupon details below</p>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Coupon Code -->
+            <div>
+                <label for="code" class="block text-sm font-medium text-gray-700 mb-1">Coupon Code</label>
+                <input type="text" 
+                       name="code" 
+                       id="code" 
+                       value="{{ coupon.code }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                       required>
+            </div>
+
+            <!-- Discount Type -->
+            <div>
+                <label for="discount_type" class="block text-sm font-medium text-gray-700 mb-1">Discount Type</label>
+                <select name="discount_type" 
+                        id="discount_type" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        required>
+                    <option value="PERCENTAGE" {% if coupon.discount_type == 'PERCENTAGE' %}selected{% endif %}>Percentage</option>
+                    <option value="FIXED" {% if coupon.discount_type == 'FIXED' %}selected{% endif %}>Fixed Amount</option>
+                </select>
+            </div>
+
+            <!-- Discount Value -->
+            <div>
+                <label for="discount_value" class="block text-sm font-medium text-gray-700 mb-1">Discount Value</label>
+                <input type="number" 
+                       name="discount_value" 
+                       id="discount_value" 
+                       value="{{ coupon.discount_value }}"
+                       step="0.01"
+                       min="0"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                       required>
+                <p class="mt-1 text-sm text-gray-500" id="discount_hint">
+                    {% if coupon.discount_type == 'PERCENTAGE' %}
+                        Enter percentage (e.g., 20 for 20%)
+                    {% else %}
+                        Enter amount in ₹
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Validity Period -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="valid_from" class="block text-sm font-medium text-gray-7 mb-1">Valid From</label>
+                    <input type="datetime-local" 
+                           name="valid_from" 
+                           id="valid_from" 
+                           value="{{ coupon.valid_from|date:'Y-m-d\TH:i' }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                           required>
+                </div>
+                <div>
+                    <label for="valid_to" class="block text-sm font-medium text-gray-700 mb-1">Valid To</label>
+                    <input type="datetime-local" 
+                           name="valid_to" 
+                           id="valid_to" 
+                           value="{{ coupon.valid_to|date:'Y-m-d\TH:i' }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                           required>
+                </div>
+            </div>
+
+            <!-- Usage Limits -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="max_usage" class="block text-sm font-medium text-gray-700 mb-1">Maximum Usage</label>
+                    <input type="number" 
+                           name="max_usage" 
+                           id="max_usage" 
+                           value="{{ coupon.max_usage }}"
+                           min="1"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                           required>
+                </div>
+                <div>
+                    <label for="current_usage" class="block text-sm font-medium text-gray-700 mb-1">Current Usage</label>
+                    <input type="number" 
+                           name="current_usage" 
+                           id="current_usage" 
+                           value="{{ coupon.current_usage }}"
+                           min="0"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                           readonly>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" 
+                        id="status" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        required>
+                    <option value="ACTIVE" {% if coupon.status == 'ACTIVE' %}selected{% endif %}>Active</option>
+                    <option value="INACTIVE" {% if coupon.status == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+                    <option value="EXPIRED" {% if coupon.status == 'EXPIRED' %}selected{% endif %}>Expired</option>
+                </select>
+            </div>
+
+            <!-- Applicable Subscription Plans -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Applicable Subscription Plans</label>
+                <p class="text-sm text-gray-500 mb-3">Select which subscription plans this coupon can be applied to. Leave empty to apply to all plans.</p>
+                
+                {% if form.applicable_plans.errors %}
+                <div class="text-red-600 text-sm mb-2">
+                    {{ form.applicable_plans.errors }}
+                </div>
+                {% endif %}
+                
+                <div class="space-y-3">
+                    {% for plan in form.applicable_plans %}
+                    <div class="flex items-center">
+                        <input type="checkbox" 
+                            name="applicable_plans" 
+                            value="{{ plan.data.value }}"
+                            id="{{ plan.id_for_label }}"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            {% if plan.data.selected %}checked{% endif %}>
+                        <label for="{{ plan.id_for_label }}" class="ml-3 text-sm text-gray-700">
+                            {{ plan.choice_label }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button type="submit" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Update Coupon
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const discountType = document.getElementById('discount_type');
+    const discountValue = document.getElementById('discount_value');
+    const discountHint = document.getElementById('discount_hint');
+
+    function updateDiscountHint() {
+        if (discountType.value === 'PERCENTAGE') {
+            discountHint.textContent = 'Enter percentage (e.g., 20 for 20%)';
+            discountValue.max = '100';
+        } else {
+            discountHint.textContent = 'Enter amount in ₹';
+            discountValue.removeAttribute('max');
+        }
+    }
+
+    discountType.addEventListener('change', updateDiscountHint);
+    updateDiscountHint();
+});
+</script>
+{% endblock %}

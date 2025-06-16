@@ -3,41 +3,45 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
-    <div class="mb-6 sm:mb-8">
+<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
+    <div class="mb-3 sm:mb-4 md:mb-6">
         <a href="{% url 'public_institute_details' uid=institution.uid %}" 
-           class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-sm sm:text-base font-medium">
-            <i class="fas fa-arrow-left mr-2"></i>
+           class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-xs sm:text-sm md:text-base font-medium">
+            <svg class="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
             <span>Return to Institute Overview</span>
         </a>
     </div>
 
-    <div class="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-6 sm:p-8 mb-8 sm:mb-12">
+    <div class="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 mb-4 sm:mb-5 md:mb-6">
         <div class="text-center">
-            <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">{{ institution.name }}</h1>
-            <h2 class="text-lg sm:text-xl font-semibold text-gray-600">Comprehensive Learning Programs</h2>
+            <h1 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{{ institution.name }}</h1>
+            <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-600">Comprehensive Learning Programs</h2>
         </div>
     </div>
 
     <!-- Global Coupon Section -->
-    <div class="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-6 sm:p-8 mb-8 sm:mb-12">
-        <div class="flex flex-col sm:flex-row gap-4">
+    <div class="bg-white rounded-lg md:rounded-xl shadow-sm md:shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10 lg:mb-12">
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div class="flex-1">
-                <label for="global-coupon-input" class="block text-sm font-medium text-gray-700 mb-2">Apply Coupon to All Programs</label>
-                <div class="flex gap-2">
+                <label for="global-coupon-input" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Apply Coupon to All Programs</label>
+                <div class="flex flex-col sm:flex-row gap-2">
                     <input type="text" 
                            id="global-coupon-input"
-                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+                           class="flex-1 px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-blue-500 focus:border-blue-500"
                            placeholder="Enter coupon code">
                     <button id="apply-global-coupon-btn"
-                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center">
-                        <i class="fas fa-tag mr-2"></i>
-                        Apply to All
+                            class="px-4 py-1.5 sm:px-5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                        <span class="whitespace-nowrap">Apply to All</span>
                     </button>
                 </div>
             </div>
         </div>
-        <div id="global-coupon-message" class="mt-3"></div>
+        <div id="global-coupon-message" class="mt-2 sm:mt-3 text-xs sm:text-sm"></div>
     </div>
 
     {% if subscriptions %}
@@ -53,11 +57,13 @@
                         
                         <!-- Content Section -->
                         <div class="space-y-4 text-gray-700">
-                            <!-- Program Overview -->
+                            <!-- Course Overview -->
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <div class="flex items-center mb-2">
-                                    <i class="fas fa-book-open text-blue-600 mr-2"></i>
-                                    <h3 class="font-semibold text-gray-800">Program Overview</h3>
+                                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                    <h3 class="font-semibold text-gray-800">Course Overview</h3>
                                 </div>
                                 <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.course_description }}</p>
                             </div>
@@ -65,17 +71,21 @@
                             <!-- Expert Faculty -->
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <div class="flex items-center mb-2">
-                                    <i class="fas fa-chalkboard-teacher text-blue-600 mr-2"></i>
+                                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
                                     <h3 class="font-semibold text-gray-800">Expert Faculty</h3>
                                 </div>
                                 <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.faculty_description }}</p>
                             </div>
 
-                            <!-- Curriculum Coverage -->
+                            <!-- Subject Covered -->
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <div class="flex items-center mb-2">
-                                    <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>
-                                    <h3 class="font-semibold text-gray-800">Curriculum Coverage</h3>
+                                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <h3 class="font-semibold text-gray-800">Subject Covered</h3>
                                 </div>
                                 <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.subject_cover }}</p>
                             </div>
@@ -83,7 +93,9 @@
                             <!-- Target Examinations -->
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <div class="flex items-center mb-2">
-                                    <i class="fas fa-tasks text-blue-600 mr-2"></i>
+                                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                    </svg>
                                     <h3 class="font-semibold text-gray-800">Target Examinations</h3>
                                 </div>
                                 <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.exam_cover }}</p>
@@ -93,14 +105,18 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="bg-gray-50 p-4 rounded-lg">
                                     <div class="flex items-center mb-2">
-                                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
                                         <h3 class="font-semibold text-gray-800">Duration</h3>
                                     </div>
                                     <p class="text-gray-600 text-sm">{{ subscription.course_duration }} months</p>
                                 </div>
                                 <div class="bg-gray-50 p-4 rounded-lg">
                                     <div class="flex items-center mb-2">
-                                        <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
                                         <h3 class="font-semibold text-gray-800">Schedule</h3>
                                     </div>
                                     <p class="text-gray-600 text-sm">{{ subscription.start_time }} - {{ subscription.end_time }}</p>
@@ -110,8 +126,10 @@
                             <!-- Start Date -->
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <div class="flex items-center mb-2">
-                                    <i class="fas fa-calendar text-blue-600 mr-2"></i>
-                                    <h3 class="font-semibold text-gray-800">Program Commencement</h3>
+                                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <h3 class="font-semibold text-gray-800">Course Starting Date</h3>
                                 </div>
                                 <p class="text-gray-600 text-sm">{{ subscription.start_date }}</p>
                             </div>
@@ -122,11 +140,11 @@
                                  data-original-price="{{ subscription.old_price|floatformat:2 }}">
                                 {% if subscription.has_discount %}
                                     <div class="flex items-center justify-between mb-2">
-                                        <span class="text-gray-400 line-through text-sm">₹{{ subscription.old_price|floatformat:2 }}</span>
+                                        <span class="text-red-400 font-bold line-through text-3xl px-2 py-1 rounded">₹{{ subscription.old_price|floatformat:2 }}</span>
                                         <span class="text-3xl font-bold text-green-600">₹{{ subscription.new_price|floatformat:2 }}</span>
                                     </div>
                                     <div class="text-sm text-green-600 font-medium text-right">
-                                        Save ₹{{ subscription.old_price|sub:subscription.new_price|floatformat:2 }}
+                                        You Save ₹{{ subscription.old_price|sub:subscription.new_price|floatformat:2 }}
                                     </div>
                                 {% else %}
                                     <div class="text-3xl font-bold text-gray-900 text-right">₹{{ subscription.old_price|floatformat:2 }}</div>
@@ -134,13 +152,16 @@
                             </div>
 
                             <!-- Subscribe Button -->
-                            <button class="mt-6 w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors subscribe-btn flex items-center justify-center"
-                                    data-subscription-id="{{ subscription.id }}"
-                                    data-original-price="{{ subscription.old_price|floatformat:2 }}"
-                                    data-current-price="{{ subscription.new_price|floatformat:2 }}">
-                                <i class="fas fa-shopping-cart mr-2"></i>
+                            <a href="{% url 'institute_subscription_payment' uid=institution.uid subscription_id=subscription.id %}" 
+                               class="mt-6 w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors subscribe-btn flex items-center justify-center"
+                               data-subscription-id="{{ subscription.id }}"
+                               data-original-price="{{ subscription.old_price|floatformat:2 }}"
+                               data-current-price="{{ subscription.new_price|floatformat:2 }}">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
                                 Subscribe Now - ₹{{ subscription.new_price|floatformat:2 }}
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -184,11 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
             error: 'red',
             info: 'blue'
         };
-        
         element.innerHTML = `
             <div class="p-3 bg-${colors[type]}-50 border border-${colors[type]}-200 rounded-lg">
                 <div class="flex items-center">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} text-${colors[type]}-500 mr-2"></i>
+                    <svg class="w-5 h-5 mr-2 text-${colors[type]}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'success' ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' : 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'}"></path>
+                    </svg>
                     <span class="text-${colors[type]}-700 text-sm">${message}</span>
                 </div>
             </div>
@@ -223,7 +245,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update subscribe button with new price
         subscribeBtn.innerHTML = `
-            <i class="fas fa-shopping-cart mr-2"></i>
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
             Subscribe Now - ₹${formatPrice(discountedPrice)}
         `;
         
@@ -247,7 +271,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show loading state
             this.disabled = true;
-            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Applying...';
+            this.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Applying...
+            `;
 
             try {
                 const subscriptionIds = Array.from(document.querySelectorAll('.subscribe-btn'))
@@ -307,7 +337,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } finally {
                 // Reset button state
                 this.disabled = false;
-                this.innerHTML = '<i class="fas fa-tag mr-2"></i> Apply to All';
+                this.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                    </svg>
+                    Apply to All
+                `;
             }
         });
     }

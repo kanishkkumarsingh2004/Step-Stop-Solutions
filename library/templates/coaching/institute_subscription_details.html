@@ -1,0 +1,99 @@
+    {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Subscription Details - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Subscription Details</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="text-primary">{{ subscription_plan.name }}</h5>
+                        <p class="text-muted">{{ institution.name }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Course Details</h6>
+                            <p>{{ subscription_plan.course_description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Faculty Details</h6>
+                            <p>{{ subscription_plan.faculty_description }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Subjects Covered</h6>
+                            <p>{{ subscription_plan.subject_cover }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Exams Covered</h6>
+                            <p>{{ subscription_plan.exam_cover }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Schedule</h6>
+                            <p>
+                                Start Date: {{ subscription.start_date|date:"d M Y" }}<br>
+                                End Date: {{ subscription.end_date|date:"d M Y" }}<br>
+                                Time: {{ subscription.start_time|time:"g:i A" }} - {{ subscription.end_time|time:"g:i A" }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Status</h6>
+                            <p>
+                                <span class="badge {% if subscription.status == 'valid' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ subscription.status|title }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Payment Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Original Price:</span>
+                                <span>₹{{ original_price|floatformat:2 }}</span>
+                            </div>
+                            {% if has_coupon %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Coupon Applied:</span>
+                                <span>{{ coupon.code }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Discount:</span>
+                                <span>-₹{{ discount_amount|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <strong>Final Amount Paid:</strong>
+                                <strong>₹{{ final_price|floatformat:2 }}</strong>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">Transaction ID: {{ subscription.transaction_id }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <a href="{% url 'institute_dashboard' institution.id %}" class="btn btn-primary">Back to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -283,12 +283,13 @@ class InstitutionCouponForm(forms.ModelForm):
     class Meta:
         model = InstitutionCoupon
         fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 
-                 'max_usage', 'status']
+                 'max_usage', 'status', 'applicable_plans']
         widgets = {
             'valid_from': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'valid_to': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'discount_value': forms.NumberInput(attrs={'min': '0', 'step': '0.01'}),
             'max_usage': forms.NumberInput(attrs={'min': '1'}),
+            'applicable_plans': forms.CheckboxSelectMultiple(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -296,11 +297,45 @@ class InstitutionCouponForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if institution_id:
             self.fields['code'].validators.append(self.validate_unique_code(institution_id))
+            # Filter subscription plans for this institution
+            self.fields['applicable_plans'].queryset = InstitutionSubscriptionPlan.objects.filter(
+                institution_id=institution_id
+            )
+            self.fields['applicable_plans'].label = "Applicable Subscription Plans"
+            self.fields['applicable_plans'].help_text = "Select which subscription plans this coupon can be applied to. Leave empty to apply to all plans."
+            
+            # Add custom validation for applicable plans
+            self.fields['applicable_plans'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        applicable_plans = cleaned_data.get('applicable_plans')
+        
+        # If no plans are selected, it means the coupon applies to all plans
+        if not applicable_plans:
+            cleaned_data['applicable_plans'] = InstitutionSubscriptionPlan.objects.filter(
+                institution=self.instance.institution if self.instance else None
+            )
+        
+        return cleaned_data
 
     def validate_unique_code(self, institution_id):
         def validator(value):
-            if InstitutionCoupon.objects.filter(code=value, institution_id=institution_id).exists():
-                raise ValidationError('This coupon code already exists for this institution.')
+            # Check if this is a new coupon or an existing one being edited
+            if self.instance and self.instance.pk:
+                # For existing coupon, exclude it from the uniqueness check
+                if InstitutionCoupon.objects.filter(
+                    code=value, 
+                    institution_id=institution_id
+                ).exclude(pk=self.instance.pk).exists():
+                    raise ValidationError('This coupon code is already in use by another coupon in your institution.')
+            else:
+                # For new coupon, check if code exists
+                if InstitutionCoupon.objects.filter(
+                    code=value, 
+                    institution_id=institution_id
+                ).exists():
+                    raise ValidationError('This coupon code is already in use by another coupon in your institution.')
         return validator
 
     def clean(self):
