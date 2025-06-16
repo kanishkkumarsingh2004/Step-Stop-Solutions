@@ -1,8 +1,11 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon, InstitutionBanner
+from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon, InstitutionBanner, InstitutionSubscriptionPlan
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+from decimal import Decimal
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -324,3 +327,68 @@ class UPIForm(forms.ModelForm):
             'recipient_name': forms.TextInput(attrs={'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'}),
             'thank_you_message': forms.Textarea(attrs={'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out', 'rows': 3}),
         }
+
+class InstitutionSubscriptionPlanForm(forms.ModelForm):
+    class Meta:
+        model = InstitutionSubscriptionPlan
+        fields = [
+            'name',
+            'course_description',
+            'faculty_description',
+            'subject_cover',
+            'exam_cover',
+            'start_time',
+            'end_time',
+            'start_date',
+            'course_duration',
+            'old_price',
+            'new_price',
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter subscription plan name'}),
+            'course_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Enter course description'}),
+            'faculty_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Enter faculty description'}),
+            'subject_cover': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Enter subjects covered in this course (one per line)'}),
+            'exam_cover': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Enter exams covered in this course (one per line)'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'course_duration': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'placeholder': 'Duration in months'}),
+            'old_price': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder': 'Original price'}),
+            'new_price': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01', 'placeholder': 'Discounted price'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        old_price = cleaned_data.get('old_price')
+        new_price = cleaned_data.get('new_price')
+
+        # Validate time range
+        if start_time and end_time and start_time >= end_time:
+            raise forms.ValidationError("End time must be after start time")
+
+        # Validate prices
+        if old_price and new_price and new_price > old_price:
+            raise forms.ValidationError("New price cannot be greater than old price")
+
+        return cleaned_data
+
+    def clean_course_duration(self):
+        duration = self.cleaned_data.get('course_duration')
+        if duration and duration < 1:
+            raise forms.ValidationError("Course duration must be at least 1 month")
+        return duration
+
+    def clean_old_price(self):
+        price = self.cleaned_data.get('old_price')
+        if price and price < Decimal('0'):
+            raise forms.ValidationError("Price cannot be negative")
+        return price
+
+    def clean_new_price(self):
+        price = self.cleaned_data.get('new_price')
+        if price and price < Decimal('0'):
+            raise forms.ValidationError("Price cannot be negative")
+        return price

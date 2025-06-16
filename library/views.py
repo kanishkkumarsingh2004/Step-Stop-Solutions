@@ -624,11 +624,16 @@ def register_venders_shop(request):
     if not request.user.is_authenticated:
         return redirect('login')
     query = request.GET.get('q', '')
-    libraries = Library.objects.filter(Q(venue_name__icontains=query) | Q(address__icontains=query) | Q(city__icontains=query) | Q(state__icontains=query) | Q(pincode__icontains=query))
-    items = list(libraries)
+    libraries = Library.objects.filter(Q(venue_name__icontains=query) |
+                                        Q(address__icontains=query) |
+                                        Q(city__icontains=query) |
+                                        Q(state__icontains=query) |
+                                        Q(district__icontains=query) |
+                                        Q(pincode__icontains=query))
     
-    return render(request, 'users_pages/register_venders_shop.html', {'items': items})
+    items = list(libraries) if libraries.exists() else Library.objects.all()    
 
+    return render(request, 'users_pages/register_venders_shop.html', {'items': items})
 def register_institute(request):
     if not request.user.is_authenticated:
         return redirect('login')
@@ -638,9 +643,10 @@ def register_institute(request):
         Q(address__icontains=query) | 
         Q(contact_email__icontains=query) | 
         Q(contact_phone__icontains=query) | 
-        Q(website_url__icontains=query)
+        Q(website_url__icontains=query) |
+        Q(pincode__icontains=query)
     )
-    items = list(institutions)
+    items = list(institutions) if institutions.exists() else Institution.objects.all()
     
     return render(request, 'users_pages/register_institute.html', {'items': items})
 

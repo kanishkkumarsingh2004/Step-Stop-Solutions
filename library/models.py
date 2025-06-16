@@ -613,3 +613,31 @@ class InstitutionBanner(models.Model):
 
     def __str__(self):
         return f"Banner for {self.institution.name}"
+    
+class InstitutionSubscriptionPlan(models.Model):
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='subscription_plans')
+    name = models.CharField(max_length=255, help_text="Name of the subscription plan")
+    course_description = models.TextField(help_text="Description of the course", blank=True, null=True)
+    faculty_description = models.TextField(help_text="Description of the faculty members", blank=True, null=True)
+    subject_cover = models.TextField(help_text="List of subjects covered in this course", blank=True, null=True)
+    exam_cover = models.TextField(help_text="List of exams covered in this course", blank=True, null=True)
+    start_time = models.TimeField(help_text="Start time of the course")
+    end_time = models.TimeField(help_text="End time of the course")
+    start_date = models.DateField(help_text="Start date of the subscription")
+    course_duration = models.PositiveIntegerField(help_text="Duration of the course in months")
+    old_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Original price of the subscription")
+    new_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Discounted price of the subscription")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.institution.name}"
+
+    @property
+    def has_discount(self):
+        return self.new_price < self.old_price
+
+    class Meta:
+        verbose_name = "Institution Subscription Plan"
+        verbose_name_plural = "Institution Subscription Plans"
+        ordering = ['-created_at']

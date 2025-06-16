@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+    <div class="mb-6 sm:mb-8">
+        <a href="{% url 'public_institute_details' uid=institution.uid %}" 
+           class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-sm sm:text-base font-medium">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>Return to Institute Overview</span>
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-6 sm:p-8 mb-8 sm:mb-12">
+        <div class="text-center">
+            <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">{{ institution.name }}</h1>
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-600">Comprehensive Learning Programs</h2>
+        </div>
+    </div>
+
+    <!-- Global Coupon Section -->
+    <div class="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-6 sm:p-8 mb-8 sm:mb-12">
+        <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+                <label for="global-coupon-input" class="block text-sm font-medium text-gray-700 mb-2">Apply Coupon to All Programs</label>
+                <div class="flex gap-2">
+                    <input type="text" 
+                           id="global-coupon-input"
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Enter coupon code">
+                    <button id="apply-global-coupon-btn"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-tag mr-2"></i>
+                        Apply to All
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="global-coupon-message" class="mt-3"></div>
+    </div>
+
+    {% if subscriptions %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {% for subscription in subscriptions %}
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
+                    <div class="p-6">
+                        <!-- Header Section -->
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ subscription.name }}</h2>
+                            <div class="h-1 w-16 bg-blue-500 rounded-full"></div>
+                        </div>
+                        
+                        <!-- Content Section -->
+                        <div class="space-y-4 text-gray-700">
+                            <!-- Program Overview -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-book-open text-blue-600 mr-2"></i>
+                                    <h3 class="font-semibold text-gray-800">Program Overview</h3>
+                                </div>
+                                <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.course_description }}</p>
+                            </div>
+
+                            <!-- Expert Faculty -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-chalkboard-teacher text-blue-600 mr-2"></i>
+                                    <h3 class="font-semibold text-gray-800">Expert Faculty</h3>
+                                </div>
+                                <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.faculty_description }}</p>
+                            </div>
+
+                            <!-- Curriculum Coverage -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>
+                                    <h3 class="font-semibold text-gray-800">Curriculum Coverage</h3>
+                                </div>
+                                <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.subject_cover }}</p>
+                            </div>
+
+                            <!-- Target Examinations -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-tasks text-blue-600 mr-2"></i>
+                                    <h3 class="font-semibold text-gray-800">Target Examinations</h3>
+                                </div>
+                                <p class="text-gray-600 text-sm leading-relaxed">{{ subscription.exam_cover }}</p>
+                            </div>
+
+                            <!-- Program Details Grid -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                                        <h3 class="font-semibold text-gray-800">Duration</h3>
+                                    </div>
+                                    <p class="text-gray-600 text-sm">{{ subscription.course_duration }} months</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                                        <h3 class="font-semibold text-gray-800">Schedule</h3>
+                                    </div>
+                                    <p class="text-gray-600 text-sm">{{ subscription.start_time }} - {{ subscription.end_time }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Start Date -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-calendar text-blue-600 mr-2"></i>
+                                    <h3 class="font-semibold text-gray-800">Program Commencement</h3>
+                                </div>
+                                <p class="text-gray-600 text-sm">{{ subscription.start_date }}</p>
+                            </div>
+
+                            <!-- Pricing Section -->
+                            <div class="mt-6 pt-6 border-t border-gray-200 price-section" 
+                                 data-subscription-id="{{ subscription.id }}"
+                                 data-original-price="{{ subscription.old_price|floatformat:2 }}">
+                                {% if subscription.has_discount %}
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-gray-400 line-through text-sm">₹{{ subscription.old_price|floatformat:2 }}</span>
+                                        <span class="text-3xl font-bold text-green-600">₹{{ subscription.new_price|floatformat:2 }}</span>
+                                    </div>
+                                    <div class="text-sm text-green-600 font-medium text-right">
+                                        Save ₹{{ subscription.old_price|sub:subscription.new_price|floatformat:2 }}
+                                    </div>
+                                {% else %}
+                                    <div class="text-3xl font-bold text-gray-900 text-right">₹{{ subscription.old_price|floatformat:2 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Subscribe Button -->
+                            <button class="mt-6 w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors subscribe-btn flex items-center justify-center"
+                                    data-subscription-id="{{ subscription.id }}"
+                                    data-original-price="{{ subscription.old_price|floatformat:2 }}"
+                                    data-current-price="{{ subscription.new_price|floatformat:2 }}">
+                                <i class="fas fa-shopping-cart mr-2"></i>
+                                Subscribe Now - ₹{{ subscription.new_price|floatformat:2 }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm sm:shadow-md p-6 sm:p-8 lg:p-12 text-center">
+            <div class="text-gray-500 text-base sm:text-lg mb-3 sm:mb-4">Currently no programs available</div>
+            <div class="text-gray-400 text-xs sm:text-sm">Please check back later for updates</div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Utility Functions
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function formatPrice(price) {
+        return parseFloat(price).toFixed(2);
+    }
+
+    function showMessage(element, message, type) {
+        if (!element) return;
+        
+        const colors = {
+            success: 'green',
+            error: 'red',
+            info: 'blue'
+        };
+        
+        element.innerHTML = `
+            <div class="p-3 bg-${colors[type]}-50 border border-${colors[type]}-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} text-${colors[type]}-500 mr-2"></i>
+                    <span class="text-${colors[type]}-700 text-sm">${message}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Price Update Functions
+    function updateSubscriptionPrice(subscriptionId, data) {
+        const priceSection = document.querySelector(`.price-section[data-subscription-id="${subscriptionId}"]`);
+        const subscribeBtn = document.querySelector(`.subscribe-btn[data-subscription-id="${subscriptionId}"]`);
+        
+        if (!priceSection || !subscribeBtn) {
+            console.error('Could not find price elements for subscription:', subscriptionId);
+            return;
+        }
+
+        // Get the original price from the price section's dataset
+        const originalPrice = parseFloat(priceSection.dataset.originalPrice);
+        const discountedPrice = parseFloat(data.discounted_price);
+        const savings = parseFloat(data.discount_amount);
+
+        // Update price section with proper formatting
+        priceSection.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-gray-400 line-through text-sm">₹${formatPrice(originalPrice)}</span>
+                <span class="text-3xl font-bold text-green-600">₹${formatPrice(discountedPrice)}</span>
+            </div>
+            <div class="text-sm text-green-600 font-medium text-right">
+                Save ₹${formatPrice(savings)}
+            </div>
+        `;
+
+        // Update subscribe button with new price
+        subscribeBtn.innerHTML = `
+            <i class="fas fa-shopping-cart mr-2"></i>
+            Subscribe Now - ₹${formatPrice(discountedPrice)}
+        `;
+        
+        // Store the current price for future coupon applications
+        subscribeBtn.dataset.currentPrice = discountedPrice;
+    }
+
+    // Coupon Application
+    const globalCouponBtn = document.getElementById('apply-global-coupon-btn');
+    const globalCouponInput = document.getElementById('global-coupon-input');
+    const globalMessageDiv = document.getElementById('global-coupon-message');
+
+    if (globalCouponBtn && globalCouponInput && globalMessageDiv) {
+        globalCouponBtn.addEventListener('click', async function() {
+            const couponCode = globalCouponInput.value.trim();
+            
+            if (!couponCode) {
+                showMessage(globalMessageDiv, 'Please enter a coupon code', 'error');
+                return;
+            }
+
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Applying...';
+
+            try {
+                const subscriptionIds = Array.from(document.querySelectorAll('.subscribe-btn'))
+                    .map(btn => btn.dataset.subscriptionId)
+                    .filter(id => id);
+
+                if (subscriptionIds.length === 0) {
+                    showMessage(globalMessageDiv, 'No subscriptions found', 'error');
+                    return;
+                }
+
+                let successCount = 0;
+                let errorMessages = new Set();
+
+                // Apply coupon to each subscription
+                for (const subscriptionId of subscriptionIds) {
+                    try {
+                        const subscribeBtn = document.querySelector(`.subscribe-btn[data-subscription-id="${subscriptionId}"]`);
+                        const currentPrice = subscribeBtn.dataset.currentPrice || subscribeBtn.dataset.originalPrice;
+
+                        const response = await fetch(`/subscription/${subscriptionId}/apply-coupon/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: JSON.stringify({
+                                coupon_code: couponCode,
+                                current_price: currentPrice
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            successCount++;
+                            updateSubscriptionPrice(subscriptionId, data);
+                        } else {
+                            errorMessages.add(data.error || 'Unknown error');
+                        }
+                    } catch (error) {
+                        console.error('Error applying coupon:', error);
+                        errorMessages.add('Failed to apply coupon');
+                    }
+                }
+
+                // Show results
+                if (successCount > 0) {
+                    showMessage(globalMessageDiv, `Coupon applied to ${successCount} subscription(s) successfully!`, 'success');
+                }
+                if (errorMessages.size > 0) {
+                    showMessage(globalMessageDiv, `Some errors occurred: ${Array.from(errorMessages).join(', ')}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(globalMessageDiv, 'An error occurred. Please try again.', 'error');
+            } finally {
+                // Reset button state
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-tag mr-2"></i> Apply to All';
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

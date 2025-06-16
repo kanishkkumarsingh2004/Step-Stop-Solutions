@@ -250,11 +250,5 @@
             dashboardMenu.classList.add('hidden');
         }
     });
-
-    // Prevent duplicate page entries in browser history
-    if (window.history && window.history.replaceState) {
-        const cleanUrl = window.location.href.split('?')[0].split('#')[0];
-        window.history.replaceState(null, '', cleanUrl);
-    }
 </script>
 </html>

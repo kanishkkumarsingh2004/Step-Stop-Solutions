@@ -3,15 +3,21 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 import logging
 from django.utils.timezone import now
-from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm
+from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, UserSubscription
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
 from django.db import models
 import re
 from django.db import transaction
+from django.core.exceptions import PermissionDenied
+from django.utils import timezone
+from django.db.models import Q
+import json
+from decimal import Decimal
+import decimal
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -76,18 +82,21 @@ def enrollment_success(request):
 def institution_details(request, uid):
     """View institution details"""
     institution = get_object_or_404(Institution, uid=uid)
+    
     return render(request, 'coaching/institution_details.html', {
-        'institution': institution
+        'institution': institution,
     })
 
 def public_institute_details(request, uid):
     """Public view of institution details"""
     institution = get_object_or_404(Institution, uid=uid)
+    images = InstitutionImage.objects.filter(institution=institution).first()  # Get images for this particular institution
     if not institution.is_approved:
         messages.error(request, "This institution is not yet approved.")
         return redirect('home')
     return render(request, 'coaching/public_institute_details.html', {
-        'institution': institution
+        'institution': institution,
+        'images': images,
     })
 
 @login_required
@@ -615,3 +624,207 @@ def delete_institution_banner(request, banner_id):
     banner.delete()
     messages.success(request, 'Banner deleted successfully!')
     return redirect('manage_institution_banner', uid=institution.uid)
+
+@login_required
+def manage_institution_subscriptions(request, uid):
+    """Manage subscription plans for an institution."""
+    institution = get_object_or_404(Institution, uid=uid)
+    
+    # Check if user has permission to manage subscriptions
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to manage subscriptions for this institution.")
+        return redirect('home')
+    
+    subscriptions = InstitutionSubscriptionPlan.objects.filter(institution=institution).order_by('-created_at')
+    
+    if request.method == 'POST':
+        form = InstitutionSubscriptionPlanForm(request.POST)
+        if form.is_valid():
+            subscription = form.save(commit=False)
+            subscription.institution = institution
+            subscription.save()
+            messages.success(request, 'Subscription plan created successfully!')
+            return redirect('manage_institution_subscriptions', uid=institution.uid)
+        else:
+            messages.error(request, 'Invalid subscription data. Please check the form.')
+    else:
+        form = InstitutionSubscriptionPlanForm()
+    
+    context = {
+        'institution': institution,
+        'subscriptions': subscriptions,
+        'form': form,
+    }
+    
+    return render(request, 'coaching/manage_institution_subscriptions.html', context)
+
+@login_required
+def delete_institution_subscription(request, subscription_id):
+    """Delete an institution subscription plan."""
+    subscription = get_object_or_404(InstitutionSubscriptionPlan, id=subscription_id)
+    institution = subscription.institution
+    
+    # Check if user has permission to delete the subscription
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to delete this subscription plan.")
+        return redirect('home')
+    
+    subscription.delete()
+    messages.success(request, 'Subscription plan deleted successfully!')
+    return redirect('manage_institution_subscriptions', uid=institution.uid)
+
+@require_http_methods(["GET"])
+def get_subscription(request, subscription_id):
+    try:
+        subscription = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
+        # Check if user owns the institution
+        if subscription.institution.owner != request.user:
+            raise PermissionDenied
+        
+        data = {
+            'id': subscription.id,
+            'name': subscription.name,
+            'course_duration': subscription.course_duration,
+            'start_time': subscription.start_time.strftime('%H:%M'),
+            'end_time': subscription.end_time.strftime('%H:%M'),
+            'start_date': subscription.start_date.strftime('%Y-%m-%d'),
+            'old_price': float(subscription.old_price),
+            'new_price': float(subscription.new_price),
+            'course_description': subscription.course_description,
+            'faculty_description': subscription.faculty_description,
+            'subject_cover': subscription.subject_cover,
+            'exam_cover': subscription.exam_cover,
+        }
+        return JsonResponse(data)
+    except InstitutionSubscriptionPlan.DoesNotExist:
+        return JsonResponse({'error': 'Subscription not found'}, status=404)
+    except PermissionDenied:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@require_http_methods(["POST"])
+def update_subscription(request, subscription_id):
+    try:
+        subscription = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
+        # Check if user owns the institution
+        if subscription.institution.owner != request.user:
+            raise PermissionDenied
+        
+        form = InstitutionSubscriptionPlanForm(request.POST, instance=subscription)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': form.errors})
+    except InstitutionSubscriptionPlan.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Subscription not found'}, status=404)
+    except PermissionDenied:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+def public_institute_subscriptions(request, uid):
+    """Public view of institution subscriptions"""
+    institution = get_object_or_404(Institution, uid=uid)
+    if not institution.is_approved:
+        messages.error(request, "This institution is not yet approved.")
+        return redirect('home')
+    
+    subscriptions = InstitutionSubscriptionPlan.objects.filter(
+        institution=institution
+    ).order_by('-created_at')
+    
+    return render(request, 'coaching/public_institute_subscriptions.html', {
+        'institution': institution,
+        'subscriptions': subscriptions,
+    })
+
+@require_http_methods(["POST"])
+def apply_subscription_coupon(request, subscription_id):
+    try:
+        # Get subscription and request data
+        subscription = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
+        data = json.loads(request.body)
+        coupon_code = data.get('coupon_code')
+        current_price = Decimal(str(data.get('current_price', subscription.old_price)))
+        
+        if not coupon_code:
+            return JsonResponse({
+                'success': False,
+                'error': 'Please enter a coupon code'
+            })
+        
+        # Get and validate coupon
+        try:
+            coupon = InstitutionCoupon.objects.get(
+                code=coupon_code,
+                institution=subscription.institution,
+                status='ACTIVE'
+            )
+        except InstitutionCoupon.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid coupon code'
+            })
+        
+        # Check if coupon is valid
+        if not coupon.is_valid():
+            return JsonResponse({
+                'success': False,
+                'error': 'Coupon has expired or reached maximum usage'
+            })
+        
+        # Calculate discounted price
+        try:
+            # Convert values to Decimal for precise calculations
+            current_price = Decimal(str(current_price))
+            discount_value = Decimal(str(coupon.discount_value))
+            
+            if coupon.discount_type == 'PERCENTAGE':
+                # Calculate percentage discount
+                discount_amount = (current_price * discount_value) / Decimal('100')
+                discounted_price = current_price - discount_amount
+            else:  # FIXED amount
+                # Apply fixed discount
+                discounted_price = current_price - discount_value
+            
+            # Ensure discounted price doesn't go below 0
+            discounted_price = max(discounted_price, Decimal('0'))
+            
+            # Calculate savings
+            savings = current_price - discounted_price
+            
+            # Round all values to 2 decimal places
+            discounted_price = discounted_price.quantize(Decimal('0.01'))
+            savings = savings.quantize(Decimal('0.01'))
+            
+            return JsonResponse({
+                'success': True,
+                'discounted_price': float(discounted_price),
+                'original_price': float(current_price),
+                'discount_amount': float(savings),
+                'coupon_code': coupon.code
+            })
+            
+        except (ValueError, TypeError, decimal.InvalidOperation) as e:
+            return JsonResponse({
+                'success': False,
+                'error': 'Error calculating discount. Please try again.'
+            })
+        
+    except InstitutionSubscriptionPlan.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Subscription plan not found'
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request data'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred. Please try again.'
+        })

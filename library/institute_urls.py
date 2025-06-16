@@ -28,4 +28,11 @@ urlpatterns = [
    # Banner management URLs
    path('institution/<str:uid>/manage-banner/', institute_view.manage_institution_banner, name='manage_institution_banner'),
    path('institution/banner/<int:banner_id>/delete/', institute_view.delete_institution_banner, name='delete_institution_banner'),
+   # Subscription management URLs
+   path('institution/<str:uid>/manage-subscriptions/', institute_view.manage_institution_subscriptions, name='manage_institution_subscriptions'),
+   path('institution/subscription/<int:subscription_id>/delete/', institute_view.delete_institution_subscription, name='delete_institution_subscription'),
+   path('get-subscription/<int:subscription_id>/', institute_view.get_subscription, name='get_subscription'),
+   path('update-subscription/<int:subscription_id>/', institute_view.update_subscription, name='update_subscription'),
+   path('institute-details/<str:uid>/subscriptions/', institute_view.public_institute_subscriptions, name='public_institute_subscriptions'),
+   path('subscription/<int:subscription_id>/apply-coupon/', institute_view.apply_subscription_coupon, name='apply_subscription_coupon'),
 ]
