@@ -66,16 +66,8 @@
             <i class="bi bi-people-fill text-sm sm:text-lg"></i>
             <span>Manage Users</span>
         </a>
-        <a href="{% url 'edit_institution_profile' institution.uid %}" class="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-pencil-square text-sm sm:text-lg"></i>
-            <span>Edit Profile</span>
-        </a>
-        <a href="{% url 'manage_institution_coupons' institution.uid %}" class="bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-ticket-perforated-fill text-sm sm:text-lg"></i>
-            <span>Manage Coupons</span>
-        </a>
-        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-cash-stack text-sm sm:text-lg"></i>
+        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
+            <i class="bi bi-cash-coin mr-2"></i>
             <span>Payment Verifications</span>
         </a>
         <a href="{% url 'institution_reviews' institution.uid %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
@@ -157,14 +149,17 @@
                 <h2 class="text-base sm:text-lg font-semibold text-gray-700">Statistics</h2>
             </div>
             <div class="space-y-2">
-                <!-- Classroom Statistics -->
                 <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <span class="text-xs sm:text-sm text-gray-600">Total Classrooms</span>
-                    <span class="font-semibold text-blue-600 text-base sm:text-lg">{{ classroom_stats.total_classrooms }}</span>
+                    <a href="{% url 'payment_expenses' institution.uid %}" class="w-full flex items-center justify-between text-green-600 hover:text-green-700">
+                        <span class="text-xs sm:text-sm text-gray-600">Payments & Expenses</span>
+                        <i class="bi bi-graph-up text-base sm:text-lg"></i>
+                    </a>
                 </div>
                 <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <span class="text-xs sm:text-sm text-gray-600">Total Capacity</span>
-                    <span class="font-semibold text-green-600 text-base sm:text-lg">{{ classroom_stats.total_capacity }}</span>
+                    <a href="{% url 'expense_analytics' institution.uid %}" class="w-full flex items-center justify-between text-blue-600 hover:text-blue-700">
+                        <span class="text-xs sm:text-sm text-gray-600">Expense Analytics</span>
+                        <i class="bi bi-pie-chart text-base sm:text-lg"></i>
+                    </a>
                 </div>
             </div>
         </div>

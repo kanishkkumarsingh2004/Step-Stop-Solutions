@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Payments & Expenses Management</h1>
+        <button onclick="showExpenseModal()" 
+                class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200">
+            + Add Expense
+        </button>
+    </div>
+
+    <!-- Financial Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Total Income</h3>
+            <p class="text-2xl font-bold text-green-600">₹{{ total_income }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Total Expenses</h3>
+            <p class="text-2xl font-bold text-red-600">₹{{ total_expenses }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Net Balance</h3>
+            <p class="text-2xl font-bold {% if net_balance >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                ₹{{ net_balance }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+        <div class="flex flex-col lg:flex-row gap-4 items-center">
+            <div class="flex-1 w-full">
+                <input type="text" id="searchInput" placeholder="Search transactions..." 
+                       class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                       value="{{ search_query }}">
+            </div>
+            <div class="flex flex-wrap gap-2 w-full lg:w-auto">
+                <button onclick="filterTransactions('all')" 
+                        class="flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                               {% if transaction_type == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    All
+                </button>
+                <button onclick="filterTransactions('income')" 
+                        class="flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                               {% if transaction_type == 'income' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Income
+                </button>
+                <button onclick="filterTransactions('expense')" 
+                        class="flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                               {% if transaction_type == 'expense' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Expenses
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for transaction in transactions %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ transaction.date|date:"M d, Y" }}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ transaction.description }}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                       {% if transaction.type == 'income' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ transaction.type|title }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm 
+                                  {% if transaction.type == 'income' %}text-green-600{% else %}text-red-600{% endif %}">
+                            ₹{{ transaction.amount }}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ transaction.payment_mode|default:"-"|title }}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ transaction.transaction_id|default:"-" }}
+                        </td>
+                        <td class="px-4 py-4 text-sm text-gray-500">
+                            {{ transaction.notes|default:"-" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500">
+                            {% if search_query %}
+                                No transactions found matching "{{ search_query }}"
+                            {% elif transaction_type != 'all' %}
+                                No {{ transaction_type }} transactions found
+                            {% else %}
+                                No transactions found
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Include the Add Expense Modal -->
+{% include 'coaching/add_expense_form.html' %}
+
+<script>
+function filterTransactions(type) {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('type', type);
+    window.location.href = currentUrl.toString();
+}
+
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('search', this.value);
+        window.location.href = currentUrl.toString();
+    }
+});
+</script>
+{% endblock %}

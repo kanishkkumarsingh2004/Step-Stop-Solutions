@@ -5,7 +5,7 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
@@ -14,7 +14,7 @@ import re
 from django.db import transaction
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Sum
 import json
 from decimal import Decimal
 import decimal
@@ -1193,5 +1193,324 @@ def payment_verifications(request, uid):
     except Exception as e:
         logger.error(f"Error in payment_verifications: {str(e)}")
         messages.error(request, 'An error occurred while loading payment verifications')
+        return redirect('home')
+
+@login_required
+def payment_expenses(request, uid):
+    try:
+        institution = Institution.objects.get(uid=uid)
+        # Check if the current user is the owner of the institution
+        if request.user != institution.owner:
+            messages.error(request, "You don't have permission to view this page.")
+            return redirect('home')
+        
+        # Get filter parameters
+        transaction_type = request.GET.get('type', 'all')
+        search_query = request.GET.get('search', '')
+        
+        # Get all subscriptions (income)
+        subscriptions = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution
+        )
+        
+        # Get all expenses with complete data
+        expenses = InstitutionExpense.objects.filter(institution=institution).select_related('institution')
+        
+        # Apply search filter if provided
+        if search_query:
+            subscriptions = subscriptions.filter(
+                Q(user__first_name__icontains=search_query) |
+                Q(user__last_name__icontains=search_query) |
+                Q(subscription_plan__name__icontains=search_query)
+            )
+            expenses = expenses.filter(
+                Q(description__icontains=search_query) |
+                Q(notes__icontains=search_query) |
+                Q(expense_type__icontains=search_query) |
+                Q(payment_mode__icontains=search_query) |
+                Q(transaction_id__icontains=search_query)
+            )
+        
+        # Calculate totals
+        total_income = subscriptions.filter(payment_status='valid').aggregate(
+            total=Sum('amount_paid')
+        )['total'] or 0
+        
+        total_expenses = expenses.aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+        
+        net_balance = total_income - total_expenses
+        
+        # Prepare transactions list with complete data
+        transactions = []
+        
+        # Add income transactions
+        for sub in subscriptions:
+            transactions.append({
+                'date': sub.created_at.date(),
+                'description': f"Payment from {sub.user.get_full_name()} - {sub.subscription_plan.name}",
+                'type': 'income',
+                'amount': sub.amount_paid,
+                'payment_mode': sub.payment_mode if hasattr(sub, 'payment_mode') else 'N/A',
+                'transaction_id': sub.transaction_id,
+                'notes': f"Transaction ID: {sub.transaction_id}"
+            })
+        
+        # Add expense transactions with all fields
+        for expense in expenses:
+            transactions.append({
+                'date': expense.date,
+                'description': expense.description,
+                'type': 'expense',
+                'amount': expense.amount,
+                'payment_mode': expense.payment_mode,
+                'transaction_id': expense.transaction_id,
+                'notes': expense.notes,
+                'expense_type': expense.get_expense_type_display(),
+                'created_at': expense.created_at
+            })
+        
+        # Sort transactions by date (newest first)
+        transactions.sort(key=lambda x: x['date'], reverse=True)
+        
+        # Filter transactions by type if specified
+        if transaction_type != 'all':
+            transactions = [t for t in transactions if t['type'] == transaction_type]
+
+        context = {
+            'institution': institution,
+            'transactions': transactions,
+            'total_income': total_income,
+            'total_expenses': total_expenses,
+            'net_balance': net_balance,
+            'transaction_type': transaction_type,
+            'search_query': search_query,
+            'expense_types': dict(InstitutionExpense.EXPENSE_TYPES),
+            'payment_modes': dict(InstitutionExpense.PAYMENT_MODES)
+        }
+        
+        return render(request, 'coaching/payment_expenses.html', context)
+        
+    except Institution.DoesNotExist:
+        messages.error(request, "Institution not found.")
+        return redirect('home')
+    except Exception as e:
+        logger.error(f"Error in payment_expenses: {str(e)}")
+        messages.error(request, "An error occurred while loading the page.")
+        return redirect('home')
+
+@login_required
+@require_http_methods(["POST"])
+def add_institution_expense(request, uid):
+    try:
+        institution = Institution.objects.get(uid=uid)
+        
+        # Check if the current user is the owner of the institution
+        if request.user != institution.owner:
+            return JsonResponse({
+                'status': 'error',
+                'message': "You don't have permission to add expenses for this institution."
+            }, status=403)
+        
+        # Parse JSON data from request
+        try:
+            data = json.loads(request.body)
+            logger.info(f"Received expense data: {data}")
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid request data format.'
+            }, status=400)
+        
+        # Validate required fields
+        required_fields = ['expense_type', 'description', 'amount', 'date', 'payment_mode']
+        for field in required_fields:
+            if not data.get(field):
+                logger.error(f"Missing required field: {field}")
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f"{field.replace('_', ' ').title()} is required."
+                }, status=400)
+        
+        # Validate payment mode and transaction ID
+        if data['payment_mode'] in ['card', 'upi'] and not data.get('transaction_id'):
+            logger.error("Transaction ID missing for card/upi payment")
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Transaction ID is required for Card/UPI payments.'
+            }, status=400)
+        
+        try:
+            # Parse the date string to a date object
+            from datetime import datetime
+            date_obj = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            
+            # Create the expense
+            expense = InstitutionExpense.objects.create(
+                institution=institution,
+                expense_type=data['expense_type'],
+                description=data['description'],
+                amount=data['amount'],
+                date=date_obj,
+                payment_mode=data['payment_mode'],
+                transaction_id=data.get('transaction_id'),
+                notes=data.get('notes')
+            )
+            
+            logger.info(f"Successfully created expense with ID: {expense.id}")
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Expense added successfully!',
+                'expense': {
+                    'id': expense.id,
+                    'description': expense.description,
+                    'amount': str(expense.amount),
+                    'date': expense.date.isoformat(),
+                    'notes': expense.notes
+                }
+            })
+            
+        except ValueError as e:
+            logger.error(f"Date parsing error: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid date format. Please use YYYY-MM-DD format.'
+            }, status=400)
+        except Exception as e:
+            logger.error(f"Error creating expense: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error creating expense: {str(e)}'
+            }, status=500)
+        
+    except Institution.DoesNotExist:
+        logger.error(f"Institution not found with uid: {uid}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Institution not found.'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Unexpected error in add_institution_expense: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'An unexpected error occurred: {str(e)}'
+        }, status=500)
+
+@login_required
+def expense_analytics(request, uid):
+    try:
+        institution = Institution.objects.get(uid=uid)
+        
+        # Check if user is the owner
+        if request.user != institution.owner:
+            messages.error(request, "You don't have permission to view this page.")
+            return redirect('home')
+        
+        # Get all valid subscriptions and expenses
+        subscriptions = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution,
+            status='valid'
+        )
+        expenses = InstitutionExpense.objects.filter(institution=institution)
+        
+        # Calculate totals
+        total_income = subscriptions.aggregate(total=Sum('amount_paid'))['total'] or 0
+        total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
+        net_balance = total_income - total_expenses
+        
+        # Prepare data for Income vs Expenses Line Chart
+        dates = []
+        income_data = []
+        expense_data = []
+        
+        # Get all unique dates from both subscriptions and expenses
+        all_dates = set()
+        for sub in subscriptions:
+            all_dates.add(sub.start_date)
+        for exp in expenses:
+            all_dates.add(exp.date)
+        
+        # Sort dates
+        sorted_dates = sorted(list(all_dates))
+        
+        # Prepare data for each date
+        for date in sorted_dates:
+            dates.append(date.strftime('%Y-%m-%d'))
+            daily_income = subscriptions.filter(start_date=date).aggregate(total=Sum('amount_paid'))['total'] or 0
+            daily_expenses = expenses.filter(date=date).aggregate(total=Sum('amount'))['total'] or 0
+            income_data.append(float(daily_income))
+            expense_data.append(float(daily_expenses))
+        
+        # Prepare data for Expense Types Pie Chart
+        expense_types = []
+        expense_type_data = []
+        for expense_type, _ in InstitutionExpense.EXPENSE_TYPES:
+            total = expenses.filter(expense_type=expense_type).aggregate(total=Sum('amount'))['total'] or 0
+            if total > 0:
+                expense_types.append(expense_type)
+                expense_type_data.append(float(total))
+        
+        # Prepare data for Payment Methods Bar Chart
+        payment_methods = []
+        payment_method_data = []
+        for payment_mode, _ in InstitutionExpense.PAYMENT_MODES:
+            total = expenses.filter(payment_mode=payment_mode).aggregate(total=Sum('amount'))['total'] or 0
+            if total > 0:
+                payment_methods.append(payment_mode)
+                payment_method_data.append(float(total))
+        
+        # Prepare data for Monthly Trend Chart
+        from datetime import datetime, timedelta
+        
+        monthly_labels = []
+        monthly_income = []
+        monthly_expenses = []
+        
+        # Get last 6 months
+        today = timezone.now().date()
+        for i in range(5, -1, -1):
+            month_start = today.replace(day=1) - timedelta(days=i*30)
+            month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            
+            monthly_labels.append(month_start.strftime('%b %Y'))
+            month_income = subscriptions.filter(
+                start_date__gte=month_start,
+                start_date__lte=month_end
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            month_expenses = expenses.filter(
+                date__gte=month_start,
+                date__lte=month_end
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            
+            monthly_income.append(float(month_income))
+            monthly_expenses.append(float(month_expenses))
+        
+        context = {
+            'total_income': total_income,
+            'total_expenses': total_expenses,
+            'net_balance': net_balance,
+            'dates': json.dumps(dates),
+            'income_data': json.dumps(income_data),
+            'expense_data': json.dumps(expense_data),
+            'expense_types': json.dumps(expense_types),
+            'expense_type_data': json.dumps(expense_type_data),
+            'payment_methods': json.dumps(payment_methods),
+            'payment_method_data': json.dumps(payment_method_data),
+            'monthly_labels': json.dumps(monthly_labels),
+            'monthly_income': json.dumps(monthly_income),
+            'monthly_expenses': json.dumps(monthly_expenses),
+        }
+        
+        return render(request, 'coaching/expense_analytics.html', context)
+        
+    except Institution.DoesNotExist:
+        messages.error(request, "Institution not found.")
+        return redirect('home')
+    except Exception as e:
+        logger.error(f"Error in expense_analytics: {str(e)}")
+        messages.error(request, "An error occurred while loading the analytics.")
         return redirect('home')
         

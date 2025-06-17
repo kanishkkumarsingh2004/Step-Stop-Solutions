@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon, InstitutionBanner, InstitutionSubscriptionPlan
+from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionExpense
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from decimal import Decimal
@@ -427,3 +427,32 @@ class InstitutionSubscriptionPlanForm(forms.ModelForm):
         if price and price < Decimal('0'):
             raise forms.ValidationError("Price cannot be negative")
         return price
+
+class InstitutionExpenseForm(forms.ModelForm):
+    class Meta:
+        model = InstitutionExpense
+        fields = ['expense_type', 'description', 'amount', 'date', 'payment_mode', 'transaction_id', 'notes']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'amount': forms.NumberInput(attrs={'step': '0.01'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add Bootstrap classes to all fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'
+            if field_name != 'notes':
+                field.widget.attrs['class'] += ' h-10'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_mode = cleaned_data.get('payment_mode')
+        transaction_id = cleaned_data.get('transaction_id')
+        
+        # Validate transaction ID for card/UPI payments
+        if payment_mode in ['card', 'upi'] and not transaction_id:
+            raise forms.ValidationError('Transaction ID is required for Card/UPI payments.')
+        
+        return cleaned_data
