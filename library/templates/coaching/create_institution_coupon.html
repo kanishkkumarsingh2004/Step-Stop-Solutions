@@ -163,37 +163,45 @@
             </div>
 
             <!-- Applicable Subscription Plans -->
-            <div class="mb-6">
+            <div class="relative">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Applicable Subscription Plans</label>
-                <p class="text-sm text-gray-500 mb-3">Select which subscription plans this coupon can be applied to. Leave empty to apply to all plans.</p>
-                
-                {% if form.applicable_plans.errors %}
-                <div class="text-red-600 text-sm mb-2">
-                    {{ form.applicable_plans.errors }}
-                </div>
-                {% endif %}
-                
-                <div class="space-y-3">
-                    {% for plan in form.applicable_plans %}
-                    <div class="flex items-center">
-                        <input type="checkbox" 
-                            name="applicable_plans" 
-                            value="{{ plan.data.value }}"
-                            id="{{ plan.id_for_label }}"
-                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            {% if plan.data.selected %}checked{% endif %}>
-                        <label for="{{ plan.id_for_label }}" class="ml-3 text-sm text-gray-700">
-                            {{ plan.choice_label }}
-                        </label>
+                <div class="relative rounded-lg shadow-sm bg-gray-50 p-4 border-2 border-gray-200">
+                    <div class="space-y-3">
+                        {% for plan in form.applicable_plans %}
+                        <div class="flex items-center">
+                            <input type="checkbox" 
+                                   name="applicable_plans" 
+                                   value="{{ plan.data.value }}"
+                                   id="{{ plan.id_for_label }}"
+                                   class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                                   {% if plan.data.selected %}checked{% endif %}>
+                            <label for="{{ plan.id_for_label }}" class="ml-3 text-sm text-gray-700">
+                                {{ plan.choice_label }}
+                            </label>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                    <p class="mt-2 text-sm text-gray-500">Select which subscription plans this coupon can be applied to. Leave empty to apply to all plans.</p>
                 </div>
+                {% if form.applicable_plans.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.applicable_plans.errors.0 }}</p>
+                {% endif %}
             </div>
 
             <!-- Submit Button -->
-            <div class="flex justify-end">
-                <button type="submit" 
-                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <div class="flex justify-end space-x-4 pt-4">
+                <a href="{% url 'manage_institution_coupons' institution.uid %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-150 ease-in-out">
+                    <svg class="h-5 w-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-150 ease-in-out">
+                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
                     Create Coupon
                 </button>
             </div>

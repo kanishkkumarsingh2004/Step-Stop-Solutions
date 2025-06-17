@@ -34,10 +34,75 @@
             </div>
         </div>
 
-        <!-- Subscription Status Card -->
+        <!-- Institute Subscription Status Card -->
+        {% if institute_subscriptions %}
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex flex-col space-y-2 mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">Subscription Status</h2>
+                <h2 class="text-lg font-semibold text-gray-800">Institute Subscriptions</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for subscription in institute_subscriptions %}
+                <div class="p-3 border rounded-lg bg-gray-50">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div class="flex flex-col space-y-1">
+                            <h3 class="text-sm font-bold text-gray-900">{{ subscription.subscription_plan.name }}</h3>
+                            <div class="flex flex-col space-y-1">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium {% if subscription.status == 'valid' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                    Subscription: {{ subscription.status|title }}
+                                </span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
+                                    Payment: {{ subscription.payment_status.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
+                                {{ subscription.subscription_plan.institution.name }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                        <div>
+                            <p class="text-xs text-gray-500">Start Date</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ subscription.start_date|date:"F d, Y" }} 
+                                {% if subscription.start_time %}{{ subscription.start_time|time:"H:i" }}{% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">End Date</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ subscription.end_date|date:"F d, Y" }} 
+                                {% if subscription.end_time %}{{ subscription.end_time|time:"H:i" }}{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-2 sm:gap-4 bg-gray-100 p-2 sm:p-3 rounded-md">
+                        <div class="text-center">
+                            <p class="text-[10px] sm:text-xs text-gray-500">Amount Paid</p>
+                            <p class="text-sm sm:text-base font-bold text-blue-600">₹{{ subscription.amount_paid }}</p>
+                        </div>
+                    </div>
+    <!--                     
+                        {% if subscription.coupon_applied %}
+                        <div class="mt-2 text-center">
+                            <p class="text-[10px] sm:text-xs text-gray-500">Coupon Applied</p>
+                            <p class="text-sm font-bold text-green-600">{{ subscription.coupon_applied.code }}</p>
+                        </div>
+                        {% endif %} -->
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Library Subscription Status Card -->
+        <div class="bg-white p-4 rounded-lg shadow">
+            <div class="flex flex-col space-y-2 mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">Library Subscription Status</h2>
                 <a href="{% url 'user_subscriptions' %}" class="text-blue-500 text-sm">
                     View All Subscriptions
                 </a>
@@ -98,7 +163,7 @@
             </div>
             {% else %}
             <div class="text-center py-4">
-                <p class="text-sm text-gray-500">You don't have any active subscriptions</p>
+                <p class="text-sm text-gray-500">You don't have any active library subscriptions</p>
             </div>
             {% endif %}
         </div>

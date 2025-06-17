@@ -5,7 +5,7 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription   
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
@@ -786,6 +786,13 @@ def apply_subscription_coupon(request, subscription_id):
                 'error': 'Coupon has expired or reached maximum usage'
             })
             
+        # Check if user has already used this coupon
+        if coupon.has_been_used_by_user(request.user):
+            return JsonResponse({
+                'success': False,
+                'error': 'You have already used this coupon'
+            })
+            
         # Check if coupon is applicable to this subscription plan
         if coupon.applicable_plans.exists():
             if subscription not in coupon.applicable_plans.all():
@@ -840,7 +847,6 @@ def apply_subscription_coupon(request, subscription_id):
                 'start_date': subscription.start_date.strftime('%Y-%m-%d')
             }
             
-            
             return JsonResponse({
                 'success': True,
                 'message': 'Coupon applied successfully',
@@ -883,24 +889,47 @@ def institute_subscription_payment(request, uid, subscription_id):
         institution = Institution.objects.get(uid=uid)
         subscription_plan = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
         
-        # Get stored session data
+        # Get coupon data from session buffer
         session_key = f'subscription_{subscription_id}'
         session_data = request.session.get(session_key, {})
+
+        # Check if we have valid coupon data in session
+        has_coupon = False
+        if session_data and isinstance(session_data, dict):
+            try:
+                # Verify the coupon still exists and is valid
+                coupon = InstitutionCoupon.objects.get(
+                    code=session_data.get('coupon_code'),
+                    institution=institution,
+                    status='ACTIVE'
+                )
+                
+                if coupon.is_valid():
+                    has_coupon = True
+                    current_price = Decimal(str(session_data.get('final_price', subscription_plan.new_price)))
+                    applied_coupon = session_data.get('coupon_code')
+                    discount_amount = Decimal(str(session_data.get('discount_amount', 0)))
+                    original_price = Decimal(str(session_data.get('original_price', subscription_plan.old_price)))
+                    
+                    logger.info(f"Using coupon data from session: {session_data}")
+                else:
+                    logger.warning(f"Coupon {session_data.get('coupon_code')} is not valid")
+                    has_coupon = False
+            except InstitutionCoupon.DoesNotExist:
+                logger.warning(f"Coupon {session_data.get('coupon_code')} not found")
+                has_coupon = False
+            except Exception as e:
+                logger.error(f"Error processing coupon from session: {str(e)}")
+                has_coupon = False
         
-        if not session_data:
-            # If no session data exists, use default values
+        if not has_coupon:
+            # Use default subscription prices
             current_price = subscription_plan.new_price
             applied_coupon = None
-            discount_amount = 0
+            discount_amount = Decimal('0')
             original_price = subscription_plan.old_price
-        else:
-            # Use stored session data
-            current_price = Decimal(str(session_data.get('final_price', subscription_plan.new_price)))
-            applied_coupon = session_data.get('coupon_code')
-            discount_amount = Decimal(str(session_data.get('discount_amount', 0)))
-            original_price = Decimal(str(session_data.get('original_price', subscription_plan.old_price)))
         
-        # Generate UPI payment URL
+        # Generate UPI payment URL with the correct price
         upi_url = f"upi://pay?pa={institution.upi_id}&pn={institution.recipient_name}&am={float(current_price)}&cu=INR&tn=Subscription Payment"
         
         # Generate QR code for UPI payment
@@ -926,8 +955,13 @@ def institute_subscription_payment(request, uid, subscription_id):
             'original_price': original_price,
             'discount_amount': discount_amount,
             'final_price': current_price,
+            'has_coupon': has_coupon,
         }
         
+        # Clear the session data after processing
+        request.session.pop(session_key, None)
+        
+        logger.info(f"Rendering payment page with context: {context}")
         return render(request, 'coaching/institute_subscription_payment.html', context)
         
     except Institution.DoesNotExist:
@@ -942,40 +976,28 @@ def institute_subscription_payment(request, uid, subscription_id):
         return redirect('home')
 
 @login_required
-def process_subscription_payment(request, institution_id, subscription_id):
+def process_subscription_payment(request, uid, subscription_id):
     try:
-        institution = Institution.objects.get(id=institution_id)
-        subscription = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
+        institution = Institution.objects.get(uid=uid)
+        subscription_plan = InstitutionSubscriptionPlan.objects.get(id=subscription_id)
         
-        # Get the final price and coupon from session
-        session_price = request.session.get(f'subscription_{subscription_id}_price')
-        coupon_code = request.session.get(f'subscription_{subscription_id}_coupon')
-        
-        # Get the current price
-        current_price = Decimal(str(session_price)) if session_price is not None else subscription.new_price
+        # Get the final price and coupon from form
+        final_price = Decimal(request.POST.get('final_price', subscription_plan.new_price))
+        final_coupon = request.POST.get('final_coupon')
         
         # Get the applied coupon if any
         applied_coupon = None
-        if coupon_code:
+        if final_coupon:
             try:
                 applied_coupon = InstitutionCoupon.objects.get(
-                    code=coupon_code,
+                    code=final_coupon,
                     institution=institution,
                     status='ACTIVE'
                 )
-                if not applied_coupon.is_valid():
+                if not applied_coupon.is_valid() or applied_coupon.has_been_used_by_user(request.user):
                     applied_coupon = None
             except InstitutionCoupon.DoesNotExist:
                 applied_coupon = None
-        
-        # Calculate the final price
-        if applied_coupon:
-            if applied_coupon.discount_type == 'PERCENTAGE':
-                discount_amount = (current_price * applied_coupon.discount_value) / Decimal('100')
-            else:  # FIXED
-                discount_amount = applied_coupon.discount_value
-            current_price = max(current_price - discount_amount, Decimal('0'))
-            current_price = current_price.quantize(Decimal('0.01'))
         
         # Get transaction ID from form
         transaction_id = request.POST.get('transaction_id')
@@ -986,26 +1008,35 @@ def process_subscription_payment(request, institution_id, subscription_id):
         # Create the subscription
         subscription = InstitutionSubscription.objects.create(
             user=request.user,
-            subscription_plan=subscription,
-            start_date=subscription.start_date,
-            end_date=subscription.start_date + timedelta(days=30 * subscription.course_duration),
-            start_time=subscription.start_time,
-            end_time=subscription.end_time,
-            amount_paid=current_price,
+            subscription_plan=subscription_plan,
+            start_date=subscription_plan.start_date,
+            end_date=subscription_plan.start_date + timedelta(days=30 * subscription_plan.course_duration),
+            start_time=subscription_plan.start_time,
+            end_time=subscription_plan.end_time,
+            amount_paid=final_price,
             transaction_id=transaction_id,
-            coupon_applied=applied_coupon
+            coupon_applied=applied_coupon,
+            status='PENDING'  # Set initial status as pending
         )
         
         # Use the coupon if it was applied
         if applied_coupon:
-            applied_coupon.use_coupon()
+            applied_coupon.use_coupon(request.user)
         
-        # Clear session data
-        request.session.pop(f'subscription_{subscription_id}_price', None)
-        request.session.pop(f'subscription_{subscription_id}_coupon', None)
+        # Calculate discount amount for the success page
+        discount_amount = subscription_plan.old_price - final_price if applied_coupon else 0
         
-        messages.success(request, 'Subscription purchased successfully!')
-        return redirect('institute_subscription_details', uid=institution.uid, subscription_id=subscription.id)
+        # Render success page
+        return render(request, 'coaching/subscription_payment_success.html', {
+            'subscription': subscription,
+            'institution': institution,
+            'subscription_plan': subscription_plan,
+            'discount_amount': discount_amount,
+            'original_price': subscription_plan.old_price,
+            'final_price': final_price,
+            'applied_coupon': applied_coupon.code if applied_coupon else None,
+            'transaction_id': transaction_id
+        })
         
     except Institution.DoesNotExist:
         messages.error(request, 'Institution not found')
@@ -1016,7 +1047,7 @@ def process_subscription_payment(request, institution_id, subscription_id):
     except Exception as e:
         logger.error(f"Error in process_subscription_payment: {str(e)}")
         messages.error(request, 'An error occurred while processing your payment')
-        return redirect('institute_subscription_payment', uid=institution.uid, subscription_id=subscription_id)
+        return redirect('institute_subscription_payment', uid=uid, subscription_id=subscription_id)
 
 @login_required
 def institute_subscription_details(request, uid, subscription_id):
@@ -1027,7 +1058,7 @@ def institute_subscription_details(request, uid, subscription_id):
             user=request.user,
             subscription_plan__institution=institution
         )
-        
+
         context = {
             'institution': institution,
             'subscription': subscription,
@@ -1038,9 +1069,9 @@ def institute_subscription_details(request, uid, subscription_id):
             'discount_amount': subscription.subscription_plan.old_price - subscription.amount_paid if subscription.coupon_applied else 0,
             'final_price': subscription.amount_paid
         }
-        
+
         return render(request, 'coaching/institute_subscription_details.html', context)
-        
+
     except Institution.DoesNotExist:
         messages.error(request, 'Institution not found')
         return redirect('home')
@@ -1051,3 +1082,116 @@ def institute_subscription_details(request, uid, subscription_id):
         logger.error(f"Error in institute_subscription_details: {str(e)}")
         messages.error(request, 'An error occurred while loading subscription details')
         return redirect('home')
+
+@login_required
+def verify_payment(request, uid, subscription_id):
+    try:
+        institution = Institution.objects.get(uid=uid)
+        subscription = InstitutionSubscription.objects.get(id=subscription_id, subscription_plan__institution=institution)
+        
+        if request.method == 'POST':
+            status = request.POST.get('status')
+            
+            if status in ['pending', 'valid', 'invalid']:
+                # Create or update verification record
+                verification, created = PaymentVerification.objects.get_or_create(
+                    subscription=subscription,
+                    defaults={
+                        'status': 'verified' if status == 'valid' else 'rejected' if status == 'invalid' else 'pending',
+                        'verified_by': request.user if status != 'pending' else None,
+                        'verification_notes': f'Status changed to {status}'
+                    }
+                )
+                
+                if not created:
+                    verification.status = 'verified' if status == 'valid' else 'rejected' if status == 'invalid' else 'pending'
+                    verification.verified_by = request.user if status != 'pending' else None
+                    verification.verification_notes = f'Status changed to {status}'
+                    verification.save()
+                
+                # Update subscription payment status
+                subscription.payment_status = status
+                subscription.save()
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f'Payment status updated to {status}'
+                })
+            
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid status value'
+            }, status=400)
+            
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid request method'
+        }, status=405)
+        
+    except Institution.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Institution not found'
+        }, status=404)
+    except InstitutionSubscription.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Subscription not found'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error in verify_payment: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'An error occurred while verifying payment'
+        }, status=500)
+
+@login_required
+def payment_verifications(request, uid):
+    try:
+        institution = Institution.objects.get(uid=uid)
+        
+        # Get filter parameters
+        status_filter = request.GET.get('status', 'all')
+        search_query = request.GET.get('search', '').strip()
+        
+        # Base queryset
+        subscriptions = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution
+        ).select_related('user', 'subscription_plan')
+        
+        # Apply status filter
+        if status_filter != 'all':
+            subscriptions = subscriptions.filter(payment_status=status_filter)
+        
+        # Apply search filter
+        if search_query:
+            subscriptions = subscriptions.filter(
+                Q(user__first_name__icontains=search_query) |
+                Q(user__last_name__icontains=search_query) |
+                Q(transaction_id__icontains=search_query) |
+                Q(subscription_plan__name__icontains=search_query)
+            )
+        
+        # Get verifications for the filtered subscriptions
+        verifications = PaymentVerification.objects.filter(
+            subscription__in=subscriptions
+        ).select_related('verified_by', 'subscription__user', 'subscription__subscription_plan')
+        
+        context = {
+            'institution': institution,
+            'subscriptions': subscriptions,
+            'verifications': verifications,
+            'current_status': status_filter,
+            'search_query': search_query
+        }
+        
+        return render(request, 'coaching/payment_verifications.html', context)
+        
+    except Institution.DoesNotExist:
+        messages.error(request, 'Institution not found')
+        return redirect('home')
+    except Exception as e:
+        logger.error(f"Error in payment_verifications: {str(e)}")
+        messages.error(request, 'An error occurred while loading payment verifications')
+        return redirect('home')
+        

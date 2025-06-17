@@ -38,6 +38,7 @@ from .models import (
     VendorSSID,
     AdminCard,
     AdminExpense,
+    InstitutionSubscription,
 )
 # Python standard library imports
 import json
@@ -62,11 +63,8 @@ def home(request):
     })
 def dashboard(request):
     # Get subscriptions for the current user with library details
-    subscriptions = UserSubscription.objects.filter(user=request.user).select_related('subscription__library')
-    
-    # Process subscriptions and add library seat details
-    subscriptions_with_details = []
-    for subscription in subscriptions:
+    active_subscriptions = []
+    for subscription in UserSubscription.objects.filter(user=request.user).select_related('subscription__library'):
         # Check if subscription is expired or valid based on end date
         if subscription.end_date and subscription.end_time:
             end_datetime = datetime.combine(subscription.end_date, subscription.end_time)
@@ -86,12 +84,12 @@ def dashboard(request):
         
         # Determine payment status and color
         if latest_transaction:
-            status = latest_transaction.status
-            color = 'green' if status == 'valid' else 'yellow' if status == 'pending' else 'red'
+            payment_status = latest_transaction.status
+            payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
             cost = latest_transaction.amount
         else:
-            status = None
-            color = 'red'
+            payment_status = 'pending'
+            payment_color = 'yellow'
             cost = subscription.subscription.normal_price
             
         # Get library details for this subscription
@@ -99,43 +97,62 @@ def dashboard(request):
         total_seats = library.capacity if library else 0
         available_seats = library.available_seats if library else 0
         
-        # Get subscription status from UserSubscription
-        subscription_status = 'active' if subscription.status == 'valid' and subscription.end_date >= timezone.now().date() else 'expired'
-        status_color = 'green' if subscription_status == 'active' else 'red'
-        # Add processed data to subscription
-        subscription.latest_transaction = latest_transaction
-        subscription.payment_status = {'status': status, 'color': color}
-        subscription.cost = cost
-        subscription.library_seats = {
-            'total_seats': total_seats,
-            'available_seats': available_seats
+        # Get subscription status
+        subscription_status = subscription.status
+        status_color = 'green' if subscription_status == 'valid' else 'red'
+
+        subscription_data = {
+            'subscription': subscription.subscription,
+            'start_date': subscription.start_date,
+            'end_date': subscription.end_date,
+            'start_time': subscription.start_time,
+            'end_time': subscription.end_time,
+            'cost': cost,
+            'subscription_status': {
+                'status': subscription_status,
+                'color': status_color
+            },
+            'payment_status': {
+                'status': payment_status,
+                'color': payment_color
+            },
+            'library_seats': {
+                'total_seats': total_seats,
+                'available_seats': available_seats
+            }
         }
-        subscription.subscription_status = {
-            'status': subscription_status,
-            'color': status_color
+        active_subscriptions.append(subscription_data)
+
+    # Get institute subscriptions with payment status
+    institute_subscriptions = []
+    for subscription in InstitutionSubscription.objects.filter(user=request.user).select_related('subscription_plan__institution'):
+        # Use the payment_status directly from the InstitutionSubscription model
+        payment_status = subscription.payment_status
+        payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
+
+        subscription_data = {
+            'subscription_plan': subscription.subscription_plan,
+            'start_date': subscription.start_date,
+            'end_date': subscription.end_date,
+            'start_time': subscription.start_time,
+            'end_time': subscription.end_time,
+            'amount_paid': subscription.amount_paid,
+            'transaction_id': subscription.transaction_id,
+            'status': subscription.status,
+            'payment_status': {
+                'status': payment_status,
+                'color': payment_color
+            },
+            'coupon_applied': subscription.coupon_applied
         }
-        
-        # Add to list for sorting
-        subscriptions_with_details.append({
-            'subscription': subscription,
-            'start_date': subscription.start_date
-        })
-    
-    # Sort subscriptions by start date (most recent first)
-    sorted_subscriptions = sorted(
-        subscriptions_with_details,
-        key=lambda x: x['start_date'],
-        reverse=True
-    )
-    subscriptions = [item['subscription'] for item in sorted_subscriptions]
-    
-    # Get attendances for the current user
-    attendances = Attendance.objects.filter(user=request.user).order_by('-check_in_time')[:15]
-    
+        institute_subscriptions.append(subscription_data)
+
+    # Get recent attendance records
+    attendances = Attendance.objects.filter(user=request.user).order_by('-check_in_time')[:5]
+
     context = {
-        'status_color': 'gray',
-        'status': 'inactive', 
-        'active_subscriptions': subscriptions,
+        'active_subscriptions': active_subscriptions,
+        'institute_subscriptions': institute_subscriptions,
         'attendances': attendances,
     }
     return render(request, 'users_pages/dashboard.html', context)
@@ -631,8 +648,7 @@ def register_venders_shop(request):
                                         Q(district__icontains=query) |
                                         Q(pincode__icontains=query))
     
-    items = list(libraries) if libraries.exists() else Library.objects.all()    
-
+    items = list(libraries) if libraries.exists() else Library.objects.all()
     return render(request, 'users_pages/register_venders_shop.html', {'items': items})
 def register_institute(request):
     if not request.user.is_authenticated:
@@ -646,7 +662,7 @@ def register_institute(request):
         Q(website_url__icontains=query) |
         Q(pincode__icontains=query)
     )
-    items = list(institutions) if institutions.exists() else Institution.objects.all()
+    items = list(institutions)
     
     return render(request, 'users_pages/register_institute.html', {'items': items})
 

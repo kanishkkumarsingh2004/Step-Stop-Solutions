@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
+    <!-- Header -->
+    <div class="text-center mb-2 sm:mb-3">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 animate-fade-in">
+            Payment Verifications
+        </h1>
+    </div>
+
+    <!-- Filter and Search Section -->
+    <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row items-stretch sm:items-center justify-between mb-4">
+        <!-- Filter Buttons -->
+        <div class="flex flex-row space-x-1 justify-center">
+            <a href="?status=all{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if current_status == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                All
+            </a>
+            <a href="?status=valid{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if current_status == 'valid' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Valid
+            </a>
+            <a href="?status=pending{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if current_status == 'pending' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Pending
+            </a>
+            <a href="?status=invalid{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if current_status == 'invalid' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Invalid
+            </a>
+        </div>
+
+        <!-- Search Field -->
+        <form method="get" class="w-full sm:w-56">
+            {% if current_status != 'all' %}
+            <input type="hidden" name="status" value="{{ current_status }}">
+            {% endif %}
+            <div class="relative">
+                <input type="text" name="search" placeholder="Search payments..." value="{{ search_query }}" 
+                       class="w-full px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <button type="submit" class="absolute inset-y-0 right-0 px-2 flex items-center">
+                    <i class="bi bi-search text-gray-500 text-sm"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Payments Section -->
+    <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">
+            {% if current_status == 'all' %}
+                All Payments
+            {% else %}
+                {{ current_status|title }} Payments
+            {% endif %}
+        </h2>
+        
+        {% if subscriptions %}
+        <div class="block md:hidden space-y-2">
+            {% for subscription in subscriptions %}
+            <div class="p-2 sm:p-3 border rounded-md">
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Student:</span>
+                        <span>{{ subscription.user.get_full_name }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Transaction ID:</span>
+                        <span>{{ subscription.transaction_id }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Plan:</span>
+                        <span>{{ subscription.subscription_plan.name }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Amount:</span>
+                        <span>₹{{ subscription.amount_paid }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Status:</span>
+                        <form method="POST" action="{% url 'verify_payment' institution.uid subscription.id %}" class="inline" onsubmit="return handleStatusChange(event, this)">
+                            {% csrf_token %}
+                            <select name="status" class="text-2xs xs:text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500" onchange="handleStatusChange(event, this.form)">
+                                <option value="pending" {% if subscription.payment_status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="valid" {% if subscription.payment_status == 'valid' %}selected{% endif %}>Valid</option>
+                                <option value="invalid" {% if subscription.payment_status == 'invalid' %}selected{% endif %}>Invalid</option>
+                            </select>
+                        </form>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Date:</span>
+                        <span>{{ subscription.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for subscription in subscriptions %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {{ subscription.user.get_full_name }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {{ subscription.transaction_id }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {{ subscription.subscription_plan.name }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            ₹{{ subscription.amount_paid }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <form method="POST" action="{% url 'verify_payment' institution.uid subscription.id %}" class="inline" onsubmit="return handleStatusChange(event, this)">
+                                {% csrf_token %}
+                                <select name="status" class="text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500" onchange="handleStatusChange(event, this.form)">
+                                    <option value="pending" {% if subscription.payment_status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="valid" {% if subscription.payment_status == 'valid' %}selected{% endif %}>Valid</option>
+                                    <option value="invalid" {% if subscription.payment_status == 'invalid' %}selected{% endif %}>Invalid</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {{ subscription.created_at|date:"M d, Y" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <p class="text-gray-500">
+                {% if search_query %}
+                    No payments found matching "{{ search_query }}"
+                {% else %}
+                    No payments found for the selected status
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{% static 'js/payment_verifications.js' %}"></script>
+{% endblock %} 

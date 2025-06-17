@@ -527,6 +527,12 @@ class InstitutionCoupon(models.Model):
             return True
         return subscription_plan in self.applicable_plans.all()
 
+    def has_been_used_by_user(self, user):
+        """
+        Check if this coupon has already been used by the given user.
+        """
+        return self.used_by.filter(user=user).exists()
+
     def apply_discount(self, amount):
         if not self.is_valid():
             return amount
@@ -538,14 +544,41 @@ class InstitutionCoupon(models.Model):
         
         return max(0, amount - discount)
 
-    def use_coupon(self):
-        if self.is_valid():
-            self.current_usage += 1
-            if self.current_usage >= self.max_usage:
-                self.status = 'INACTIVE'
-            self.save()
-            return True
-        return False
+    def use_coupon(self, user):
+        """
+        Mark the coupon as used by a specific user.
+        Returns True if successful, False if the coupon cannot be used.
+        """
+        if not self.is_valid() or self.has_been_used_by_user(user):
+            return False
+            
+        self.current_usage += 1
+        if self.current_usage >= self.max_usage:
+            self.status = 'INACTIVE'
+        self.save()
+        
+        # Create a record of usage
+        CouponUsage.objects.create(
+            coupon=self,
+            user=user,
+            used_at=timezone.now()
+        )
+        return True
+
+class CouponUsage(models.Model):
+    """
+    Tracks which users have used which coupons.
+    """
+    coupon = models.ForeignKey(InstitutionCoupon, on_delete=models.CASCADE, related_name='used_by')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='used_coupons')
+    used_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['coupon', 'user']
+        ordering = ['-used_at']
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} used {self.coupon.code} on {self.used_at}"
 
 class InstitutionReview(models.Model):
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='reviews')
@@ -658,6 +691,12 @@ class InstitutionSubscription(models.Model):
         ('expired', 'Expired'),
     ]
     
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('valid', 'Valid'),
+        ('invalid', 'Invalid'),
+    ]
+    
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='institution_subscriptions')
     subscription_plan = models.ForeignKey(InstitutionSubscriptionPlan, on_delete=models.CASCADE, related_name='subscriptions')
     start_date = models.DateField()
@@ -665,6 +704,7 @@ class InstitutionSubscription(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='valid')
+    payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='pending')
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_id = models.CharField(max_length=100, unique=True)
     coupon_applied = models.ForeignKey(InstitutionCoupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='applied_subscriptions')
@@ -685,3 +725,26 @@ class InstitutionSubscription(models.Model):
         verbose_name = "Institution Subscription"
         verbose_name_plural = "Institution Subscriptions"
         ordering = ['-created_at']
+
+class PaymentVerification(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    subscription = models.ForeignKey(InstitutionSubscription, on_delete=models.CASCADE, related_name='verifications')
+    verified_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='verified_payments')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    verification_notes = models.TextField(blank=True, null=True)
+    screenshot_url = models.URLField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Payment Verification"
+        verbose_name_plural = "Payment Verifications"
+
+    def __str__(self):
+        return f"Payment Verification for {self.subscription} - {self.status}"

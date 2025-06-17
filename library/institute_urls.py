@@ -38,4 +38,6 @@ urlpatterns = [
    path('institution/<str:uid>/subscription/<int:subscription_id>/payment/', institute_view.institute_subscription_payment, name='institute_subscription_payment'),
    path('institution/<str:uid>/subscription/<int:subscription_id>/process-payment/', institute_view.process_subscription_payment, name='process_subscription_payment'),
    path('institution/<str:uid>/subscription/<int:subscription_id>/details/', institute_view.institute_subscription_details, name='institute_subscription_details'),
+   path('institution/<str:uid>/subscription/<int:subscription_id>/verify-payment/', institute_view.verify_payment, name='verify_payment'),
+   path('institution/<str:uid>/payment-verifications/', institute_view.payment_verifications, name='payment_verifications'),
 ]

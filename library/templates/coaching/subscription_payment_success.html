@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl mx-auto">
+        <div class="text-center mb-8">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Payment Submitted Successfully!</h1>
+            <p class="mt-2 text-gray-600">Your transaction is being processed and will be verified within 24 hours.</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Transaction Details</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Transaction ID:</span>
+                    <span class="font-medium">{{ subscription.transaction_id }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Subscription Plan:</span>
+                    <span class="font-medium">{{ subscription.subscription_plan.name }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Amount Paid:</span>
+                    <span class="font-medium">₹{{ subscription.amount_paid|floatformat:2 }}</span>
+                </div>
+                {% if subscription.coupon_applied %}
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Coupon Applied:</span>
+                    <span class="font-medium text-green-600">{{ subscription.coupon_applied.code }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Discount Amount:</span>
+                    <span class="font-medium text-green-600">-₹{{ discount_amount|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Start Date:</span>
+                    <span class="font-medium">{{ subscription.start_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">End Date:</span>
+                    <span class="font-medium">{{ subscription.end_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Timing:</span>
+                    <span class="font-medium">{{ subscription.start_time|time:"g:i A" }} - {{ subscription.end_time|time:"g:i A" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-8">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        Your subscription will be activated after verification. You will receive a confirmation email once the payment is verified.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center space-y-4">
+            <a href="{% url 'institute_subscription_details' institution.uid subscription.id %}" 
+               class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-lg font-semibold shadow-lg hover:shadow-xl">
+                View Subscription Details
+            </a>
+            <div>
+                <a href="{% url 'public_institute_subscriptions' institution.uid %}" 
+                   class="text-blue-600 hover:text-blue-800 text-sm">
+                    Back to Subscription Plans
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
