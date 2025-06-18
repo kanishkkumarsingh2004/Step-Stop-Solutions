@@ -243,7 +243,7 @@ def edit_institution_profile(request, uid):
 
 @login_required
 def manage_institution_users(request, uid):
-    """Display all students who have joined the institution"""
+    """Display all students who have enrolled in the institution through subscriptions"""
     institution = get_object_or_404(Institution, uid=uid)
     
     # Check if the logged-in user is the owner of the institution
@@ -251,15 +251,33 @@ def manage_institution_users(request, uid):
         messages.error(request, "You don't have permission to view this institution's students.")
         return redirect('coaching_dashboard')
     
-    # Get all students who have joined this institution through libraries
-    students = CustomUser.objects.filter(
-        library__owner=institution.owner,
-        library__business_type='Coaching'
-    ).distinct()
+    # Get all students who have subscribed to this institution's subscription plans
+    subscriptions = InstitutionSubscription.objects.filter(
+        subscription_plan__institution=institution
+    ).select_related('user', 'subscription_plan').order_by('-created_at')
+    
+    # Get unique users with their subscription details
+    enrolled_users = []
+    seen_users = set()
+    
+    for subscription in subscriptions:
+        user_id = subscription.user.id
+        if user_id not in seen_users:
+            seen_users.add(user_id)
+            enrolled_users.append({
+                'user': subscription.user,
+                'subscription': subscription,
+                'subscription_plan': subscription.subscription_plan,
+                'enrollment_date': subscription.created_at,
+                'payment_status': subscription.payment_status,
+                'payment_method': subscription.payment_method,
+                'amount_paid': subscription.amount_paid
+            })
     
     return render(request, 'coaching/manage_institution_users.html', {
         'institution': institution,
-        'students': students
+        'enrolled_users': enrolled_users,
+        'total_enrolled': len(enrolled_users)
     })
 
 @login_required
@@ -984,6 +1002,7 @@ def process_subscription_payment(request, uid, subscription_id):
         # Get the final price and coupon from form
         final_price = Decimal(request.POST.get('final_price', subscription_plan.new_price))
         final_coupon = request.POST.get('final_coupon')
+        payment_method = request.POST.get('payment_method', 'cash')
         
         # Get the applied coupon if any
         applied_coupon = None
@@ -1000,10 +1019,16 @@ def process_subscription_payment(request, uid, subscription_id):
                 applied_coupon = None
         
         # Get transaction ID from form
-        transaction_id = request.POST.get('transaction_id')
-        if not transaction_id:
-            messages.error(request, 'Transaction ID is required')
+        transaction_id = request.POST.get('transaction_id', '').strip()
+        
+        # Validate transaction ID based on payment method
+        if payment_method == 'upi' and not transaction_id:
+            messages.error(request, 'Transaction ID is required for UPI payments')
             return redirect('institute_subscription_payment', uid=institution.uid, subscription_id=subscription_id)
+        
+        # For cash payments, generate a reference if no transaction ID provided
+        if payment_method == 'cash' and not transaction_id:
+            transaction_id = f"CASH_{request.user.id}_{int(timezone.now().timestamp())}"
         
         # Create the subscription
         subscription = InstitutionSubscription.objects.create(
@@ -1015,8 +1040,9 @@ def process_subscription_payment(request, uid, subscription_id):
             end_time=subscription_plan.end_time,
             amount_paid=final_price,
             transaction_id=transaction_id,
+            payment_method=payment_method,
             coupon_applied=applied_coupon,
-            status='PENDING'  # Set initial status as pending
+            status='Valid'  # Set initial status as pending
         )
         
         # Use the coupon if it was applied
@@ -1035,7 +1061,8 @@ def process_subscription_payment(request, uid, subscription_id):
             'original_price': subscription_plan.old_price,
             'final_price': final_price,
             'applied_coupon': applied_coupon.code if applied_coupon else None,
-            'transaction_id': transaction_id
+            'transaction_id': transaction_id,
+            'payment_method': payment_method
         })
         
     except Institution.DoesNotExist:
@@ -1252,7 +1279,7 @@ def payment_expenses(request, uid):
                 'description': f"Payment from {sub.user.get_full_name()} - {sub.subscription_plan.name}",
                 'type': 'income',
                 'amount': sub.amount_paid,
-                'payment_mode': sub.payment_mode if hasattr(sub, 'payment_mode') else 'N/A',
+                'payment_mode': sub.payment_method,
                 'transaction_id': sub.transaction_id,
                 'notes': f"Transaction ID: {sub.transaction_id}"
             })
@@ -1457,8 +1484,6 @@ def expense_analytics(request, uid):
             cumulative_income += float(daily_income)
             cumulative_expense += float(daily_expenses)
             
-            print(f"Date: {date}, Daily Income: {daily_income}, Cumulative Income: {cumulative_income}")  # Debug log
-            
             income_data.append(cumulative_income)
             expense_data.append(cumulative_expense)
         
@@ -1474,11 +1499,25 @@ def expense_analytics(request, uid):
         # Prepare data for Payment Methods Bar Chart
         payment_methods = []
         payment_method_data = []
+        
+        # Get payment methods from expenses
         for payment_mode, _ in InstitutionExpense.PAYMENT_MODES:
             total = expenses.filter(payment_mode=payment_mode).aggregate(total=Sum('amount'))['total'] or 0
             if total > 0:
                 payment_methods.append(payment_mode)
                 payment_method_data.append(float(total))
+        
+        # Get payment methods from subscriptions (income)
+        for payment_method, _ in InstitutionSubscription.PAYMENT_METHOD_CHOICES:
+            total = subscriptions.filter(payment_method=payment_method).aggregate(total=Sum('amount_paid'))['total'] or 0
+            if total > 0:
+                if payment_method not in payment_methods:
+                    payment_methods.append(payment_method)
+                    payment_method_data.append(float(total))
+                else:
+                    # Add to existing payment method total
+                    idx = payment_methods.index(payment_method)
+                    payment_method_data[idx] += float(total)
         
         # Prepare data for Monthly Trend Chart
         from datetime import datetime, timedelta
@@ -1507,6 +1546,15 @@ def expense_analytics(request, uid):
             monthly_income.append(float(month_income))
             monthly_expenses.append(float(month_expenses))
         
+        # Prepare data for Expense Categories Bar Chart
+        expense_categories = []
+        expense_amounts = []
+        for expense_type, display_name in InstitutionExpense.EXPENSE_TYPES:
+            total = expenses.filter(expense_type=expense_type).aggregate(total=Sum('amount'))['total'] or 0
+            if total > 0:
+                expense_categories.append(display_name)  # Use display name instead of internal value
+                expense_amounts.append(float(total))
+        
         context = {
             'total_income': total_income,
             'total_expenses': total_expenses,
@@ -1521,6 +1569,8 @@ def expense_analytics(request, uid):
             'monthly_labels': json.dumps(monthly_labels),
             'monthly_income': json.dumps(monthly_income),
             'monthly_expenses': json.dumps(monthly_expenses),
+            'expense_categories': json.dumps(expense_categories),
+            'expense_amounts': json.dumps(expense_amounts),
         }
         
         return render(request, 'coaching/expense_analytics.html', context)

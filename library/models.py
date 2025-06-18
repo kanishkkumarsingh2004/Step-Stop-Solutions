@@ -471,7 +471,7 @@ class AdminCard(models.Model):
             raise ValidationError("A card cannot be allocated to both a library and an institution")
         if not self.library and not self.institution:
             raise ValidationError("A card must be allocated to either a library or an institution")
-
+    
 class AdminExpense(models.Model):
     TYPE_CHOICES = [
         ('Profit', 'Profit'),
@@ -708,6 +708,12 @@ class InstitutionSubscription(models.Model):
         ('invalid', 'Invalid'),
     ]
     
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('upi', 'UPI'),
+    ]
+    
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='institution_subscriptions')
     subscription_plan = models.ForeignKey(InstitutionSubscriptionPlan, on_delete=models.CASCADE, related_name='subscriptions')
     start_date = models.DateField()
@@ -716,6 +722,7 @@ class InstitutionSubscription(models.Model):
     end_time = models.TimeField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='valid')
     payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='cash')
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_id = models.CharField(max_length=100, unique=True)
     coupon_applied = models.ForeignKey(InstitutionCoupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='applied_subscriptions')

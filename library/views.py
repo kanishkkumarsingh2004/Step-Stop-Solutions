@@ -125,7 +125,7 @@ def dashboard(request):
 
     # Get institute subscriptions with payment status
     institute_subscriptions = []
-    for subscription in InstitutionSubscription.objects.filter(user=request.user).select_related('subscription_plan__institution'):
+    for subscription in InstitutionSubscription.objects.filter(user=request.user).select_related('subscription_plan__institution')[:3]:
         # Use the payment_status directly from the InstitutionSubscription model
         payment_status = subscription.payment_status
         payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
@@ -148,7 +148,7 @@ def dashboard(request):
         institute_subscriptions.append(subscription_data)
 
     # Get recent attendance records
-    attendances = Attendance.objects.filter(user=request.user).order_by('-check_in_time')[:5]
+    attendances = Attendance.objects.filter(user=request.user).order_by('-check_in_time')[:10]
 
     context = {
         'active_subscriptions': active_subscriptions,

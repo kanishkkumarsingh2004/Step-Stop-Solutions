@@ -64,6 +64,10 @@
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
+                                <span>Payment Method:</span>
+                                <span class="text-capitalize">{{ subscription.payment_method }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Original Price:</span>
                                 <span>₹{{ original_price|floatformat:2 }}</span>
                             </div>
@@ -83,7 +87,13 @@
                                 <strong>₹{{ final_price|floatformat:2 }}</strong>
                             </div>
                             <div class="mt-2">
-                                <small class="text-muted">Transaction ID: {{ subscription.transaction_id }}</small>
+                                <small class="text-muted">
+                                    {% if subscription.payment_method == 'cash' %}
+                                        Reference ID: {{ subscription.transaction_id }}
+                                    {% else %}
+                                        Transaction ID: {{ subscription.transaction_id }}
+                                    {% endif %}
+                                </small>
                             </div>
                         </div>
                     </div>

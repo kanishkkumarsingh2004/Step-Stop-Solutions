@@ -8,10 +8,10 @@
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex-1 min-w-0">
                     <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                        Institution Students
+                        Enrolled Students
                     </h2>
                     <p class="mt-1 text-sm text-gray-500">
-                        View all students enrolled in {{ institution.name }}
+                        View all students enrolled in {{ institution.name }} ({{ total_enrolled }} students)
                     </p>
                 </div>
                 <div class="mt-4 flex md:mt-0 md:ml-4">
@@ -26,7 +26,7 @@
             </div>
         </div>
 
-        <!-- Students List Section -->
+        <!-- Enrolled Students List Section -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <div class="space-y-6">
@@ -42,13 +42,16 @@
                                                     Student
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Email
+                                                    Contact Info
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Mobile
+                                                    Subscription Plan
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Education
+                                                    Payment Details
+                                                </th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Enrollment Date
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Status
@@ -56,43 +59,73 @@
                                             </tr>
                                         </thead>
                                         <tbody class="bg-white divide-y divide-gray-200">
-                                            {% for student in students %}
+                                            {% for enrolled_user in enrolled_users %}
                                             <tr>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <div class="flex items-center">
                                                         <div class="flex-shrink-0 h-10 w-10">
-                                                            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                                <span class="text-gray-500 text-lg font-medium">
-                                                                    {{ student.first_name|first }}{{ student.last_name|first }}
+                                                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                                <span class="text-blue-600 text-lg font-medium">
+                                                                    {{ enrolled_user.user.first_name|first }}{{ enrolled_user.user.last_name|first }}
                                                                 </span>
                                                             </div>
                                                         </div>
                                                         <div class="ml-4">
                                                             <div class="text-sm font-medium text-gray-900">
-                                                                {{ student.get_full_name }}
+                                                                {{ enrolled_user.user.get_full_name }}
+                                                            </div>
+                                                            <div class="text-sm text-gray-500">
+                                                                {{ enrolled_user.user.get_education_display }}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900">{{ student.email }}</div>
+                                                    <div class="text-sm text-gray-900">{{ enrolled_user.user.email }}</div>
+                                                    <div class="text-sm text-gray-500">{{ enrolled_user.user.mobile_number }}</div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900">{{ student.mobile_number }}</div>
+                                                    <div class="text-sm font-medium text-gray-900">{{ enrolled_user.subscription_plan.name }}</div>
+                                                    <div class="text-sm text-gray-500">
+                                                        {{ enrolled_user.subscription.start_date|date:"M d, Y" }} - {{ enrolled_user.subscription.end_date|date:"M d, Y" }}
+                                                    </div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900">{{ student.get_education_display }}</div>
+                                                    <div class="text-sm font-medium text-gray-900">₹{{ enrolled_user.amount_paid|floatformat:2 }}</div>
+                                                    <div class="text-sm text-gray-500 capitalize">{{ enrolled_user.payment_method }}</div>
+                                                    <div class="text-xs text-gray-400">{{ enrolled_user.subscription.transaction_id|truncatechars:15 }}</div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if student.is_checked_in %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                                                        {% if student.is_checked_in %}Checked In{% else %}Not Checked In{% endif %}
-                                                    </span>
+                                                    <div class="text-sm text-gray-900">{{ enrolled_user.enrollment_date|date:"M d, Y" }}</div>
+                                                    <div class="text-sm text-gray-500">{{ enrolled_user.enrollment_date|time:"g:i A" }}</div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex flex-col space-y-1 items-center">
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                            {% if enrolled_user.subscription.status == 'Valid' %}bg-green-100 text-green-800
+                                                            {% elif enrolled_user.subscription.status == 'expired' %}bg-red-100 text-red-800
+                                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                            Subscription: {{ enrolled_user.subscription.status|title }}
+                                                        </span>
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                            {% if enrolled_user.payment_status == 'valid' %}bg-green-100 text-green-800
+                                                            {% elif enrolled_user.payment_status == 'pending' %}bg-yellow-100 text-yellow-800
+                                                            {% else %}bg-red-100 text-red-800{% endif %}">
+                                                            Payment: {{ enrolled_user.payment_status|title }}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                             </tr>
                                             {% empty %}
                                             <tr>
-                                                <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                    No students have enrolled yet.
+                                                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                    <div class="flex flex-col items-center py-8">
+                                                        <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                                        </svg>
+                                                        <p class="text-lg font-medium text-gray-900 mb-2">No students enrolled yet</p>
+                                                        <p class="text-gray-500">Students will appear here once they subscribe to your courses.</p>
+                                                    </div>
                                                 </td>
                                             </tr>
                                             {% endfor %}

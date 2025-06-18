@@ -48,7 +48,7 @@
                         <div class="flex flex-col space-y-1">
                             <h3 class="text-sm font-bold text-gray-900">{{ subscription.subscription_plan.name }}</h3>
                             <div class="flex flex-col space-y-1">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium {% if subscription.status == 'valid' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium {% if subscription.status == 'Valid' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
                                     Subscription: {{ subscription.status|title }}
                                 </span>
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">

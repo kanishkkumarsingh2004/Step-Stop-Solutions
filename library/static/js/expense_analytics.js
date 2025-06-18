@@ -126,6 +126,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Expense Categories Bar Chart
+    const expenseCategoryCtx = document.getElementById('expenseCategoryBarChart').getContext('2d');
+    new Chart(expenseCategoryCtx, {
+        type: 'bar',
+        data: {
+            labels: JSON.parse(document.getElementById('expenseCategories').textContent),
+            datasets: [{
+                label: 'Amount (₹)',
+                data: JSON.parse(document.getElementById('expenseAmounts').textContent),
+                backgroundColor: '#8b5cf6',
+                borderColor: '#7c3aed',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Amount: ₹' + context.raw;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb',
+                        borderDash: [5, 5],
+                        drawBorder: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value;
+                        },
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
     // Monthly Trend Chart
     const monthlyTrendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
     new Chart(monthlyTrendCtx, {

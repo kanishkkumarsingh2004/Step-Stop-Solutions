@@ -10,14 +10,26 @@
                 </svg>
             </div>
             <h1 class="text-3xl font-bold text-gray-800">Payment Submitted Successfully!</h1>
-            <p class="mt-2 text-gray-600">Your transaction is being processed and will be verified within 24 hours.</p>
+            <p class="mt-2 text-gray-600">
+                {% if payment_method == 'cash' %}
+                    Your cash payment request has been submitted. Please visit the institution to complete the payment.
+                {% else %}
+                    Your UPI transaction is being processed and will be verified within 24 hours.
+                {% endif %}
+            </p>
         </div>
 
         <div class="bg-gray-50 rounded-lg p-6 mb-8">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">Transaction Details</h2>
             <div class="space-y-3">
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Transaction ID:</span>
+                    <span class="text-gray-600">Payment Method:</span>
+                    <span class="font-medium capitalize">{{ payment_method }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">
+                        {% if payment_method == 'cash' %}Reference ID:{% else %}Transaction ID:{% endif %}
+                    </span>
                     <span class="font-medium">{{ subscription.transaction_id }}</span>
                 </div>
                 <div class="flex justify-between">
@@ -62,7 +74,11 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm text-blue-700">
-                        Your subscription will be activated after verification. You will receive a confirmation email once the payment is verified.
+                        {% if payment_method == 'cash' %}
+                            Please visit the institution to complete your cash payment. Bring this confirmation with you. Your subscription will be activated after the institution verifies your payment.
+                        {% else %}
+                            Your subscription will be activated after verification. You will receive a confirmation email once the payment is verified.
+                        {% endif %}
                     </p>
                 </div>
             </div>
