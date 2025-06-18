@@ -2906,3 +2906,89 @@ def balance_sheet(request):
         'today': now().date()
     }
     return render(request, 'admin_page/balance_sheet.html', context)
+
+@login_required
+def allocate_card_to_institution_page(request):
+    if not request.user.is_staff:
+        return redirect('home')
+    
+    institutions = Institution.objects.all()
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True)  # Only unallocated cards
+    return render(request, 'admin_page/allocate_card_to_institution.html', {
+        'institutions': institutions,
+        'admin_cards': admin_cards
+    })
+
+@login_required
+@csrf_exempt
+def allocate_card_to_institution(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            institution_id = data.get('institution_id')
+            nfc_serials = data.get('nfc_serials')
+            
+            if not institution_id or not nfc_serials:
+                return JsonResponse({'error': 'Institution ID and at least one NFC serial are required'}, status=400)
+            
+            institution = Institution.objects.get(id=institution_id)
+            allocated_cards = []
+            errors = []
+            
+            for nfc_serial in nfc_serials:
+                try:
+                    card = AdminCard.objects.get(card_id=nfc_serial)
+                    if card.library or card.institution:
+                        errors.append(f'Card {nfc_serial} is already allocated')
+                        continue
+                    
+                    card.institution = institution
+                    card.save()
+                    allocated_cards.append(nfc_serial)
+                except AdminCard.DoesNotExist:
+                    errors.append(f'Card {nfc_serial} not found')
+                    continue
+            
+            if errors:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Some cards could not be allocated',
+                    'errors': errors,
+                    'allocated_cards': allocated_cards
+                }, status=400)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'{len(allocated_cards)} cards allocated successfully',
+                'data': {
+                    'institution_id': institution.id,
+                    'institution_name': institution.name,
+                    'allocated_cards': allocated_cards
+                }
+            })
+            
+        except Institution.DoesNotExist:
+            return JsonResponse({'error': 'Institution not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def institution_card_count(request):
+    if not request.user.is_staff:
+        return redirect('home')
+    
+    institutions = Institution.objects.annotate(
+        allocated_cards_count=Count('admin_cards', distinct=True)
+    ).order_by('name')
+    
+    institution_data = [{
+        'name': institution.name,
+        'allocated_cards_count': institution.allocated_cards_count,
+        'owner': institution.owner
+    } for institution in institutions]
+    
+    return render(request, 'admin_page/institution_card_count.html', {
+        'institutions': institution_data
+    })

@@ -187,4 +187,8 @@ urlpatterns = [
 
    path('balance-sheet/', views.balance_sheet, name='balance_sheet'),
 
+   path('allocate-card-to-institution/', views.allocate_card_to_institution_page, name='allocate_card_to_institution_page'),
+   path('allocate-card-to-institution/submit/', views.allocate_card_to_institution, name='allocate_card_to_institution'),
+   path('institution-card-count/', views.institution_card_count, name='institution_card_count'),
+
 ]

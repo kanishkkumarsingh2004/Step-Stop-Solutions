@@ -455,12 +455,23 @@ class VendorSSID(models.Model):
 
 class AdminCard(models.Model):
     card_id = models.CharField(max_length=100, unique=True)
-    library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='admin_cards', null=True)
+    library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.card_id} - {self.library.name}"
-    
+        if self.library:
+            return f"{self.card_id} - {self.library.venue_name}"
+        elif self.institution:
+            return f"{self.card_id} - {self.institution.name}"
+        return f"{self.card_id} - Unallocated"
+
+    def clean(self):
+        if self.library and self.institution:
+            raise ValidationError("A card cannot be allocated to both a library and an institution")
+        if not self.library and not self.institution:
+            raise ValidationError("A card must be allocated to either a library or an institution")
+
 class AdminExpense(models.Model):
     TYPE_CHOICES = [
         ('Profit', 'Profit'),
