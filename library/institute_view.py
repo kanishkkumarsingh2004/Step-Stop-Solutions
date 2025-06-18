@@ -1412,7 +1412,7 @@ def expense_analytics(request, uid):
         # Get all valid subscriptions and expenses
         subscriptions = InstitutionSubscription.objects.filter(
             subscription_plan__institution=institution,
-            status='valid'
+            payment_status='valid'  # Add payment_status filter
         )
         expenses = InstitutionExpense.objects.filter(institution=institution)
         
@@ -1425,11 +1425,15 @@ def expense_analytics(request, uid):
         dates = []
         income_data = []
         expense_data = []
+        cumulative_income = 0
+        cumulative_expense = 0
         
         # Get all unique dates from both subscriptions and expenses
         all_dates = set()
         for sub in subscriptions:
-            all_dates.add(sub.start_date)
+            payment_date = sub.created_at.date()
+            all_dates.add(payment_date)
+        
         for exp in expenses:
             all_dates.add(exp.date)
         
@@ -1439,10 +1443,24 @@ def expense_analytics(request, uid):
         # Prepare data for each date
         for date in sorted_dates:
             dates.append(date.strftime('%Y-%m-%d'))
-            daily_income = subscriptions.filter(start_date=date).aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            # Calculate daily income
+            daily_income = subscriptions.filter(
+                created_at__date=date,
+                payment_status='valid'  # Add payment_status filter
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            # Calculate daily expenses
             daily_expenses = expenses.filter(date=date).aggregate(total=Sum('amount'))['total'] or 0
-            income_data.append(float(daily_income))
-            expense_data.append(float(daily_expenses))
+            
+            # Calculate cumulative totals
+            cumulative_income += float(daily_income)
+            cumulative_expense += float(daily_expenses)
+            
+            print(f"Date: {date}, Daily Income: {daily_income}, Cumulative Income: {cumulative_income}")  # Debug log
+            
+            income_data.append(cumulative_income)
+            expense_data.append(cumulative_expense)
         
         # Prepare data for Expense Types Pie Chart
         expense_types = []
@@ -1477,8 +1495,9 @@ def expense_analytics(request, uid):
             
             monthly_labels.append(month_start.strftime('%b %Y'))
             month_income = subscriptions.filter(
-                start_date__gte=month_start,
-                start_date__lte=month_end
+                created_at__date__gte=month_start,
+                created_at__date__lte=month_end,
+                payment_status='valid'  # Add payment_status filter
             ).aggregate(total=Sum('amount_paid'))['total'] or 0
             month_expenses = expenses.filter(
                 date__gte=month_start,
@@ -1505,12 +1524,10 @@ def expense_analytics(request, uid):
         }
         
         return render(request, 'coaching/expense_analytics.html', context)
-        
     except Institution.DoesNotExist:
         messages.error(request, "Institution not found.")
         return redirect('home')
     except Exception as e:
-        logger.error(f"Error in expense_analytics: {str(e)}")
-        messages.error(request, "An error occurred while loading the analytics.")
+        messages.error(request, f"An error occurred: {str(e)}")
         return redirect('home')
         

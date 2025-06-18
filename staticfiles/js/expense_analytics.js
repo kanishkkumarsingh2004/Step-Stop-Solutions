@@ -6,14 +6,14 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: JSON.parse(document.getElementById('dates').textContent),
             datasets: [{
-                label: 'Income',
+                label: 'Cumulative Income',
                 data: JSON.parse(document.getElementById('income_data').textContent),
                 borderColor: 'rgb(34, 197, 94)',
                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                 tension: 0.1,
                 fill: true
             }, {
-                label: 'Expenses',
+                label: 'Cumulative Expenses',
                 data: JSON.parse(document.getElementById('expense_data').textContent),
                 borderColor: 'rgb(239, 68, 68)',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -30,9 +30,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.dataset.label + ': ₹' + context.raw;
+                            return context.dataset.label + ': ₹' + context.raw.toLocaleString('en-IN', {
+                                maximumFractionDigits: 2
+                            });
                         }
                     }
+                },
+                title: {
+                    display: true,
+                    text: 'Cumulative Income vs Expenses Over Time'
                 }
             },
             scales: {
@@ -40,8 +46,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '₹' + value;
+                            return '₹' + value.toLocaleString('en-IN', {
+                                maximumFractionDigits: 2
+                            });
                         }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Cumulative Amount (₹)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
                     }
                 }
             }
