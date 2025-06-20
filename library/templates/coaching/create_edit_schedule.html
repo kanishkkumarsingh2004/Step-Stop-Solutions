@@ -27,22 +27,24 @@
                     <thead id="timetable-head-{{ day }}" class="bg-blue-50">
                         <tr>
                             <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-gray-200">ClassRoom/Time</th>
-                            {% for i in "12" %}
-                                {% with col=forloop.counter0 %}
-                                    {% get_entry header_time_map day col as entry %}
-                                    <th>
-                                        <div class="flex flex-col sm:flex-row items-center sm:space-x-2 space-y-1 sm:space-y-0">
-                                            <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400" value="{{ entry.start_time|time:'H:i'|default:'' }}">
-                                            <span class="hidden sm:inline text-gray-500">to</span>
-                                            <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400" value="{{ entry.end_time|time:'H:i'|default:'' }}">
-                                        </div>
-                                    </th>
-                                {% endwith %}
+                            {% for col in day_col_indices|get_item:day %}
+                                {% get_entry header_time_map day col as entry %}
+                                <th>
+                                    <div class="flex flex-col sm:flex-row items-center sm:space-x-2 space-y-1 sm:space-y-0">
+                                        <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400" value="{{ entry.start_time|time:'H:i'|default:'' }}">
+                                        <span class="hidden sm:inline text-gray-500">to</span>
+                                        <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400" value="{{ entry.end_time|time:'H:i'|default:'' }}">
+                                    </div>
+                                </th>
                             {% endfor %}
                             <th class="p-2 sm:p-4 text-center border-b border-gray-200 min-w-[120px]">
-                                <div class="space-y-2">
-                                    <button class="w-full bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg hover:bg-green-700 text-xs sm:text-sm shadow-sm" onclick="addColumn('{{ day }}')">+ Add Column</button>
-                                    <button class="w-full bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg hover:bg-red-700 text-xs sm:text-sm shadow-sm" onclick="removeColumn('{{ day }}')">- Remove Column</button>
+                                <div class="flex flex-col space-y-1 items-center">
+                                    <button class="w-7 h-7 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 text-base shadow-sm p-0" title="Add Column" onclick="addColumn('{{ day }}')">
+                                        <span class="text-lg leading-none">+</span>
+                                    </button>
+                                    <button class="w-7 h-7 flex items-center justify-center bg-red-600 text-white rounded-full hover:bg-red-700 text-base shadow-sm p-0" title="Remove Column" onclick="removeColumn('{{ day }}')">
+                                        <span class="text-lg leading-none">&minus;</span>
+                                    </button>
                                 </div>
                             </th>
                         </tr>
@@ -58,11 +60,9 @@
                                     {% endfor %}
                                 </select>
                             </td>
-                            {% for i in "12" %}
-                            {% with col=forloop.counter0 %}
+                            {% for col in day_col_indices|get_item:day %}
                             <td class="p-2 sm:p-4 text-center bg-blue-50 min-w-[160px]">
                                 <div class="space-y-2">
-                                    {% with entry=timetable_map|get_item:day|get_item:classroom|get_item:col %}
                                     {% get_entry timetable_map day classroom col as entry %}
                                     <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white subject-select">
                                         <option value="" selected disabled>Select Subject</option>
@@ -76,10 +76,8 @@
                                             <option value="{{ sf.faculty_ssid }}" {% if entry and entry.faculty_ssid == sf.faculty_ssid %}selected{% endif %}>{{ sf.faculty_name }}</option>
                                         {% endfor %}
                                     </select>
-                                    {% endwith %}
                                 </div>
                             </td>
-                            {% endwith %}
                             {% endfor %}
                             <td class="bg-blue-50"></td>
                         </tr>
@@ -88,8 +86,12 @@
                 </table>
             </div>
             <div class="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                <button class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-md w-full sm:w-auto" onclick="addRow('{{ day }}')">+ Add Row</button>
-                <button class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-md w-full sm:w-auto" onclick="removeRow('{{ day }}')">- Remove Row</button>
+                <button class="w-7 h-7 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 text-base shadow-sm p-0" title="Add Row" onclick="addRow('{{ day }}')">
+                    <span class="text-lg leading-none">+</span>
+                </button>
+                <button class="w-7 h-7 flex items-center justify-center bg-red-600 text-white rounded-full hover:bg-red-700 text-base shadow-sm p-0" title="Remove Row" onclick="removeRow('{{ day }}')">
+                    <span class="text-lg leading-none">&minus;</span>
+                </button>
             </div>
         </div>
         {% endfor %}
@@ -188,64 +190,5 @@
     window.subjectFacultyList = JSON.parse(document.getElementById('subject-faculty-list-data').textContent);
 </script>
 <script src="{% static 'js/subjectForm.js' %}"></script>
-
-<script>
-    if (document.getElementById('saveTimetableBtn')) {
-        document.getElementById('saveTimetableBtn').addEventListener('click', function() {
-            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-            let entries = [];
-            days.forEach(day => {
-                const headRow = document.querySelector(`#timetable-head-${day} tr`);
-                const timeInputs = headRow.querySelectorAll('input[type="time"]');
-                const rows = document.querySelectorAll(`#timetable-body-${day} tr`);
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('td');
-                    // First cell: classroom
-                    const classroomSelect = cells[0].querySelector('select');
-                    const classroom = classroomSelect ? classroomSelect.value : '';
-                    // For each period/column
-                    for (let i = 1; i < cells.length - 1; i++) { // skip first and last cell
-                        const subjectSelect = cells[i].querySelector('.subject-select');
-                        const facultySelect = cells[i].querySelector('.faculty-select');
-                        const subject = subjectSelect ? subjectSelect.value : '';
-                        const faculty_ssid = facultySelect ? facultySelect.value : '';
-                        const faculty_name = facultySelect ? (facultySelect.selectedOptions[0]?.text || '') : '';
-                        // Get start/end time for this column
-                        const start_time = timeInputs[(i-1)*2] ? timeInputs[(i-1)*2].value : '';
-                        const end_time = timeInputs[(i-1)*2+1] ? timeInputs[(i-1)*2+1].value : '';
-                        // Only save if subject and faculty are selected
-                        if (subject && faculty_ssid) {
-                            entries.push({
-                                day,
-                                classroom,
-                                start_time,
-                                end_time,
-                                subject,
-                                faculty_ssid,
-                                faculty_name
-                            });
-                        }
-                    }
-                });
-            });
-            fetch(window.saveTimetableUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": window.csrfToken
-                },
-                body: JSON.stringify({entries})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    alert("Timetable saved!");
-                } else {
-                    alert("Error saving timetable: " + data.message);
-                }
-            });
-        });
-    }
-</script>
 
 {% endblock %}

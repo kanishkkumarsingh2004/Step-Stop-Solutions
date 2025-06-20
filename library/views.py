@@ -54,6 +54,7 @@ import qrcode
 from django.views.decorators.http import require_POST, require_GET
 from decimal import Decimal
 import csv
+from collections import defaultdict
 
 User = get_user_model()
 
@@ -3017,6 +3018,17 @@ def create_edit_schedule(request, institution_uid):
         if key not in header_time_map:
             header_time_map[key] = entry
     
+    # Find max col for each day
+    max_cols = defaultdict(int)
+    for entry in timetable_entries:
+        day = entry['day']
+        col = entry.get('cell_col', 0)
+        if col + 1 > max_cols[day]:
+            max_cols[day] = col + 1  # +1 because col is zero-based
+
+    # For template, build a dict: {day: [0, 1, ..., max_col-1]}
+    day_col_indices = {day: list(range(max_col)) for day, max_col in max_cols.items()}
+    
     return render(request, 'coaching/create_edit_schedule.html', {
         'institution': institution,
         'subject_faculty_list': subject_faculty_list,
@@ -3025,4 +3037,5 @@ def create_edit_schedule(request, institution_uid):
         'timetable_entries': timetable_entries,
         'timetable_map': timetable_map,
         'header_time_map': header_time_map,
+        'day_col_indices': day_col_indices,
     })
