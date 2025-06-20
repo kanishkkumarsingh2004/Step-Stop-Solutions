@@ -18,3 +18,7 @@ def subtract(value, arg):
         return Decimal(str(value)) - Decimal(str(arg))
     except (ValueError, TypeError):
         return '' 
+    
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key, '')

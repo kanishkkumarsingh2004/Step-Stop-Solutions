@@ -191,4 +191,6 @@ urlpatterns = [
    path('allocate-card-to-institution/submit/', views.allocate_card_to_institution, name='allocate_card_to_institution'),
    path('institution-card-count/', views.institution_card_count, name='institution_card_count'),
 
+   # path('institution/<uuid:institution_uid>/save_timetable/', views.save_timetable, name='save_timetable'),
+   path('institution/<str:institution_uid>/create-edit-schedule/', views.create_edit_schedule, name='create_edit_schedule'),
 ]

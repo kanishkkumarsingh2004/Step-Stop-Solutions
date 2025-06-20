@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
@@ -225,6 +226,18 @@
                class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                 Manage Subscriptions
             </a>
+        </div>
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-calendar-week text-blue-500 text-lg sm:text-xl"></i>
+                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Institute Timetable</h2>
+            </div>
+            <div class="space-y-2">
+                <a href="{% url 'create_edit_schedule' institution.uid %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Create/Update Timetable</span>
+                    <i class="bi bi-upload text-gray-500 text-sm sm:text-base"></i>
+                </a>
+            </div>
         </div>
     </div>
 </div>

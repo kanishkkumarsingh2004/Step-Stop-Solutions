@@ -5,12 +5,12 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.core.paginator import Paginator
-from django.db import models
 import re
+from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
@@ -44,13 +44,18 @@ def coaching_dashboard(request, uid):
         
         # Get the first institution image
         first_image = institution.images.first()
-        return render(request, 'coaching/coaching_dashboard.html', {
+        
+        
+        context = {
             'institution': institution,
             'active_coupons_count': active_coupons_count,
             'total_coupons_count': total_coupons_count,
             'expired_coupons_count': expired_coupons_count,
-            'primary_image': first_image  # Keep the variable name for template compatibility
-        })
+            'primary_image': first_image,  # Keep the variable name for template compatibility
+
+        }
+        
+        return render(request, 'coaching/coaching_dashboard.html', context)
     except Institution.DoesNotExist:
         messages.error(request, "Institution not found.")
         return redirect('home')
@@ -1581,3 +1586,70 @@ def expense_analytics(request, uid):
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('home')
         
+
+# my_library/library/views.py
+
+
+@csrf_exempt  # For AJAX, but use with caution; better to use @require_POST and proper CSRF
+def save_timetable(request, institution_uid):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        institution = Institution.objects.get(uid=institution_uid)
+        # Clear previous entries
+        TimetableEntry.objects.filter(institution=institution).delete()
+        # Save new entries
+        for entry in data['entries']:
+            TimetableEntry.objects.create(
+                institution=institution,
+                day=entry['day'],
+                session=entry['session'],
+                start_time=entry['start_time'],
+                end_time=entry['end_time'],
+                subject=entry['subject'],
+                faculty_ssid=entry['faculty_ssid'],
+                faculty_name=entry.get('faculty_name', '')
+            )
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+
+
+@csrf_exempt  # If you use AJAX and don't want to handle CSRF, otherwise use @login_required and @require_POST
+@require_POST
+def save_subject_faculty(request, institution_uid):
+    try:
+        data = json.loads(request.body)
+        subject = data.get('subject')
+        faculty_ssid = data.get('faculty_ssid')
+        faculty_name = data.get('faculty_name', '')
+
+        if not subject or not faculty_ssid:
+            return JsonResponse({'status': 'error', 'message': 'Subject and faculty_ssid are required.'}, status=400)
+
+        institution = Institution.objects.get(uid=institution_uid)
+        obj, created = SubjectFacultyMap.objects.update_or_create(
+            institution=institution,
+            subject=subject,
+            defaults={
+                'faculty_ssid': faculty_ssid,
+                'faculty_name': faculty_name
+            }
+        )
+        return JsonResponse({'status': 'success', 'created': created})
+    except Institution.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Institution not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+from django.views.decorators.http import require_GET
+
+@require_GET
+def get_faculty_name_by_ssid(request):
+    ssid = request.GET.get('ssid')
+    if not ssid:
+        return JsonResponse({'status': 'error', 'message': 'SSID is required.'}, status=400)
+    try:
+        user = CustomUser.objects.get(ssid=ssid)
+        return JsonResponse({'status': 'success', 'faculty_name': user.get_full_name()})
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Faculty not found.'}, status=404)

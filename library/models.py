@@ -801,3 +801,29 @@ class InstitutionExpense(models.Model):
 
     def __str__(self):
         return f"{self.institution.name} - {self.get_expense_type_display()}: {self.description} - ₹{self.amount}"
+    
+class TimetableEntry(models.Model):
+    institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
+    day = models.CharField(max_length=10)  # e.g., 'Monday'
+    session = models.CharField(max_length=20)  # e.g., 'Session 1'
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    subject = models.CharField(max_length=100)
+    faculty_ssid = models.CharField(max_length=20)
+    faculty_name = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.institution} - {self.day} - {self.session} - {self.subject}"
+
+# New model for subject-faculty mapping
+class SubjectFacultyMap(models.Model):
+    institution = models.ForeignKey('Institution', on_delete=models.CASCADE, related_name='subject_faculty_maps')
+    subject = models.CharField(max_length=100)
+    faculty_ssid = models.CharField(max_length=10)
+    faculty_name = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        unique_together = ('institution', 'subject')
+
+    def __str__(self):
+        return f"{self.institution.name} - {self.subject} -> {self.faculty_ssid}"

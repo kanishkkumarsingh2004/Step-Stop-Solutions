@@ -49,8 +49,9 @@ import re
 
 # Third-party imports
 import qrcode
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from decimal import Decimal
+import csv
 
 User = get_user_model()
 
@@ -2991,4 +2992,10 @@ def institution_card_count(request):
     
     return render(request, 'admin_page/institution_card_count.html', {
         'institutions': institution_data
+    })
+
+def create_edit_schedule(request, institution_uid):
+    institution = Institution.objects.get(uid=institution_uid)
+    return render(request, 'coaching/create_edit_schedule.html', {
+        'institution': institution
     })

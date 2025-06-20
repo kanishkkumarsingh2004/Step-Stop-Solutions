@@ -43,4 +43,7 @@ urlpatterns = [
    path('institution/<str:uid>/payment-expenses/', institute_view.payment_expenses, name='payment_expenses'),
    path('institution/<str:uid>/add-expense/', institute_view.add_institution_expense, name='add_institution_expense'),
    path('institution/<str:uid>/expense-analytics/', institute_view.expense_analytics, name='expense_analytics'),
+   path('institution/<str:institution_uid>/save_timetable/', institute_view.save_timetable, name='save_timetable'),
+   path('institution/<str:institution_uid>/save-subject-faculty/', institute_view.save_subject_faculty, name='save_subject_faculty'),
+   path('get-faculty-name/', institute_view.get_faculty_name_by_ssid, name='get_faculty_name_by_ssid'),
 ]
