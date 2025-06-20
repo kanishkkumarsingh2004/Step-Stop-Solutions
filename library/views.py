@@ -39,7 +39,8 @@ from .models import (
     AdminCard,
     AdminExpense,
     InstitutionSubscription,
-    SubjectFacultyMap
+    SubjectFacultyMap,
+    TimetableEntry
 )
 # Python standard library imports
 import json
@@ -3001,9 +3002,27 @@ def create_edit_schedule(request, institution_uid):
     classroom_names = [c['name'] for c in institution.classrooms.values()]
     subject_names = list(subject_faculty_qs.values_list('subject', flat=True))
     subject_faculty_list = list(subject_faculty_qs.values('subject', 'faculty_ssid', 'faculty_name'))
+    timetable_entries = list(TimetableEntry.objects.filter(institution=institution).values())
+    
+    # Build a mapping: (day, classroom, cell_col) -> entry
+    timetable_map = {}
+    for entry in timetable_entries:
+        key = (entry['day'], entry['classroom'], entry['cell_col'])
+        timetable_map[key] = entry
+    
+    # Build a mapping: (day, cell_col) -> entry for header times
+    header_time_map = {}
+    for entry in timetable_entries:
+        key = (entry['day'], entry['cell_col'])
+        if key not in header_time_map:
+            header_time_map[key] = entry
+    
     return render(request, 'coaching/create_edit_schedule.html', {
         'institution': institution,
         'subject_faculty_list': subject_faculty_list,
         'classroom_names': classroom_names,
         'subject_names': subject_names,
+        'timetable_entries': timetable_entries,
+        'timetable_map': timetable_map,
+        'header_time_map': header_time_map,
     })

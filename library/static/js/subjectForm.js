@@ -115,26 +115,35 @@ if (document.getElementById('saveTimetableBtn')) {
         const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
         let entries = [];
         days.forEach(day => {
+            const headRow = document.querySelector(`#timetable-head-${day} tr`);
+            const timeInputs = headRow.querySelectorAll('input[type="time"]');
             const rows = document.querySelectorAll(`#timetable-body-${day} tr`);
-            rows.forEach(row => {
-                const session = row.querySelector('select').value;
+            rows.forEach((row, rowIndex) => {
+                const classroomSelect = row.querySelector('select');
+                const classroom = classroomSelect ? classroomSelect.value : '';
                 const cells = row.querySelectorAll('td');
                 for (let i = 1; i < cells.length - 1; i++) { // skip first and last cell
-                    const timeInputs = document.querySelectorAll(`#timetable-head-${day} input[type="time"]`);
-                    const start_time = timeInputs[(i-1)*2].value;
-                    const end_time = timeInputs[(i-1)*2+1].value;
-                    const selects = cells[i].querySelectorAll('select');
-                    const subject = selects[0].value;
-                    const faculty_ssid = selects[1].value;
-                    entries.push({
-                        day,
-                        session,
-                        start_time,
-                        end_time,
-                        subject,
-                        faculty_ssid,
-                        faculty_name: "" // You can fetch this if needed
-                    });
+                    const subjectSelect = cells[i].querySelector('.subject-select');
+                    const facultySelect = cells[i].querySelector('.faculty-select');
+                    const subject = subjectSelect ? subjectSelect.value : '';
+                    const faculty_ssid = facultySelect ? facultySelect.value : '';
+                    const faculty_name = facultySelect ? (facultySelect.selectedOptions[0]?.text || '') : '';
+                    // Get start/end time for this column from header
+                    const start_time = timeInputs[(i-1)*2] ? timeInputs[(i-1)*2].value : '';
+                    const end_time = timeInputs[(i-1)*2+1] ? timeInputs[(i-1)*2+1].value : '';
+                    if (subject && faculty_ssid && start_time && end_time) {
+                        entries.push({
+                            day,
+                            classroom,
+                            start_time,
+                            end_time,
+                            subject,
+                            faculty_ssid,
+                            faculty_name,
+                            cell_row: rowIndex,
+                            cell_col: i - 1
+                        });
+                    }
                 }
             });
         });
@@ -149,9 +158,17 @@ if (document.getElementById('saveTimetableBtn')) {
         .then(response => response.json())
         .then(data => {
             if (data.status === "success") {
+                if (document.getElementById('errorBanner')) {
+                    document.getElementById('errorBanner').classList.add('hidden');
+                }
                 alert("Timetable saved!");
             } else {
-                alert("Error saving timetable: " + data.message);
+                if (document.getElementById('errorBanner')) {
+                    document.getElementById('errorBannerMsg').textContent = data.message || "Unknown error";
+                    document.getElementById('errorBanner').classList.remove('hidden');
+                } else {
+                    alert("Error saving timetable: " + data.message);
+                }
             }
         });
     });

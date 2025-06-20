@@ -805,15 +805,17 @@ class InstitutionExpense(models.Model):
 class TimetableEntry(models.Model):
     institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
     day = models.CharField(max_length=10)  # e.g., 'Monday'
-    session = models.CharField(max_length=20)  # e.g., 'Session 1'
     start_time = models.TimeField()
     end_time = models.TimeField()
     subject = models.CharField(max_length=100)
     faculty_ssid = models.CharField(max_length=20)
     faculty_name = models.CharField(max_length=100, blank=True, null=True)
+    classroom = models.CharField(max_length=100, blank=True, null=True)
+    cell_row = models.IntegerField(default=0)  # New: row index in timetable
+    cell_col = models.IntegerField(default=0)  # New: column index in timetable
 
     def __str__(self):
-        return f"{self.institution} - {self.day} - {self.session} - {self.subject}"
+        return f"{self.institution} - {self.day} - {self.classroom} - {self.subject} (row {self.cell_row}, col {self.cell_col})"
 
 # New model for subject-faculty mapping
 class SubjectFacultyMap(models.Model):

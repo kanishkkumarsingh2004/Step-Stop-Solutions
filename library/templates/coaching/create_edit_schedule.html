@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
@@ -12,6 +13,11 @@
     <div class="bg-white rounded-xl shadow-lg p-4 sm:p-8 w-full">
         <h1 class="text-2xl sm:text-3xl font-bold text-blue-800 mb-4 sm:mb-6 text-center">Weekly Timetable Editor</h1>
         
+        <div id="errorBanner" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert" style="z-index:1000;">
+            <span class="block sm:inline" id="errorBannerMsg"></span>
+            <span onclick="document.getElementById('errorBanner').classList.add('hidden')" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">&times;</span>
+        </div>
+        
         {% with days="Monday Tuesday Wednesday Thursday Friday Saturday Sunday" %}
         {% for day in days.split %}
         <div class="mb-8">
@@ -20,15 +26,18 @@
                 <table class="min-w-[600px] w-full bg-white text-xs sm:text-sm">
                     <thead id="timetable-head-{{ day }}" class="bg-blue-50">
                         <tr>
-                            <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-gray-200">Time</th>
+                            <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-gray-200">ClassRoom/Time</th>
                             {% for i in "12" %}
-                            <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-gray-200 min-w-[160px]">
-                                <div class="flex flex-col sm:flex-row items-center sm:space-x-2 space-y-1 sm:space-y-0">
-                                    <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400">
-                                    <span class="hidden sm:inline text-gray-500 font-bold">to</span>
-                                    <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400">
-                                </div>
-                            </th>
+                                {% with col=forloop.counter0 %}
+                                    {% get_entry header_time_map day col as entry %}
+                                    <th>
+                                        <div class="flex flex-col sm:flex-row items-center sm:space-x-2 space-y-1 sm:space-y-0">
+                                            <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400" value="{{ entry.start_time|time:'H:i'|default:'' }}">
+                                            <span class="hidden sm:inline text-gray-500">to</span>
+                                            <input type="time" class="w-full sm:w-1/2 p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400" value="{{ entry.end_time|time:'H:i'|default:'' }}">
+                                        </div>
+                                    </th>
+                                {% endwith %}
                             {% endfor %}
                             <th class="p-2 sm:p-4 text-center border-b border-gray-200 min-w-[120px]">
                                 <div class="space-y-2">
@@ -39,31 +48,42 @@
                         </tr>
                     </thead>
                     <tbody id="timetable-body-{{ day }}" class="divide-y divide-gray-200">
+                        {# Render rows for each classroom and session #}
+                        {% for classroom in classroom_names %}
                         <tr class="hover:bg-gray-50 transition-colors duration-200">
                             <td class="p-2 sm:p-4 text-center bg-blue-50 min-w-[120px]">
                                 <select class="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400 font-semibold text-gray-700">
                                     {% for cname in classroom_names %}
-                                        <option value="{{ cname }}">{{ cname }}</option>
+                                        <option value="{{ cname }}" {% if cname == classroom %}selected{% endif %}>{{ cname }}</option>
                                     {% endfor %}
                                 </select>
-                            </td>                       
-                            {% for _ in "12" %}
+                            </td>
+                            {% for i in "12" %}
+                            {% with col=forloop.counter0 %}
                             <td class="p-2 sm:p-4 text-center bg-blue-50 min-w-[160px]">
                                 <div class="space-y-2">
-                                    <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                                    {% with entry=timetable_map|get_item:day|get_item:classroom|get_item:col %}
+                                    {% get_entry timetable_map day classroom col as entry %}
+                                    <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white subject-select">
                                         <option value="" selected disabled>Select Subject</option>
                                         {% for sname in subject_names %}
-                                            <option value="{{ sname }}">{{ sname }}</option>
+                                            <option value="{{ sname }}" {% if entry and entry.subject == sname %}selected{% endif %}>{{ sname }}</option>
                                         {% endfor %}
                                     </select>
-                                    <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                                    <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white faculty-select">
                                         <option value="" selected disabled>Select Faculty</option>
+                                        {% for sf in subject_faculty_list %}
+                                            <option value="{{ sf.faculty_ssid }}" {% if entry and entry.faculty_ssid == sf.faculty_ssid %}selected{% endif %}>{{ sf.faculty_name }}</option>
+                                        {% endfor %}
                                     </select>
+                                    {% endwith %}
                                 </div>
                             </td>
+                            {% endwith %}
                             {% endfor %}
                             <td class="bg-blue-50"></td>
                         </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -168,5 +188,64 @@
     window.subjectFacultyList = JSON.parse(document.getElementById('subject-faculty-list-data').textContent);
 </script>
 <script src="{% static 'js/subjectForm.js' %}"></script>
+
+<script>
+    if (document.getElementById('saveTimetableBtn')) {
+        document.getElementById('saveTimetableBtn').addEventListener('click', function() {
+            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            let entries = [];
+            days.forEach(day => {
+                const headRow = document.querySelector(`#timetable-head-${day} tr`);
+                const timeInputs = headRow.querySelectorAll('input[type="time"]');
+                const rows = document.querySelectorAll(`#timetable-body-${day} tr`);
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    // First cell: classroom
+                    const classroomSelect = cells[0].querySelector('select');
+                    const classroom = classroomSelect ? classroomSelect.value : '';
+                    // For each period/column
+                    for (let i = 1; i < cells.length - 1; i++) { // skip first and last cell
+                        const subjectSelect = cells[i].querySelector('.subject-select');
+                        const facultySelect = cells[i].querySelector('.faculty-select');
+                        const subject = subjectSelect ? subjectSelect.value : '';
+                        const faculty_ssid = facultySelect ? facultySelect.value : '';
+                        const faculty_name = facultySelect ? (facultySelect.selectedOptions[0]?.text || '') : '';
+                        // Get start/end time for this column
+                        const start_time = timeInputs[(i-1)*2] ? timeInputs[(i-1)*2].value : '';
+                        const end_time = timeInputs[(i-1)*2+1] ? timeInputs[(i-1)*2+1].value : '';
+                        // Only save if subject and faculty are selected
+                        if (subject && faculty_ssid) {
+                            entries.push({
+                                day,
+                                classroom,
+                                start_time,
+                                end_time,
+                                subject,
+                                faculty_ssid,
+                                faculty_name
+                            });
+                        }
+                    }
+                });
+            });
+            fetch(window.saveTimetableUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": window.csrfToken
+                },
+                body: JSON.stringify({entries})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("Timetable saved!");
+                } else {
+                    alert("Error saving timetable: " + data.message);
+                }
+            });
+        });
+    }
+</script>
 
 {% endblock %}
