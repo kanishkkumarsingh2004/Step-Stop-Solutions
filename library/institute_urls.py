@@ -46,4 +46,5 @@ urlpatterns = [
    path('institution/<str:institution_uid>/save_timetable/', institute_view.save_timetable, name='save_timetable'),
    path('institution/<str:institution_uid>/save-subject-faculty/', institute_view.save_subject_faculty, name='save_subject_faculty'),
    path('get-faculty-name/', institute_view.get_faculty_name_by_ssid, name='get_faculty_name_by_ssid'),
+   path('institution/<str:institution_uid>/remove-subject/', institute_view.remove_subject, name='remove_subject'),
 ]

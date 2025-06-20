@@ -26,24 +26,21 @@ window.addColumn = function(day) {
     bodyRows.forEach(row => {
         const td = document.createElement('td');
         td.className = 'p-2 sm:p-4 text-center bg-blue-50 min-w-[160px]';
-        let subjectOptions = '<option value="" selected disabled>Select Subject</option>';
-        if (window.subjectNames && window.subjectNames.length > 0) {
-            window.subjectNames.forEach(function(name) {
-                subjectOptions += `<option value="${name}">${name}</option>`;
-            });
-        }
         td.innerHTML = `
             <div class="space-y-2">
-                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white subject-select">
-                    ${subjectOptions}
+                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                    <option>Subject A</option>
+                    <option>Subject B</option>
+                    <option>Subject C</option>
                 </select>
-                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white faculty-select">
-                    <option value="" selected disabled>Select Faculty</option>
+                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
                 </select>
             </div>
         `;
         row.insertBefore(td, row.lastElementChild);
-        attachSubjectFacultyListeners(td);
     });
 }
 window.removeColumn = function(day) {
@@ -63,39 +60,32 @@ window.addRow = function(day) {
     row.className = 'hover:bg-gray-50 transition-colors duration-200';
     const firstCell = document.createElement('td');
     firstCell.className = 'p-2 sm:p-4 text-center bg-blue-50 min-w-[120px]';
-    let classroomOptions = '';
-    if (window.classroomNames && window.classroomNames.length > 0) {
-        window.classroomNames.forEach(function(name) {
-            classroomOptions += `<option value="${name}">${name}</option>`;
-        });
-    }
     firstCell.innerHTML = `
         <select class="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400 font-semibold text-gray-700">
-            ${classroomOptions}
+            <option value="Session 1">Session 1</option>
+            <option value="Session 2">Session 2</option>
+            <option value="Session 3">Session 3</option>
         </select>
     `;
     row.appendChild(firstCell);
     for (let i = 0; i < colCount; i++) {
         const td = document.createElement('td');
         td.className = 'p-2 sm:p-4 text-center bg-blue-50 min-w-[160px]';
-        let subjectOptions = '<option value="" selected disabled>Select Subject</option>';
-        if (window.subjectNames && window.subjectNames.length > 0) {
-            window.subjectNames.forEach(function(name) {
-                subjectOptions += `<option value="${name}">${name}</option>`;
-            });
-        }
         td.innerHTML = `
             <div class="space-y-2">
-                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white subject-select">
-                    ${subjectOptions}
+                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                    <option>Subject A</option>
+                    <option>Subject B</option>
+                    <option>Subject C</option>
                 </select>
-                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white faculty-select">
-                    <option value="" selected disabled>Select Faculty</option>
+                <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
                 </select>
             </div>
         `;
         row.appendChild(td);
-        attachSubjectFacultyListeners(td);
     }
     const controlCell = document.createElement('td');
     controlCell.className = 'bg-blue-50';
@@ -196,6 +186,7 @@ if (document.getElementById('subjectForm')) {
     });
 }
 
+// Live faculty name fetch
 if (document.getElementById('facultySsid')) {
     let facultySsidTimeout = null;
     document.getElementById('facultySsid').addEventListener('input', function() {
@@ -215,76 +206,6 @@ if (document.getElementById('facultySsid')) {
                         document.getElementById('facultyName').value = "";
                     }
                 });
-        }, 300);
+        }, 300); // 300ms debounce
     });
 }
-
-let subjectOptions = '';
-if (window.subjectNames && window.subjectNames.length > 0) {
-    window.subjectNames.forEach(function(name) {
-        subjectOptions += `<option value="${name}">${name}</option>`;
-    });
-}
-
-window.removeSubject = function(subject) {
-    if (!confirm('Are you sure you want to remove this subject?')) return;
-    fetch(window.removeSubjectUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': window.csrfToken
-        },
-        body: JSON.stringify({subject: subject})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert('Subject removed!');
-            location.reload(); // Or update the table dynamically
-        } else {
-            alert('Error: ' + data.message);
-        }
-    });
-};
-
-function getFacultyOptionsForSubject(subject) {
-    let options = '<option value="" selected disabled>Select Faculty</option>';
-    if (window.subjectFacultyList && subject) {
-        window.subjectFacultyList.forEach(function(sf) {
-            if (sf.subject === subject) {
-                options += `<option value="${sf.faculty_ssid}">${sf.faculty_name}</option>`;
-            }
-        });
-    }
-    return options;
-}
-
-// Update faculty dropdown when subject changes
-function attachSubjectFacultyListeners(row) {
-    const selects = row.querySelectorAll('select');
-    if (selects.length < 2) return;
-    const subjectSelect = selects[0];
-    const facultySelect = selects[1];
-    // Initially disable faculty select
-    facultySelect.disabled = true;
-    subjectSelect.addEventListener('change', function() {
-        if (subjectSelect.value) {
-            facultySelect.innerHTML = getFacultyOptionsForSubject(subjectSelect.value);
-            facultySelect.disabled = false;
-        } else {
-            facultySelect.innerHTML = '<option value="" selected disabled>Select Faculty</option>';
-            facultySelect.disabled = true;
-        }
-    });
-}
-
-// Attach listeners to initial static rows on page load
-window.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('#timetable-body-Monday, #timetable-body-Tuesday, #timetable-body-Wednesday, #timetable-body-Thursday, #timetable-body-Friday, #timetable-body-Saturday, #timetable-body-Sunday').forEach(function(tbody) {
-        tbody.querySelectorAll('tr').forEach(function(row) {
-            row.querySelectorAll('td').forEach(function(td) {
-                attachSubjectFacultyListeners(td);
-            });
-        });
-    });
-});

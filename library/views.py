@@ -39,6 +39,7 @@ from .models import (
     AdminCard,
     AdminExpense,
     InstitutionSubscription,
+    SubjectFacultyMap
 )
 # Python standard library imports
 import json
@@ -2996,6 +2997,13 @@ def institution_card_count(request):
 
 def create_edit_schedule(request, institution_uid):
     institution = Institution.objects.get(uid=institution_uid)
+    subject_faculty_qs = SubjectFacultyMap.objects.filter(institution=institution)
+    classroom_names = [c['name'] for c in institution.classrooms.values()]
+    subject_names = list(subject_faculty_qs.values_list('subject', flat=True))
+    subject_faculty_list = list(subject_faculty_qs.values('subject', 'faculty_ssid', 'faculty_name'))
     return render(request, 'coaching/create_edit_schedule.html', {
-        'institution': institution
+        'institution': institution,
+        'subject_faculty_list': subject_faculty_list,
+        'classroom_names': classroom_names,
+        'subject_names': subject_names,
     })

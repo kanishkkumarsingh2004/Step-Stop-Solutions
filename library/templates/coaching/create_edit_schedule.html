@@ -42,23 +42,22 @@
                         <tr class="hover:bg-gray-50 transition-colors duration-200">
                             <td class="p-2 sm:p-4 text-center bg-blue-50 min-w-[120px]">
                                 <select class="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-400 font-semibold text-gray-700">
-                                    <option value="Session 1">Session 1</option>
-                                    <option value="Session 2">Session 2</option>
-                                    <option value="Session 3">Session 3</option>
+                                    {% for cname in classroom_names %}
+                                        <option value="{{ cname }}">{{ cname }}</option>
+                                    {% endfor %}
                                 </select>
-                            </td>                            
+                            </td>                       
                             {% for _ in "12" %}
                             <td class="p-2 sm:p-4 text-center bg-blue-50 min-w-[160px]">
                                 <div class="space-y-2">
                                     <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                                        <option>Subject A</option>
-                                        <option>Subject B</option>
-                                        <option>Subject C</option>
+                                        <option value="" selected disabled>Select Subject</option>
+                                        {% for sname in subject_names %}
+                                            <option value="{{ sname }}">{{ sname }}</option>
+                                        {% endfor %}
                                     </select>
                                     <select class="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                                        <option>1</option>
-                                        <option>2</option>
-                                        <option>3</option>
+                                        <option value="" selected disabled>Select Faculty</option>
                                     </select>
                                 </div>
                             </td>
@@ -96,7 +95,7 @@
                 <form id="subjectForm" class="space-y-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Subject Name</label>
-                        <input type="text" id="subjectName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                        <input type="text" id="subjectName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required oninput="this.value = this.value.toLowerCase()">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Faculty Code (SSID)</label>
@@ -104,7 +103,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Faculty Name</label>
-                        <input type="text" id="facultyName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="facultyName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-100" disabled>
                     </div>
                     <div class="flex justify-end space-x-4 pt-6">
                         <button type="button" onclick="closePopup()" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
@@ -119,27 +118,34 @@
                 <table class="min-w-full bg-white rounded-lg overflow-hidden">
                     <thead class="bg-gray-100">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty SSID</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty Name</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty SSID</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty Name</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm text-gray-700">101</td>
-                            <td class="px-4 py-3 text-sm text-gray-700">Mathematics</td>
-                            <td class="px-4 py-3 text-sm text-gray-700">Dr. Smith</td>
+                        {% for sf in subject_faculty_list %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <td class="px-4 py-3 text-sm text-center text-blue-600 font-medium">{{ sf.faculty_ssid }}</td>
+                            <td class="px-4 py-3 text-sm text-center text-green-600 font-medium">{{ sf.subject }}</td>
+                            <td class="px-4 py-3 text-sm text-center text-purple-600 font-medium">{{ sf.faculty_name }}</td>
+                            <td class="px-4 py-3 text-sm text-center">
+                                <button class="text-red-600 hover:text-red-800 font-bold" onclick="removeSubject('{{ sf.subject|escapejs }}')">Remove</button>
+                            </td>
                         </tr>
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm text-gray-700">102</td>
-                            <td class="px-4 py-3 text-sm text-gray-700">Physics</td>
-                            <td class="px-4 py-3 text-sm text-gray-700">Prof. Johnson</td>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-4 py-3 text-sm text-center text-gray-500 bg-gray-100 rounded-lg">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>No subjects added yet</span>
+                                </div>
+                            </td>
                         </tr>
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm text-gray-700">103</td>
-                            <td class="px-4 py-3 text-sm text-gray-700">Chemistry</td>
-                            <td class="px-4 py-3 text-sm text-gray-700">Dr. Williams</td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -151,6 +157,15 @@
     window.saveSubjectFacultyUrl = "{% url 'save_subject_faculty' institution.uid %}";
     window.getFacultyNameBySsidUrl = "{% url 'get_faculty_name_by_ssid' %}";
     window.csrfToken = "{{ csrf_token }}";
+    window.removeSubjectUrl = "{% url 'remove_subject' institution.uid %}";
+</script>
+{{ classroom_names|json_script:"classroom-names-data" }}
+{{ subject_names|json_script:"subject-names-data" }}
+{{ subject_faculty_list|json_script:"subject-faculty-list-data" }}
+<script>
+    window.classroomNames = JSON.parse(document.getElementById('classroom-names-data').textContent);
+    window.subjectNames = JSON.parse(document.getElementById('subject-names-data').textContent);
+    window.subjectFacultyList = JSON.parse(document.getElementById('subject-faculty-list-data').textContent);
 </script>
 <script src="{% static 'js/subjectForm.js' %}"></script>
 

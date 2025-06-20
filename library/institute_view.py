@@ -1653,3 +1653,23 @@ def get_faculty_name_by_ssid(request):
         return JsonResponse({'status': 'success', 'faculty_name': user.get_full_name()})
     except CustomUser.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Faculty not found.'}, status=404)
+    
+
+@csrf_exempt
+@require_POST
+def remove_subject(request, institution_uid):
+    try:
+        data = json.loads(request.body)
+        subject = data.get('subject')
+        if not subject:
+            return JsonResponse({'status': 'error', 'message': 'Subject is required.'}, status=400)
+        institution = Institution.objects.get(uid=institution_uid)
+        deleted, _ = SubjectFacultyMap.objects.filter(institution=institution, subject=subject).delete()
+        if deleted:
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Subject not found.'}, status=404)
+    except Institution.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Institution not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
