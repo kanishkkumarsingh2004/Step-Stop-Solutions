@@ -1587,45 +1587,37 @@ def expense_analytics(request, uid):
         return redirect('home')
         
 
-# my_library/library/views.py
-
-
-@csrf_exempt  # For AJAX, but use with caution; better to use @require_POST and proper CSRF
+@csrf_exempt
 def save_timetable(request, institution_uid):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            institution = Institution.objects.get(uid=institution_uid)
-            entries = data.get('entries', [])
-            print(f"Received {len(entries)} timetable entries: {entries}")
-            # Clear previous entries
-            TimetableEntry.objects.filter(institution=institution).delete()
-            saved_count = 0
-            # Save new entries
-            for entry in entries:
-                TimetableEntry.objects.create(
-                    institution=institution,
-                    day=entry['day'],
-                    classroom=entry.get('classroom', ''),
-                    start_time=entry['start_time'],
-                    end_time=entry['end_time'],
-                    subject=entry['subject'],
-                    faculty_ssid=entry['faculty_ssid'],
-                    faculty_name=entry.get('faculty_name', ''),
-                    cell_row=entry.get('cell_row', 0),
-                    cell_col=entry.get('cell_col', 0)
-                )
-                saved_count += 1
-            return JsonResponse({'status': 'success', 'saved': saved_count})
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
-        except Institution.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Institution not found'}, status=404)
-        except KeyError as e:
-            return JsonResponse({'status': 'error', 'message': f'Missing required field: {str(e)}'}, status=400)
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+    if request.method == "POST":
+        data = json.loads(request.body)
+        entries = data.get("entries", [])
+        institution = Institution.objects.get(uid=institution_uid)
+        updated = 0
+        created = 0
+
+        for entry in entries:
+            obj, created_flag = TimetableEntry.objects.update_or_create(
+                institution=institution,
+                day=entry["day"],
+                classroom=entry["classroom"],
+                cell_row=entry["cell_row"],
+                cell_col=entry["cell_col"],
+                defaults={
+                    "start_time": entry["start_time"],
+                    "end_time": entry["end_time"],
+                    "subject": entry["subject"],
+                    "faculty_ssid": entry["faculty_ssid"],
+                    "faculty_name": entry["faculty_name"],
+                }
+            )
+            if created_flag:
+                created += 1
+            else:
+                updated += 1
+
+        return JsonResponse({"status": "success", "updated": updated, "created": created})
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
 
 
