@@ -86,6 +86,11 @@
                             <p class="text-sm sm:text-base font-bold text-blue-600">₹{{ subscription.amount_paid }}</p>
                         </div>
                     </div>
+                    {% if subscription.has_timetable and subscription.status == 'Valid' and subscription.payment_status.status == 'valid' %}
+                    <div class="mt-2 text-center">
+                        <a href="{% url 'view_schedule' uid=subscription.subscription_plan.institution.uid %}" class="text-sm text-blue-600 hover:underline">View Timetable</a>
+                    </div>
+                    {% endif %}
     <!--                     
                         {% if subscription.coupon_applied %}
                         <div class="mt-2 text-center">

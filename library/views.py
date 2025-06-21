@@ -133,7 +133,8 @@ def dashboard(request):
         # Use the payment_status directly from the InstitutionSubscription model
         payment_status = subscription.payment_status
         payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
-
+        # Check if timetable exists for the institution
+        has_timetable = TimetableEntry.objects.filter(institution=subscription.subscription_plan.institution).exists()
         subscription_data = {
             'subscription_plan': subscription.subscription_plan,
             'start_date': subscription.start_date,
@@ -147,7 +148,8 @@ def dashboard(request):
                 'status': payment_status,
                 'color': payment_color
             },
-            'coupon_applied': subscription.coupon_applied
+            'coupon_applied': subscription.coupon_applied,
+            'has_timetable': has_timetable
         }
         institute_subscriptions.append(subscription_data)
 
@@ -3028,6 +3030,7 @@ def create_edit_schedule(request, institution_uid):
 
     # For template, build a dict: {day: [0, 1, ..., max_col-1]}
     day_col_indices = {day: list(range(max_col)) for day, max_col in max_cols.items()}
+    day_row_indices = {day: [row for row in classroom_names]}  # Or build dynamically if needed
     
     return render(request, 'coaching/create_edit_schedule.html', {
         'institution': institution,
@@ -3038,4 +3041,5 @@ def create_edit_schedule(request, institution_uid):
         'timetable_map': timetable_map,
         'header_time_map': header_time_map,
         'day_col_indices': day_col_indices,
+        'day_row_indices': day_row_indices,
     })

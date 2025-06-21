@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <div class="text-center mb-4 sm:mb-8">
+        <h1 class="text-xl sm:text-3xl font-bold text-gray-800">{{ institution.name }}</h1>
+        <p class="text-base sm:text-lg text-gray-600">Your Weekly Schedule</p>
+    </div>
+
+    {% for day in days_of_week %}
+        {% if day_classrooms|get_item:day %}
+        <div class="mb-4 sm:mb-8">
+            <h2 class="text-lg sm:text-2xl font-bold text-blue-800 mb-2 sm:mb-4 text-center underline">{{ day }}</h2>
+            <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm sm:shadow-md">
+                <table class="min-w-full w-full bg-white text-xs sm:text-sm">
+                    <thead class="bg-blue-50">
+                        <tr>
+                            <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-r border-gray-200">Classroom / Time</th>
+                            {% for col in day_col_indices|get_item:day %}
+                                {% get_entry header_time_map day col as entry %}
+                                <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-r border-gray-200 whitespace-nowrap">
+                                    {{ entry.start_time|time:'h:i A' }} - {{ entry.end_time|time:'h:i A' }}
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for classroom in day_classrooms|get_item:day %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <td class="p-2 sm:p-4 text-center font-semibold bg-blue-50 border-r border-gray-200 whitespace-nowrap">{{ classroom }}</td>
+                            {% for col in day_col_indices|get_item:day %}
+                            <td class="p-2 sm:p-4 text-center">
+                                {% get_entry timetable_map day classroom col as entry %}
+                                {% if entry %}
+                                    <div class="font-semibold text-xs sm:text-sm">{{ entry.subject }}</div>
+                                    <div class="text-gray-600 text-xs">{{ entry.faculty_name }}</div>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}

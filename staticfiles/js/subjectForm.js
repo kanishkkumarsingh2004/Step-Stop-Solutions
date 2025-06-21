@@ -26,7 +26,7 @@ window.addColumn = function(day) {
     bodyRows.forEach(row => {
         const td = document.createElement('td');
         td.className = 'p-2 sm:p-4 text-center bg-blue-50 min-w-[160px]';
-        let subjectOptions = '<option value="" selected disabled>Select Subject</option>';
+        let subjectOptions = '<option value="" selected>Select Subject</option>';
         if (window.subjectNames && window.subjectNames.length > 0) {
             window.subjectNames.forEach(function(name) {
                 subjectOptions += `<option value="${name}">${name}</option>`;
@@ -78,7 +78,7 @@ window.addRow = function(day) {
     for (let i = 0; i < colCount; i++) {
         const td = document.createElement('td');
         td.className = 'p-2 sm:p-4 text-center bg-blue-50 min-w-[160px]';
-        let subjectOptions = '<option value="" selected disabled>Select Subject</option>';
+        let subjectOptions = '<option value="" selected >Select Subject</option>';
         if (window.subjectNames && window.subjectNames.length > 0) {
             window.subjectNames.forEach(function(name) {
                 subjectOptions += `<option value="${name}">${name}</option>`;
@@ -299,3 +299,5 @@ window.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+window.dayRowIndices = {};

@@ -7,7 +7,7 @@ from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, 
 from django.contrib import messages
 from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from django.core.paginator import Paginator
 import re
 from django.views.decorators.csrf import csrf_exempt
@@ -22,6 +22,7 @@ import base64
 from io import BytesIO
 from datetime import timedelta
 import qrcode
+from collections import defaultdict
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -106,6 +107,7 @@ def public_institute_details(request, uid):
     return render(request, 'coaching/public_institute_details.html', {
         'institution': institution,
         'images': images,
+        'has_timetable': TimetableEntry.objects.filter(institution=institution).exists()
     })
 
 @login_required
@@ -1680,3 +1682,55 @@ def remove_subject(request, institution_uid):
         return JsonResponse({'status': 'error', 'message': 'Institution not found.'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+def view_schedule(request, uid):
+    institution = get_object_or_404(Institution, uid=uid)
+    if not institution.is_approved:
+        messages.error(request, "This institution is not yet approved.")
+        return redirect('home')
+
+    timetable_entries = list(TimetableEntry.objects.filter(institution=institution).values())
+    
+    # Build a mapping: (day, classroom, cell_col) -> entry
+    timetable_map = {}
+    for entry in timetable_entries:
+        key = (entry['day'], entry['classroom'], entry['cell_col'])
+        timetable_map[key] = entry
+    
+    # Build a mapping: (day, cell_col) -> entry for header times
+    header_time_map = {}
+    for entry in timetable_entries:
+        key = (entry['day'], entry['cell_col'])
+        if key not in header_time_map:
+            header_time_map[key] = entry
+    
+    # Find max col for each day
+    max_cols = defaultdict(int)
+    for entry in timetable_entries:
+        day = entry['day']
+        col = entry.get('cell_col', 0)
+        if col + 1 > max_cols[day]:
+            max_cols[day] = col + 1  # +1 because col is zero-based
+
+    day_col_indices = {day: list(range(max_col)) for day, max_col in max_cols.items()}
+    
+    # Determine unique classrooms for each day from timetable_entries
+    scheduled_classrooms = defaultdict(set)
+    for entry in timetable_entries:
+        if entry['classroom']:
+            scheduled_classrooms[entry['day']].add(entry['classroom'])
+    
+    sorted_scheduled_classrooms = {}
+    for day, classrooms in scheduled_classrooms.items():
+        sorted_scheduled_classrooms[day] = sorted(list(classrooms))
+
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+    return render(request, 'coaching/view_schedule.html', {
+        'institution': institution,
+        'timetable_map': timetable_map,
+        'header_time_map': header_time_map,
+        'day_col_indices': day_col_indices,
+        'day_classrooms': sorted_scheduled_classrooms,
+        'days_of_week': days_of_week
+    })
