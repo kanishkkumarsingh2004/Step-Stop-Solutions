@@ -196,5 +196,4 @@ urlpatterns = [
    path('allocate_institution_card/', views.allocate_institution_card, name='allocate_institution_card'),
    path('deallocate-institution-nfc/', views.deallocate_institution_nfc, name='deallocate_institution_nfc'),
    path('check_institution_nfc_allocation/', views.check_institution_nfc_allocation, name='check_institution_nfc_allocation'),
-   path('institution/<int:institution_id>/nfc_add_user/', views.institution_nfc_add_user_page, name='institution_nfc_add_user_page'),
-]
+ ]
