@@ -29,6 +29,9 @@
             <!-- Card Selection -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Select Cards</label>
+                 <div class="mb-4">
+                    <p id="nfcStatus" class="text-sm text-gray-600"></p>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -148,55 +151,42 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Function to handle NFC card tap
-    async function handleNFCTap(nfcSerial) {
-        if (isNFCReading) return;
-        isNFCReading = true;
+    const nfcStatus = document.getElementById('nfcStatus');
 
-        try {
-            // Find the checkbox for the tapped card
-            const checkbox = document.querySelector(`input[value="${nfcSerial}"]`);
-            if (checkbox) {
-                // Toggle the checkbox
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-                
-                // Visual feedback
-                const row = checkbox.closest('tr');
-                row.style.backgroundColor = checkbox.checked ? '#E8F0FE' : '';
-                
-                // Add a temporary highlight effect
-                row.style.transition = 'background-color 0.3s';
-                setTimeout(() => {
-                    if (!checkbox.checked) {
-                        row.style.backgroundColor = '';
+    async function startNFCScan() {
+        if ('NDEFReader' in window) {
+            try {
+                nfcStatus.textContent = 'Ready to scan NFC card...';
+                const ndef = new NDEFReader();
+                await ndef.scan();
+
+                ndef.addEventListener('reading', ({ serialNumber }) => {
+                    nfcStatus.textContent = `Card detected! Serial: ${serialNumber}`;
+                    const checkbox = document.querySelector(`input[value="${serialNumber}"]`);
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                        setTimeout(() => {
+                            nfcStatus.textContent = 'Ready to scan NFC card...';
+                        }, 2000);
+                    } else {
+                        nfcStatus.textContent = `Card with serial ${serialNumber} not found.`;
+                         setTimeout(() => {
+                            nfcStatus.textContent = 'Ready to scan NFC card...';
+                        }, 2000);
                     }
-                }, 1000);
+                });
+
+            } catch (error) {
+                console.error('NFC scan failed:', error);
+                nfcStatus.textContent = 'NFC scan failed. Please try again.';
             }
-        } catch (error) {
-            console.error('Error handling NFC tap:', error);
-        } finally {
-            isNFCReading = false;
+        } else {
+            nfcStatus.textContent = 'Web NFC is not supported on this device.';
         }
     }
 
-    // Listen for NFC card taps
-    if ('NDEFReader' in window) {
-        const ndef = new NDEFReader();
-        
-        ndef.addEventListener('reading', ({ message }) => {
-            const decoder = new TextDecoder();
-            for (const record of message.records) {
-                const nfcSerial = decoder.decode(record.data);
-                handleNFCTap(nfcSerial);
-            }
-        });
-
-        ndef.scan().catch(error => {
-            console.error('Error starting NFC scan:', error);
-        });
-    } else {
-        console.log('Web NFC is not supported in this browser');
-    }
+    startNFCScan();
 
     // Handle form submission
     form.addEventListener('submit', async function(e) {
