@@ -5,7 +5,7 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap, AdminCard
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from django.core.paginator import Paginator
@@ -1734,3 +1734,84 @@ def view_schedule(request, uid):
         'day_classrooms': sorted_scheduled_classrooms,
         'days_of_week': days_of_week
     })
+
+@login_required
+def allocate_card_to_institution_page(request, uid):
+    institution = get_object_or_404(Institution, uid=uid)
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('coaching_dashboard', uid=uid)
+
+    # Get all users who have ever subscribed to this institution
+    enrolled_user_ids = InstitutionSubscription.objects.filter(
+        subscription_plan__institution=institution
+    ).values_list('user_id', flat=True).distinct()
+
+    # Get the user objects
+    enrolled_users = CustomUser.objects.filter(
+        id__in=enrolled_user_ids
+    ).order_by('first_name', 'last_name')
+
+    context = {
+        'institution': institution,
+        'users': enrolled_users
+    }
+    return render(request, 'coaching/allocate_card_to_institution.html', context)
+
+
+@login_required
+@require_POST
+def allocate_card_to_institution(request):
+    try:
+        data = json.loads(request.body)
+        card_id = data.get('card_id')
+        user_id = data.get('user_id')
+        institution_uid = data.get('institution_uid')
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid request format.'}, status=400)
+
+    if not all([card_id, user_id, institution_uid]):
+        return JsonResponse({'status': 'error', 'message': 'Card ID, User, and Institution are required.'}, status=400)
+
+    institution = get_object_or_404(Institution, uid=institution_uid)
+    user_to_allocate = get_object_or_404(CustomUser, id=user_id)
+
+    # Check permission
+    if request.user != institution.owner:
+        return JsonResponse({'status': 'error', 'message': "You don't have permission to perform this action."}, status=403)
+
+    # Check if user already has a card
+    if user_to_allocate.nfc_id:
+        return JsonResponse({'status': 'error', 'message': f"User {user_to_allocate.get_full_name()} already has a card."}, status=400)
+
+    # Check if the card is available in AdminCard
+    try:
+        admin_card = AdminCard.objects.get(card_id=card_id)
+        if admin_card.library or admin_card.institution:
+            return JsonResponse({'status': 'error', 'message': "This card is already allocated."}, status=400)
+    except AdminCard.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': "This card is not registered in the system."}, status=400)
+        
+    # Check for subscription one more time
+    has_subscription = InstitutionSubscription.objects.filter(
+        user=user_to_allocate,
+        subscription_plan__institution=institution,
+        status='valid',
+        payment_status='valid'
+    ).exists()
+
+    if not has_subscription:
+        return JsonResponse({'status': 'error', 'message': f"User {user_to_allocate.get_full_name()} does not have a valid subscription."}, status=400)
+    
+    # Allocate card
+    try:
+        with transaction.atomic():
+            user_to_allocate.nfc_id = card_id
+            user_to_allocate.save()
+
+            admin_card.institution = institution
+            admin_card.save()
+            
+            return JsonResponse({'status': 'success', 'message': f"Card {card_id} allocated to {user_to_allocate.get_full_name()} successfully."})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f"An error occurred: {str(e)}"}, status=500)

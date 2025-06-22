@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-blue-800 mb-6 text-center">Allocate Student Card</h1>
+
+        <div id="message-container" class="mb-4"></div>
+
+        <form id="allocate-card-form" class="space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="institution_uid" value="{{ institution.uid }}">
+
+            <div>
+                <label for="card_id" class="block text-sm font-medium text-gray-700 mb-2">1. Scan RFID Card</label>
+                <div id="scanner-interface" class="relative w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-center transition-all duration-300 flex items-center justify-center space-x-2">
+                    <i id="scanner-icon" class="bi bi-person-vcard text-2xl text-gray-400"></i>
+                    <p id="scanner-text" class="text-gray-500">Waiting for card scan...</p>
+                    <input type="text" id="card_id" name="card_id" class="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" required>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Ensure your RFID scanner is connected. The scanned ID will appear above.</p>
+            </div>
+
+            <div>
+                <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">2. Select Student</label>
+                <select id="user_id" name="user_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                    <option value="" disabled selected>-- Select a student --</option>
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.get_full_name }} - {{ user.mobile_number }}</option>
+                    {% empty %}
+                        <option value="" disabled>No eligible students found.</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex justify-end pt-4">
+                <button type="submit" id="submit-button" class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Allocate Card
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cardIdInput = document.getElementById('card_id');
+    const scannerInterface = document.getElementById('scanner-interface');
+    const scannerText = document.getElementById('scanner-text');
+    const scannerIcon = document.getElementById('scanner-icon');
+    const messageContainer = document.getElementById('message-container');
+    let cardId = '';
+    let timeoutId;
+    let isScanning = false;
+
+    document.addEventListener('keydown', function(e) {
+        if (isScanning && e.key === 'Enter') {
+            e.preventDefault();
+        }
+
+        if (!isScanning && e.key.length === 1 && e.key.match(/[a-zA-Z0-9]/)) {
+            isScanning = true;
+            scannerText.textContent = 'Scanning...';
+            scannerIcon.className = 'bi bi-wifi text-2xl text-blue-500 animate-pulse';
+        }
+
+        if (isScanning) {
+            if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9]/)) {
+                cardId += e.key;
+            } else if (e.key === 'Enter') {
+                finalizeScan();
+            }
+        }
+        
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(finalizeScan, 200);
+    });
+
+    function finalizeScan() {
+        if (cardId.length > 0) {
+            cardIdInput.value = cardId;
+            scannerText.textContent = `Card Scanned: ${cardId}`;
+            scannerIcon.className = 'bi bi-check-circle-fill text-2xl text-green-500';
+            scannerInterface.classList.remove('border-gray-300', 'border-blue-500');
+            scannerInterface.classList.add('border-green-500', 'bg-green-50');
+        } else if (isScanning) {
+            resetScanner();
+        }
+        cardId = '';
+        isScanning = false;
+    }
+
+    function resetScanner() {
+        cardIdInput.value = '';
+        scannerText.textContent = 'Waiting for card scan...';
+        scannerIcon.className = 'bi bi-person-vcard text-2xl text-gray-400';
+        scannerInterface.classList.remove('border-green-500', 'bg-green-50', 'border-blue-500', 'border-red-500', 'bg-red-50');
+        scannerInterface.classList.add('border-gray-300');
+    }
+
+    const allocateForm = document.getElementById('allocate-card-form');
+
+    allocateForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const submitButton = document.getElementById('submit-button');
+        
+        const formData = new FormData(allocateForm);
+        const data = {
+            card_id: formData.get('card_id'),
+            user_id: formData.get('user_id'),
+            institution_uid: formData.get('institution_uid')
+        };
+        
+        if (!data.card_id || !data.user_id) {
+            displayMessage('error', 'Please scan a card and select a student.');
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'Allocating...';
+
+        fetch("{% url 'allocate_card_to_institution_action' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            displayMessage(result.status, result.message);
+
+            if (result.status === 'success') {
+                allocateForm.reset();
+                resetScanner();
+                const userSelect = document.getElementById('user_id');
+                const optionToRemove = userSelect.querySelector(`option[value="${data.user_id}"]`);
+                if(optionToRemove) {
+                    optionToRemove.remove();
+                }
+            } else {
+                scannerIcon.className = 'bi bi-x-circle-fill text-2xl text-red-500';
+                scannerInterface.classList.add('border-red-500', 'bg-red-50');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            displayMessage('error', 'An unexpected network error occurred. Please check your connection and try again.');
+        })
+        .finally(() => {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Allocate Card';
+        });
+    });
+
+    function displayMessage(status, message) {
+        let messageDivClass = status === 'success' 
+            ? 'bg-green-100 text-green-700' 
+            : 'bg-red-100 text-red-700';
+        
+        const messageDiv = `<div class="p-4 text-sm rounded-lg ${messageDivClass}" role="alert">${message}</div>`;
+        messageContainer.innerHTML = messageDiv;
+
+        setTimeout(() => {
+            if (messageContainer.innerHTML.includes(message)) {
+                messageContainer.innerHTML = '';
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %} 

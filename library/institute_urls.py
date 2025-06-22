@@ -48,4 +48,6 @@ urlpatterns = [
    path('get-faculty-name/', institute_view.get_faculty_name_by_ssid, name='get_faculty_name_by_ssid'),
    path('institution/<str:institution_uid>/remove-subject/', institute_view.remove_subject, name='remove_subject'),
    path('institution/<str:uid>/schedule/', institute_view.view_schedule, name='view_schedule'),
+   path('institution/<str:uid>/allocate-card/', institute_view.allocate_card_to_institution_page, name='allocate_card_to_institution_page'),
+   path('institution/allocate-card-action/', institute_view.allocate_card_to_institution, name='allocate_card_to_institution_action'),
 ]

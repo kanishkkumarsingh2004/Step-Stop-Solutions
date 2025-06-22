@@ -63,17 +63,21 @@
 
     <!-- Navigation Buttons -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 md:mb-8">
-        <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-people-fill text-sm sm:text-lg"></i>
-            <span>Manage Users</span>
+        <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-purple-100 text-purple-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
+            <div class="text-3xl sm:text-4xl font-bold">{{ total_enrolled }}</div>
+            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Enrolled Users</div>
         </a>
-        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-cash-coin mr-2"></i>
-            <span>Payment Verifications</span>
+        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-yellow-100 text-yellow-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
+            <div class="text-3xl sm:text-4xl font-bold">{{ pending_verifications_count }}</div>
+            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Pending Verifications</div>
         </a>
-        <a href="{% url 'institution_reviews' institution.uid %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-center flex items-center justify-center space-x-1 sm:space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
-            <i class="bi bi-star-fill text-sm sm:text-lg"></i>
-            <span>View Rates & Reviews</span>
+        <a href="{% url 'manage_institution_subscriptions' institution.uid %}" class="bg-indigo-100 text-indigo-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
+            <div class="text-3xl sm:text-4xl font-bold">{{ total_subscriptions }}</div>
+            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Subscription Plans</div>
+        </a>
+        <a href="{% url 'allocate_card_to_institution_page' institution.uid %}" class="bg-teal-100 text-teal-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Allocate Card</div>
         </a>
     </div>
 
