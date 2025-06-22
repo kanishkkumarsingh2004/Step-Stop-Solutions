@@ -193,4 +193,8 @@ urlpatterns = [
 
    # path('institution/<uuid:institution_uid>/save_timetable/', views.save_timetable, name='save_timetable'),
    path('institution/<str:institution_uid>/create-edit-schedule/', views.create_edit_schedule, name='create_edit_schedule'),
+   path('allocate_institution_card/', views.allocate_institution_card, name='allocate_institution_card'),
+   path('deallocate-institution-nfc/', views.deallocate_institution_nfc, name='deallocate_institution_nfc'),
+   path('check_institution_nfc_allocation/', views.check_institution_nfc_allocation, name='check_institution_nfc_allocation'),
+   path('institution/<int:institution_id>/nfc_add_user/', views.institution_nfc_add_user_page, name='institution_nfc_add_user_page'),
 ]

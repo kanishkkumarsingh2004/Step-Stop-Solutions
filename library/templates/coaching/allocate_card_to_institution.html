@@ -2,162 +2,103 @@
 {% load static %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 class="text-2xl sm:text-3xl font-bold text-blue-800 mb-6 text-center">Allocate Student Card</h1>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div class="bg-white rounded-lg sm:rounded-2xl shadow-md sm:shadow-xl overflow-hidden">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-8 py-6 sm:py-10">
+            <div class="max-w-3xl mx-auto text-center">
+                <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">NFC User Activation (Institution)</h1>
+                <p class="mt-2 sm:mt-4 text-base sm:text-lg text-blue-100 font-medium">Streamline user access management with advanced NFC technology</p>
+            </div>
+        </div>
 
-        <div id="message-container" class="mb-4"></div>
-
-        <form id="allocate-card-form" class="space-y-6">
+        <!-- Form and Error Handling -->
+        <form id="nfc-form" method="post" class="hidden">
             {% csrf_token %}
-            <input type="hidden" name="institution_uid" value="{{ institution.uid }}">
+        </form>
+        <div id="nfc-error-message" class="hidden mx-4 sm:mx-6 mt-4 p-3 sm:p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm">
+            <p></p>
+        </div>
 
-            <div>
-                <label for="card_id" class="block text-sm font-medium text-gray-700 mb-2">1. Scan Card</label>
-                <div class="flex items-center space-x-4">
-                    <input type="text" id="card_id" name="card_id" disabled class="flex-grow w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Card ID will appear here" required>
-                    <button type="button" id="scan-nfc-button" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
-                        <i class="bi bi-wifi"></i>
-                        <span>Scan NFC</span>
+        <!-- Main Content Section -->
+        <div class="px-4 sm:px-6 py-6">
+            <div class="max-w-2xl mx-auto space-y-6">
+                <!-- NFC Scanner Section -->
+                <div class="text-center">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-4">NFC Scanner Interface</h2>
+                    <div class="bg-gray-50 p-4 sm:p-6 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-medium">Detected NFC ID</p>
+                        <p id="nfc-id-display" class="text-lg sm:text-2xl font-mono text-green-600 mt-2 break-all">Waiting for card...</p>
+                        <div id="invalid-card-message" class="mt-4 hidden text-red-600 text-xs">
+                            <i class="bi bi-exclamation-circle"></i> Invalid Card
+                        </div>
+                        <div id="allocated-user-info" class="mt-4 hidden">
+                            <p class="text-xs sm:text-sm text-gray-600">Allocated to:</p>
+                            <p id="allocated-user-name" class="text-lg sm:text-xl font-semibold"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Info Display -->
+                <div id="nfc-user-info" class="bg-gray-50 p-4 sm:p-6 rounded-lg border border-gray-200">
+                    <!-- Dynamic user info will be displayed here -->
+                </div>
+
+                <!-- User Selection -->
+                <div class="space-y-2">
+                    <label for="user-select" class="block text-xs sm:text-sm font-medium text-gray-700">Select User for Activation</label>
+                    {% if users %}
+                    <select id="user-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm transition-all duration-200">
+                        <option value="">-- Select User --</option>
+                        {% for user in users %}
+                            {% if not user.has_card %}
+                                <option value="{{ user.id }}" data-mobile="{{ user.mobile_number }}" data-first-name="{{ user.first_name }}" data-last-name="{{ user.last_name }}">
+                                    {{ user.mobile_number }} - {{ user.first_name }} {{ user.last_name }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-2 rounded-r-lg">
+                        <p class="text-sm text-yellow-800">
+                            <strong>No Eligible Students Found</strong>
+                        </p>
+                        <p class="text-xs text-yellow-700 mt-1">
+                            To appear in this list, a student must have an active or past subscription with this institution. Please ensure students are subscribed before allocating a card.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col gap-3 justify-center mt-6">
+                    <button id="activate-user-button" type="button" class="hidden w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-xs sm:text-sm font-semibold">
+                        <i class="bi bi-person-check-fill mr-2"></i>
+                        Allocate User
+                    </button>
+                    <button id="delete-user-button" type="button" class="hidden w-full bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-xs sm:text-sm font-semibold">
+                        <i class="bi bi-trash-fill mr-2"></i>
+                        Deallocate User
                     </button>
                 </div>
-                <p id="nfc-status" class="text-xs text-gray-500 mt-1">Click "Scan NFC" and tap the card on your device.</p>
             </div>
-
-            <div>
-                <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">2. Select Student</label>
-                <select id="user_id" name="user_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                    <option value="" disabled selected>-- Select a student --</option>
-                    {% for item in users_with_status %}
-                        <option value="{{ item.user.id }}" {% if item.has_card %}disabled{% endif %}>
-                            {{ item.user.get_full_name }} - {{ item.user.mobile_number }}
-                            {% if item.has_card %} (Card Allocated){% endif %}
-                            {% if not item.has_active_subscription %} (Inactive Subscription){% endif %}
-                        </option>
-                    {% empty %}
-                        <option value="" disabled>No students found.</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="flex justify-end pt-4">
-                <button type="submit" id="submit-button" class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Allocate Card
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const cardIdInput = document.getElementById('card_id');
-    const nfcStatus = document.getElementById('nfc-status');
-    const scanNfcButton = document.getElementById('scan-nfc-button');
-    const messageContainer = document.getElementById('message-container');
-    const allocateForm = document.getElementById('allocate-card-form');
-    const submitButton = document.getElementById('submit-button');
+<!-- Hidden Elements -->
+<input type="hidden" id="institution_id" value="{{ institution.id }}">
+<div id="deallocate-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-2xl p-6 max-w-md w-full">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Confirm Deallocation</h3>
+        <p class="text-sm sm:text-base text-gray-600 mb-6">Are you sure you want to deallocate this NFC ID from the user?</p>
+        <div class="flex justify-end space-x-3">
+            <button id="cancel-deallocate" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200">Cancel</button>
+            <button id="confirm-deallocate" class="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-md transition-colors duration-200">Deallocate</button>
+        </div>
+    </div>
+</div>
 
-    if ('NDEFReader' in window) {
-        scanNfcButton.addEventListener('click', async () => {
-            nfcStatus.textContent = 'NFC scanner activated. Please tap your card.';
-            nfcStatus.className = 'text-xs text-blue-600 mt-1';
-            
-            try {
-                const nfcReader = new NDEFReader();
-                await nfcReader.scan();
-
-                nfcReader.onreading = event => {
-                    const serialNumber = event.serialNumber;
-                    const formattedId = serialNumber.trim().toUpperCase();
-                    cardIdInput.value = formattedId;
-                    nfcStatus.textContent = `Success! Scanned card: ${formattedId}`;
-                    nfcStatus.className = 'text-xs text-green-600 mt-1';
-                };
-
-                nfcReader.onerror = (event) => {
-                    nfcStatus.textContent = 'Cannot read NFC card. Please try again. ' + event.message;
-                    nfcStatus.className = 'text-xs text-red-600 mt-1';
-                };
-
-            } catch (error) {
-                nfcStatus.textContent = `Error: ${error.message}`;
-                nfcStatus.className = 'text-xs text-red-600 mt-1';
-            }
-        });
-    } else {
-        nfcStatus.textContent = 'Web NFC is not supported on this device. Please enter Card ID manually.';
-        scanNfcButton.disabled = true;
-        scanNfcButton.classList.add('opacity-50', 'cursor-not-allowed');
-    }
-
-    allocateForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(allocateForm);
-        const data = {
-            card_id: formData.get('card_id').trim().toUpperCase(),
-            user_id: formData.get('user_id'),
-            institution_uid: formData.get('institution_uid')
-        };
-        
-        if (!data.card_id || !data.user_id) {
-            displayMessage('error', 'Please provide a card ID and select a student.');
-            return;
-        }
-
-        submitButton.disabled = true;
-        submitButton.textContent = 'Allocating...';
-
-        fetch("{% url 'allocate_card_to_institution_action' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-            displayMessage(result.status, result.message);
-
-            if (result.status === 'success') {
-                allocateForm.reset();
-                nfcStatus.textContent = 'Click "Scan NFC" and tap the card on your device.';
-                nfcStatus.className = 'text-xs text-gray-500 mt-1';
-                const userSelect = document.getElementById('user_id');
-                const optionToRemove = userSelect.querySelector(`option[value="${data.user_id}"]`);
-                if(optionToRemove) {
-                    optionToRemove.remove();
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            displayMessage('error', 'An unexpected network error occurred. Please check your connection and try again.');
-        })
-        .finally(() => {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Allocate Card';
-        });
-    });
-
-    function displayMessage(status, message) {
-        let messageDivClass = status === 'success' 
-            ? 'bg-green-100 text-green-700' 
-            : 'bg-red-100 text-red-700';
-        
-        const messageDiv = `<div class="p-4 text-sm rounded-lg ${messageDivClass}" role="alert">${message}</div>`;
-        messageContainer.innerHTML = messageDiv;
-
-        setTimeout(() => {
-            if (messageContainer.innerHTML.includes(message)) {
-                messageContainer.innerHTML = '';
-            }
-        }, 5000);
-    }
-});
-</script>
+<!-- Scripts -->
+<script src="{% static 'js/institution_nfc.js' %}"></script>
 {% endblock %}

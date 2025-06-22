@@ -832,7 +832,7 @@ class SubjectFacultyMap(models.Model):
 class InstitutionCardLog(models.Model):
     """A log of card allocations for institutions."""
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='card_allocation_logs')
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='institution_card_logs')
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='institution_card_logs')
     card_id = models.CharField(max_length=100)
     allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='institution_allocations_logged')
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -847,7 +847,7 @@ class InstitutionCardLog(models.Model):
 class LibraryCardLog(models.Model):
     """A log of card allocations for libraries."""
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='card_allocation_logs')
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='library_card_logs')
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='library_card_logs')
     card_id = models.CharField(max_length=100)
     allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='library_allocations_logged')
     timestamp = models.DateTimeField(auto_now_add=True)

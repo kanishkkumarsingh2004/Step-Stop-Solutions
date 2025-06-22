@@ -42,7 +42,8 @@ from .models import (
     InstitutionSubscription,
     SubjectFacultyMap,
     TimetableEntry,
-    LibraryCardLog
+    LibraryCardLog,
+    InstitutionCardLog
 )
 # Python standard library imports
 import json
@@ -1222,13 +1223,18 @@ def deallocate_nfc(request):
                 return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
             if card.library is None:
                 return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
-            # Optionally, log the deallocation
+
+            # Find the user to log the deallocation against
+            last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
+            user_to_deallocate = last_log.user if last_log else None
+
+            # Log the deallocation
             LibraryCardLog.objects.create(
                 library=card.library,
-                user=None,
+                user=user_to_deallocate,
                 card_id=nfc_serial,
                 allocated_by=request.user,
-                notes="Card deallocated"
+                notes=f"Card deallocated from user {user_to_deallocate.get_full_name() if user_to_deallocate else 'N/A'}"
             )
             card.library = None
             card.save()
@@ -1575,13 +1581,18 @@ def deallocate_nfc(request):
                 return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
             if card.library is None:
                 return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
-            # Optionally, log the deallocation
+
+            # Find the user to log the deallocation against
+            last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
+            user_to_deallocate = last_log.user if last_log else None
+
+            # Log the deallocation
             LibraryCardLog.objects.create(
                 library=card.library,
-                user=None,
+                user=user_to_deallocate,
                 card_id=nfc_serial,
                 allocated_by=request.user,
-                notes="Card deallocated"
+                notes=f"Card deallocated from user {user_to_deallocate.get_full_name() if user_to_deallocate else 'N/A'}"
             )
             card.library = None
             card.save()
@@ -3178,3 +3189,166 @@ def unlogged_card_allocations_library(request, library_id):
         'users_with_unlogged_cards': users_with_unlogged_cards
     }
     return render(request, 'library/unlogged_card_allocations.html', context)
+
+@login_required
+@csrf_exempt
+def allocate_institution_card(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get("nfc_serial")
+            user_id = data.get("user_id")
+            institution_id = data.get("institution_id")
+
+            if not nfc_serial or not user_id or not institution_id:
+                return JsonResponse({'error': 'NFC serial, user ID, and institution ID are required'}, status=400)
+
+            # Check if card exists and is unallocated
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'This card is not registered in the system'}, status=400)
+            if card.institution is not None:
+                return JsonResponse({'error': 'This card is already allocated to an institution'}, status=400)
+
+            # Check if user already has a card (by log)
+            if InstitutionCardLog.objects.filter(user_id=user_id, institution_id=institution_id).exists():
+                return JsonResponse({'error': 'This user already has a card allocated in this institution'}, status=400)
+
+            user = CustomUser.objects.get(id=user_id)
+            institution = Institution.objects.get(id=institution_id)
+
+            # Allocate card
+            with transaction.atomic():
+                card.institution = institution
+                card.save()
+                InstitutionCardLog.objects.create(
+                    institution=institution,
+                    user=user,
+                    card_id=nfc_serial,
+                    allocated_by=request.user,
+                    notes="Card allocated"
+                )
+            return JsonResponse({
+                'success': True,
+                'message': 'User activated successfully',
+                'user': {
+                    'id': user.id,
+                    'name': user.get_full_name(),
+                    'mobile': user.mobile_number
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error in allocate_institution_card: {str(e)}", exc_info=True)
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@csrf_exempt
+def deallocate_institution_nfc(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get("nfc_serial")
+            if not nfc_serial:
+                return JsonResponse({'error': 'NFC serial is required'}, status=400)
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
+            if card.institution is None:
+                return JsonResponse({'error': 'This card is not allocated to any institution'}, status=400)
+
+            # Find the user to log the deallocation against
+            last_log = InstitutionCardLog.objects.filter(card_id=nfc_serial, institution=card.institution).order_by('-timestamp').first()
+            user_to_deallocate = last_log.user if last_log else None
+
+            # Log the deallocation
+            InstitutionCardLog.objects.create(
+                institution=card.institution,
+                user=user_to_deallocate,
+                card_id=nfc_serial,
+                allocated_by=request.user,
+                notes=f"Card deallocated from user {user_to_deallocate.get_full_name() if user_to_deallocate else 'N/A'}"
+            )
+            card.institution = None
+            card.save()
+            return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
+        except Exception as e:
+            logger.error(f"Error in deallocate_institution_nfc: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@csrf_exempt
+def check_institution_nfc_allocation(request):
+    if request.method == 'POST':
+        try:
+            if request.content_type != 'application/json':
+                return JsonResponse({'error': 'Invalid content type, expected application/json'}, status=400)
+            data = json.loads(request.body)
+            nfc_serial = data.get('nfc_serial')
+            institution_id = data.get('institution_id')
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+                institution = Institution.objects.get(id=institution_id)
+            except (AdminCard.DoesNotExist, Institution.DoesNotExist):
+                return JsonResponse({'error': 'Card or institution not found'}, status=404)
+            if card.institution and str(card.institution.id) == str(institution_id):
+                log = InstitutionCardLog.objects.filter(card_id=nfc_serial, institution=institution).order_by('-timestamp').first()
+                user = log.user if log else None
+                response_data = {
+                    'allocated': bool(user),
+                    'nfcid': nfc_serial,
+                    'timestamp': timezone.now().isoformat()
+                }
+                if user:
+                    response_data.update({
+                        'user_full_name': user.get_full_name(),
+                        'user_mobile': user.mobile_number,
+                        'user_id': user.id
+                    })
+                return JsonResponse(response_data)
+            else:
+                return JsonResponse({'error': 'This card is not allocated to this institution'}, status=400)
+        except Exception as e:
+            logger.error(f"Error checking institution NFC allocation: {str(e)}", exc_info=True)
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def institution_nfc_add_user_page(request, institution_id):
+    institution = get_object_or_404(Institution, id=institution_id)
+    logger.info(f"Fetching users for institution card allocation page: {institution.name} (ID: {institution_id})")
+
+    # Get users who have the institution role but no card allocated
+    users_with_role = CustomUser.objects.filter(
+        roles__name='institution'
+    ).order_by('first_name', 'last_name')
+    
+    # Get user IDs who already have a card allocated for this institution
+    user_ids_with_cards = set(InstitutionCardLog.objects.filter(
+        institution=institution,
+        user__isnull=False
+    ).values_list('user_id', flat=True))
+    
+    # Filter users who have role but no card
+    eligible_users = users_with_role.exclude(id__in=user_ids_with_cards)
+    logger.info(f"Found {eligible_users.count()} eligible users with institution role but no card allocated")
+    
+    users_with_status = []
+    for user in eligible_users:
+        users_with_status.append({
+            'id': user.id,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'mobile_number': user.mobile_number,
+            'has_card': False  # Since we filtered out users with cards
+        })
+        
+    logger.info(f"Final list of eligible users being sent to template ({len(users_with_status)} users).")
+    print('-->', user)
+    return render(request, 'coaching/allocate_card_to_institution.html', {
+        'institution': institution,
+        'users': users_with_status
+    })
