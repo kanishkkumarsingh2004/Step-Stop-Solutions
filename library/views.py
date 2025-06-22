@@ -175,8 +175,14 @@ def admin_dashboard(request):
     approved_institutions = Institution.objects.filter(is_approved=True).count()
     pending_libraries = total_libraries - approved_libraries
     pending_institutions = total_institutions - approved_institutions
-    allocated_cards_count = AdminCard.objects.filter(library__isnull=False).count()
-    non_allocated_cards_count = AdminCard.objects.filter(library__isnull=True).count()
+    
+    # Card allocation stats
+    allocated_cards_count = AdminCard.objects.filter(
+        Q(library__isnull=False) | Q(institution__isnull=False)
+    ).count()
+    non_allocated_cards_count = AdminCard.objects.filter(
+        library__isnull=True, institution__isnull=True
+    ).count()
 
     # Get active subscriptions
     active_subscriptions = UserSubscription.objects.filter(

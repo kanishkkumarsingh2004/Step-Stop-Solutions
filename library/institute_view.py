@@ -1747,14 +1747,27 @@ def allocate_card_to_institution_page(request, uid):
         subscription_plan__institution=institution
     ).values_list('user_id', flat=True).distinct()
 
-    # Get the user objects
-    enrolled_users = CustomUser.objects.filter(
-        id__in=enrolled_user_ids
-    ).order_by('first_name', 'last_name')
+    enrolled_users = CustomUser.objects.filter(id__in=enrolled_user_ids)
+
+    # Augment user data with card and subscription status
+    users_with_status = []
+    for user in enrolled_users:
+        has_active_subscription = InstitutionSubscription.objects.filter(
+            user=user,
+            subscription_plan__institution=institution,
+            status='valid',
+            payment_status='valid'
+        ).exists()
+        
+        users_with_status.append({
+            'user': user,
+            'has_card': bool(user.nfc_id),
+            'has_active_subscription': has_active_subscription
+        })
 
     context = {
         'institution': institution,
-        'users': enrolled_users
+        'users_with_status': users_with_status
     }
     return render(request, 'coaching/allocate_card_to_institution.html', context)
 

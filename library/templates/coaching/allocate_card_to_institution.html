@@ -26,10 +26,14 @@
                 <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">2. Select Student</label>
                 <select id="user_id" name="user_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                     <option value="" disabled selected>-- Select a student --</option>
-                    {% for user in users %}
-                        <option value="{{ user.id }}">{{ user.get_full_name }} - {{ user.mobile_number }}</option>
+                    {% for item in users_with_status %}
+                        <option value="{{ item.user.id }}" {% if item.has_card %}disabled{% endif %}>
+                            {{ item.user.get_full_name }} - {{ item.user.mobile_number }}
+                            {% if item.has_card %} (Card Allocated){% endif %}
+                            {% if not item.has_active_subscription %} (Inactive Subscription){% endif %}
+                        </option>
                     {% empty %}
-                        <option value="" disabled>No eligible students found.</option>
+                        <option value="" disabled>No students found.</option>
                     {% endfor %}
                 </select>
             </div>
@@ -52,45 +56,50 @@ document.addEventListener('DOMContentLoaded', function() {
     const scannerText = document.getElementById('scanner-text');
     const scannerIcon = document.getElementById('scanner-icon');
     const messageContainer = document.getElementById('message-container');
-    let cardId = '';
-    let timeoutId;
-    let isScanning = false;
+    const allocateForm = document.getElementById('allocate-card-form');
+    const submitButton = document.getElementById('submit-button');
+
+    let cardIdBuffer = '';
+    let scanTimeout;
 
     document.addEventListener('keydown', function(e) {
-        if (isScanning && e.key === 'Enter') {
+        if (e.key === 'Enter') {
             e.preventDefault();
-        }
-
-        if (!isScanning && e.key.length === 1 && e.key.match(/[a-zA-Z0-9]/)) {
-            isScanning = true;
-            scannerText.textContent = 'Scanning...';
-            scannerIcon.className = 'bi bi-wifi text-2xl text-blue-500 animate-pulse';
-        }
-
-        if (isScanning) {
-            if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9]/)) {
-                cardId += e.key;
-            } else if (e.key === 'Enter') {
-                finalizeScan();
+            if (cardIdBuffer.length > 0) {
+                processScan(cardIdBuffer);
+                cardIdBuffer = '';
             }
+            return;
         }
-        
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(finalizeScan, 200);
+
+        if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9]/)) {
+            if (cardIdBuffer === '') {
+                // Start of a new scan
+                scannerText.textContent = 'Scanning...';
+                scannerIcon.className = 'bi bi-wifi text-2xl text-blue-500 animate-pulse';
+                scannerInterface.classList.remove('border-gray-300', 'border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
+                scannerInterface.classList.add('border-blue-500');
+            }
+            cardIdBuffer += e.key;
+        }
+
+        clearTimeout(scanTimeout);
+        scanTimeout = setTimeout(() => {
+            if (cardIdBuffer.length > 0) {
+                processScan(cardIdBuffer);
+                cardIdBuffer = '';
+            }
+        }, 200);
     });
 
-    function finalizeScan() {
-        if (cardId.length > 0) {
-            cardIdInput.value = cardId;
-            scannerText.textContent = `Card Scanned: ${cardId}`;
-            scannerIcon.className = 'bi bi-check-circle-fill text-2xl text-green-500';
-            scannerInterface.classList.remove('border-gray-300', 'border-blue-500');
-            scannerInterface.classList.add('border-green-500', 'bg-green-50');
-        } else if (isScanning) {
-            resetScanner();
-        }
-        cardId = '';
-        isScanning = false;
+    function processScan(scannedId) {
+        // Format the scanned ID to ensure consistency
+        const formattedId = scannedId.trim().toUpperCase();
+        cardIdInput.value = formattedId;
+        scannerText.textContent = `Card Scanned: ${formattedId}`;
+        scannerIcon.className = 'bi bi-check-circle-fill text-2xl text-green-500';
+        scannerInterface.classList.remove('border-gray-300', 'border-blue-500');
+        scannerInterface.classList.add('border-green-500', 'bg-green-50');
     }
 
     function resetScanner() {
@@ -101,15 +110,12 @@ document.addEventListener('DOMContentLoaded', function() {
         scannerInterface.classList.add('border-gray-300');
     }
 
-    const allocateForm = document.getElementById('allocate-card-form');
-
     allocateForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const submitButton = document.getElementById('submit-button');
         
         const formData = new FormData(allocateForm);
         const data = {
-            card_id: formData.get('card_id'),
+            card_id: formData.get('card_id').trim().toUpperCase(),
             user_id: formData.get('user_id'),
             institution_uid: formData.get('institution_uid')
         };
@@ -173,4 +179,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %} 
+{% endblock %}
