@@ -100,7 +100,6 @@ class CustomUser(AbstractUser):
     ]
 
     library = models.ManyToManyField(Library, related_name='library_users', blank=True)
-    nfc_id = models.CharField(max_length=100, unique=True, blank=True, null=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     address = models.TextField()
@@ -829,3 +828,33 @@ class SubjectFacultyMap(models.Model):
 
     def __str__(self):
         return f"{self.institution.name} - {self.subject} -> {self.faculty_ssid}"
+
+class InstitutionCardLog(models.Model):
+    """A log of card allocations for institutions."""
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='card_allocation_logs')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='institution_card_logs')
+    card_id = models.CharField(max_length=100)
+    allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='institution_allocations_logged')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    notes = models.CharField(max_length=255, default="Card allocated")
+
+    def __str__(self):
+        return f"Card {self.card_id} allocated to {self.user.get_full_name()} at {self.institution.name} on {self.timestamp}"
+
+    class Meta:
+        ordering = ['-timestamp']
+
+class LibraryCardLog(models.Model):
+    """A log of card allocations for libraries."""
+    library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='card_allocation_logs')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='library_card_logs')
+    card_id = models.CharField(max_length=100)
+    allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='library_allocations_logged')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    notes = models.CharField(max_length=255, default="Card allocated")
+
+    def __str__(self):
+        return f"Card {self.card_id} allocated to {self.user.get_full_name()} at {self.library.venue_name} on {self.timestamp}"
+
+    class Meta:
+        ordering = ['-timestamp']

@@ -13,6 +13,7 @@ from django.contrib.admin.models import LogEntry
 import logging
 from django.core.paginator import Paginator
 from django.utils.timezone import now
+from django.db import transaction
 
 
 # Set up logging
@@ -40,7 +41,8 @@ from .models import (
     AdminExpense,
     InstitutionSubscription,
     SubjectFacultyMap,
-    TimetableEntry
+    TimetableEntry,
+    LibraryCardLog
 )
 # Python standard library imports
 import json
@@ -1159,64 +1161,106 @@ def allocate(request):
         try:
             data = json.loads(request.body)
             nfc_serial = data.get("nfc_serial")
-            user_id = data.get("user_id")  # This is the user's ID, not mobile number
-            
-            logger.info(f"Received allocation request - NFC: {nfc_serial}, User ID: {user_id}")
+            user_id = data.get("user_id")
+            library_id = data.get("library_id")
 
-            if not nfc_serial or not user_id:
-                logger.error("Missing NFC serial or user ID")
-                return JsonResponse({'error': 'NFC serial and user ID are required'}, status=400)
+            if not nfc_serial or not user_id or not library_id:
+                return JsonResponse({'error': 'NFC serial, user ID, and library ID are required'}, status=400)
 
-            # Check if NFC ID is already allocated
-            if CustomUser.objects.filter(nfc_id=nfc_serial).exists():
-                logger.error(f"NFC ID {nfc_serial} already allocated")
-                return JsonResponse({'error': 'This NFC card is already allocated to another user'}, status=400)
-
+            # Check if card exists and is unallocated
             try:
-                # Get user by ID
-                user = CustomUser.objects.get(id=user_id)
-                logger.info(f"Found user: {user.id}")
-                
-                # Update the user's NFC ID
-                user.nfc_id = nfc_serial
-                user.save()
-                logger.info(f"Successfully allocated NFC ID {nfc_serial} to user {user_id}")
-                
-                return JsonResponse({
-                    'success': True, 
-                    'message': 'User activated successfully',
-                    'user': {
-                        'id': user.id,
-                        'name': user.get_full_name(),
-                        'mobile': user.mobile_number
-                    }
-                })
-                
-            except CustomUser.DoesNotExist:
-                logger.error(f"User not found with ID: {user_id}")
-                return JsonResponse({'error': 'User not found'}, status=404)
-                
+                card = AdminCard.objects.get(card_id=nfc_serial)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'This card is not registered in the system'}, status=400)
+            if card.library is not None:
+                return JsonResponse({'error': 'This card is already allocated to a library'}, status=400)
+
+            # Check if user already has a card (by log)
+            if LibraryCardLog.objects.filter(user_id=user_id, library_id=library_id).exists():
+                return JsonResponse({'error': 'This user already has a card allocated in this library'}, status=400)
+
+            user = CustomUser.objects.get(id=user_id)
+            library = Library.objects.get(id=library_id)
+
+            # Allocate card
+            with transaction.atomic():
+                card.library = library
+                card.save()
+                LibraryCardLog.objects.create(
+                    library=library,
+                    user=user,
+                    card_id=nfc_serial,
+                    allocated_by=request.user,
+                    notes="Card allocated"
+                )
+            return JsonResponse({
+                'success': True,
+                'message': 'User activated successfully',
+                'user': {
+                    'id': user.id,
+                    'name': user.get_full_name(),
+                    'mobile': user.mobile_number
+                }
+            })
         except Exception as e:
             logger.error(f"Error in allocate function: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=500)
-    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@csrf_exempt
+def deallocate_nfc(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get("nfc_serial")
+            if not nfc_serial:
+                return JsonResponse({'error': 'NFC serial is required'}, status=400)
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
+            if card.library is None:
+                return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
+            # Optionally, log the deallocation
+            LibraryCardLog.objects.create(
+                library=card.library,
+                user=None,
+                card_id=nfc_serial,
+                allocated_by=request.user,
+                notes="Card deallocated"
+            )
+            card.library = None
+            card.save()
+            return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
+        except Exception as e:
+            logger.error(f"Error in deallocate_nfc function: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required
 def nfc_add_user_page(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-
-    # Get users who have joined this library
-    users = CustomUser.objects.filter(
-        usersubscription__subscription__library=library
-    ).distinct()
-    
-    context = {
+    # Get all users who have ever subscribed to this library
+    enrolled_user_ids = UserSubscription.objects.filter(
+        subscription__library=library
+    ).values_list('user_id', flat=True).distinct()
+    users = CustomUser.objects.filter(id__in=enrolled_user_ids)
+    # Annotate each user with has_card
+    user_ids_with_cards = set(LibraryCardLog.objects.filter(library=library).values_list('user_id', flat=True))
+    users_with_status = []
+    for user in users:
+        users_with_status.append({
+            'id': user.id,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'mobile_number': user.mobile_number,
+            'has_card': user.id in user_ids_with_cards
+        })
+    return render(request, 'library/nfc_add_user.html', {
         'library': library,
-        'vendor': request.user,
-        'users': users
-    }
-    return render(request, 'library/nfc_add_user.html', context)
+        'users': users_with_status
+    })
 
 @login_required
 def attendance_page(request, library_id):
@@ -1523,29 +1567,28 @@ def deallocate_nfc(request):
         try:
             data = json.loads(request.body)
             nfc_serial = data.get("nfc_serial")
-            
             if not nfc_serial:
                 return JsonResponse({'error': 'NFC serial is required'}, status=400)
-
-            user = CustomUser.objects.filter(nfc_id=nfc_serial).first()
-            if user:
-                user.nfc_id = None
-                user.save()
-                return JsonResponse({
-                    'success': True,
-                    'message': 'NFC ID deallocated successfully',
-                    'user': {
-                        'id': user.id,
-                        'name': user.get_full_name()
-                    }
-                })
-            else:
-                return JsonResponse({'error': 'No user found with this NFC ID'}, status=404)
-                
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
+            if card.library is None:
+                return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
+            # Optionally, log the deallocation
+            LibraryCardLog.objects.create(
+                library=card.library,
+                user=None,
+                card_id=nfc_serial,
+                allocated_by=request.user,
+                notes="Card deallocated"
+            )
+            card.library = None
+            card.save()
+            return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
         except Exception as e:
             logger.error(f"Error in deallocate_nfc function: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
-    
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required
@@ -3049,3 +3092,89 @@ def create_edit_schedule(request, institution_uid):
         'day_col_indices': day_col_indices,
         'day_row_indices': day_row_indices,
     })
+
+@login_required
+@require_POST
+def allocate_card_to_user(request):
+    card_id = request.POST.get('card_id')
+    user_id = request.POST.get('user_id')
+    library_id = request.POST.get('library_id')
+
+    if not all([card_id, user_id, library_id]):
+        return JsonResponse({'status': 'error', 'message': 'Card ID, User, and Library are required.'}, status=400)
+
+    library = get_object_or_404(Library, id=library_id)
+    user_to_allocate = get_object_or_404(CustomUser, id=user_id)
+
+    # Check permission
+    if request.user != library.owner:
+        return JsonResponse({'status': 'error', 'message': "You don't have permission to perform this action."}, status=403)
+
+    # Check if the card is available in AdminCard
+    try:
+        admin_card = AdminCard.objects.get(card_id=card_id)
+        if admin_card.library or admin_card.institution:
+            return JsonResponse({'status': 'error', 'message': 'This card is already allocated.'}, status=400)
+    except AdminCard.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'This card is not registered in the system.'}, status=400)
+
+    # Final check for an active subscription
+    has_active_subscription = UserSubscription.objects.filter(
+        user=user_to_allocate,
+        subscription__library=library,
+        status='valid'
+    ).exists()
+
+    if not has_active_subscription:
+        return JsonResponse({'status': 'error', 'message': f"User {user_to_allocate.get_full_name()} does not have a valid subscription for this library."}, status=400)
+
+    # Allocate card
+    try:
+        with transaction.atomic():
+            # Assign card to library in AdminCard
+            admin_card.library = library
+            admin_card.save()
+
+            # Log the allocation in LibraryCardLog
+            LibraryCardLog.objects.create(
+                library=library,
+                user=user_to_allocate,
+                card_id=card_id,
+                allocated_by=request.user
+            )
+
+        return JsonResponse({'status': 'success', 'message': f"Card {card_id} allocated to {user_to_allocate.get_full_name()} successfully."})
+    except Exception as e:
+        logger.error(f"Error in allocate_card_to_user: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred during allocation.'}, status=500)
+
+
+@login_required
+def unlogged_card_allocations_library(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    if request.user != library.owner:
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('vendor_dashboard', library_id=library.id)
+
+    # Get all users who have a subscription with the library and an NFC card assigned
+    subscribed_users_with_cards = CustomUser.objects.filter(
+        usersubscription__subscription__library=library,
+        nfc_id__isnull=False
+    ).distinct()
+
+    # Get all card IDs that are properly logged for this library
+    logged_card_ids = LibraryCardLog.objects.filter(
+        library=library
+    ).values_list('card_id', flat=True)
+
+    # Find users whose assigned nfc_id is NOT in the log table
+    users_with_unlogged_cards = []
+    for user in subscribed_users_with_cards:
+        if user.nfc_id not in logged_card_ids:
+            users_with_unlogged_cards.append(user)
+
+    context = {
+        'library': library,
+        'users_with_unlogged_cards': users_with_unlogged_cards
+    }
+    return render(request, 'library/unlogged_card_allocations.html', context)

@@ -51,7 +51,7 @@
                     <select id="user-select" class="w-full px-3 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm transition-all duration-200">
                         <option value="">-- Select User --</option>
                         {% for user in users %}
-                            {% if not user.nfc_id %}
+                            {% if not user.has_card %}
                                 <option value="{{ user.id }}">{{ user.mobile_number }} - {{ user.first_name }} {{ user.last_name }}</option>
                             {% endif %}
                         {% endfor %}

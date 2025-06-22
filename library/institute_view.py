@@ -5,7 +5,7 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap, AdminCard
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap, AdminCard, InstitutionCardLog
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from django.core.paginator import Paginator
@@ -1761,7 +1761,6 @@ def allocate_card_to_institution_page(request, uid):
         
         users_with_status.append({
             'user': user,
-            'has_card': bool(user.nfc_id),
             'has_active_subscription': has_active_subscription
         })
 
@@ -1824,6 +1823,14 @@ def allocate_card_to_institution(request):
 
             admin_card.institution = institution
             admin_card.save()
+
+            # Create a log entry for the allocation
+            InstitutionCardLog.objects.create(
+                institution=institution,
+                user=user_to_allocate,
+                card_id=card_id,
+                allocated_by=request.user
+            )
             
             return JsonResponse({'status': 'success', 'message': f"Card {card_id} allocated to {user_to_allocate.get_full_name()} successfully."})
     except Exception as e:
