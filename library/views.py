@@ -2646,10 +2646,31 @@ def manage_cards(request):
 
 def add_card(request):
     if request.method == 'POST':
-        card_id = request.POST.get('card_id')
-        if card_id:
+        try:
+            # Handle modern AJAX requests with JSON body
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                card_id = data.get('card_id')
+            else:
+                # Fallback for traditional form submissions
+                card_id = request.POST.get('card_id')
+
+            if not card_id:
+                return JsonResponse({'status': 'error', 'message': 'NFC Card ID is required.'}, status=400)
+
+            if AdminCard.objects.filter(card_id=card_id).exists():
+                return JsonResponse({'status': 'error', 'message': f'Card with ID {card_id} already exists.'}, status=400)
+
             AdminCard.objects.create(card_id=card_id)
-            return redirect('add_card')
+            return JsonResponse({'status': 'success', 'message': f'Card {card_id} added successfully!'})
+
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=400)
+        except Exception as e:
+            logger.error(f"Error in add_card view: {e}", exc_info=True)
+            return JsonResponse({'status': 'error', 'message': 'An unexpected server error occurred.'}, status=500)
+            
+    # For GET requests
     return render(request, 'admin_page/add_card.html')
 
 def allocate_card(request):

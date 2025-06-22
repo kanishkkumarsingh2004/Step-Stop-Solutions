@@ -181,19 +181,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Listen for NFC card taps
     if ('NDEFReader' in window) {
-        const ndef = new NDEFReader();
-        
-        ndef.addEventListener('reading', ({ message }) => {
-            const decoder = new TextDecoder();
-            for (const record of message.records) {
-                const nfcSerial = decoder.decode(record.data);
-                handleNFCTap(nfcSerial);
-            }
-        });
+        try {
+            const ndef = new NDEFReader();
+            ndef.scan().then(() => {
+                console.log("NFC scan started successfully.");
+                
+                ndef.addEventListener('reading', ({ serialNumber }) => {
+                    console.log(`NFC card tapped with serial number: ${serialNumber}`);
+                    handleNFCTap(serialNumber);
+                });
 
-        ndef.scan().catch(error => {
-            console.error('Error starting NFC scan:', error);
-        });
+                ndef.addEventListener('readingerror', (error) => {
+                    console.error('Error reading NFC card:', error);
+                });
+
+            }).catch(error => {
+                console.error('Error starting NFC scan:', error);
+                // Optionally show a message to the user that NFC scanning failed to start.
+            });
+        } catch (error) {
+            console.error('Web NFC API could not be initialized:', error);
+        }
     } else {
         console.log('Web NFC is not supported in this browser');
     }
