@@ -50,4 +50,5 @@ urlpatterns = [
    path('institution/<str:uid>/schedule/', institute_view.view_schedule, name='view_schedule'),
    path('institution/<str:uid>/allocate-card/', institute_view.allocate_card_to_institution_page, name='allocate_card_to_institution_page'),
    path('institution/allocate-card-action/', institute_view.allocate_card_to_institution, name='allocate_card_to_institution_action'),
+   path('institution/<str:uid>/edit-schedule/', institute_view.create_edit_schedule, name='create_edit_schedule'),
 ]

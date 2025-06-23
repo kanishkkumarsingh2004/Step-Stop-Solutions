@@ -110,7 +110,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 activateButton?.classList.add('hidden');
             } else {
                 if (data.error) {
-                    showError(data.error);
+                    let errorMsg = data.error;
+                    if (data.error_details) {
+                        errorMsg += `\nDetails: ${data.error_details}`;
+                    }
+                    showError(errorMsg);
                     if (nfcDetails) nfcDetails.classList.add('hidden');
                     if (nfcIdDisplay) nfcIdDisplay.textContent = 'Waiting for card...';
                     return;
