@@ -209,11 +209,25 @@ if (document.getElementById('subjectForm')) {
 
 if (document.getElementById('facultySsid')) {
     let facultySsidTimeout = null;
-    document.getElementById('facultySsid').addEventListener('input', function() {
+    // Add or get error span for faculty name
+    let facultySsidInput = document.getElementById('facultySsid');
+    let facultyNameInput = document.getElementById('facultyName');
+    let errorSpan = document.getElementById('facultySsidError');
+    if (!errorSpan) {
+        errorSpan = document.createElement('span');
+        errorSpan.id = 'facultySsidError';
+        errorSpan.style.color = 'red';
+        errorSpan.style.fontSize = '0.9em';
+        errorSpan.style.display = 'block';
+        errorSpan.style.marginTop = '4px';
+        facultySsidInput.parentNode.appendChild(errorSpan);
+    }
+    facultySsidInput.addEventListener('input', function() {
         const ssid = this.value.trim();
         clearTimeout(facultySsidTimeout);
+        errorSpan.textContent = '';
         if (!ssid) {
-            document.getElementById('facultyName').value = "";
+            facultyNameInput.value = "";
             return;
         }
         facultySsidTimeout = setTimeout(() => {
@@ -221,12 +235,21 @@ if (document.getElementById('facultySsid')) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === "success") {
-                        document.getElementById('facultyName').value = data.faculty_name;
+                        facultyNameInput.value = data.faculty_name;
+                        facultyNameInput.style.color = '';
+                        errorSpan.textContent = '';
                     } else {
-                        document.getElementById('facultyName').value = "";
+                        facultyNameInput.value = "hii";
+                        facultyNameInput.style.color = 'red';
+                        errorSpan.textContent = data.message || 'Faculty not found.';
                     }
+                })
+                .catch(() => {
+                    facultyNameInput.value = "hii";
+                    facultyNameInput.style.color = 'red';
+                    errorSpan.textContent = 'Error fetching faculty name.';
                 });
-        }, 300);
+        }, 1000);
     });
 }
 

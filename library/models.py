@@ -228,8 +228,8 @@ class Transaction(models.Model):
     def __str__(self):
         return f"Transaction {self.transaction_id} by {self.user.email}"
 
-class Attendance(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='attendances')
+class LibraryAttendance(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='library_attendances')
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='attendances')
     check_in_time = models.DateTimeField(null=True, blank=True)
     check_out_time = models.DateTimeField(null=True, blank=True)
@@ -243,6 +243,23 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.library.venue_name} - {self.check_in_time}"
+
+
+class CoachingAttendance(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='coaching_attendances')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='attendances')
+    check_in_time = models.DateTimeField(null=True, blank=True)
+    check_out_time = models.DateTimeField(null=True, blank=True)
+    check_in_color = models.IntegerField(default=0)
+    check_out_color = models.IntegerField(default=0)
+    duration_color = models.IntegerField(default=0)
+    nfc_id = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        unique_together = ('user', 'institution', 'check_in_time')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.institution.name} - {self.check_in_time}"
 
 class UserSubscription(models.Model):
     STATUS_CHOICES = [

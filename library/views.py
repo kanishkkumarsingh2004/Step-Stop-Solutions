@@ -25,7 +25,7 @@ from .models import (
     CustomUser,
     SubscriptionPlan,
     Transaction,
-    Attendance,
+    LibraryAttendance,
     Library,
     Institution,
     UserSubscription,
@@ -157,7 +157,7 @@ def dashboard(request):
         institute_subscriptions.append(subscription_data)
 
     # Get recent attendance records
-    attendances = Attendance.objects.filter(user=request.user).order_by('-check_in_time')[:10]
+    attendances = LibraryAttendance.objects.filter(user=request.user).order_by('-check_in_time')[:10]
 
     context = {
         'active_subscriptions': active_subscriptions,
@@ -263,7 +263,7 @@ def manage_users(request, library_id):
         ).exists()
         
         # Add checkin status
-        user.is_checked_in = Attendance.objects.filter(
+        user.is_checked_in = LibraryAttendance.objects.filter(
             user=user,
             check_in_time__isnull=False,
             check_out_time__isnull=True
@@ -330,7 +330,7 @@ def mark_attendance(request):
             if not active_subscription:
                 return JsonResponse({"error": "User does not have an active subscription"}, status=403)
             
-            latest_attendance = Attendance.objects.filter(
+            latest_attendance = LibraryAttendance.objects.filter(
                 user=user,
                 library=library
             ).order_by('-check_in_time').first()
@@ -375,7 +375,7 @@ def mark_attendance(request):
                     }, status=400)
                 
                 # New check-in
-                attendance = Attendance.objects.create(
+                attendance = LibraryAttendance.objects.create(
                     user=user,
                     library=library,
                     check_in_time=current_time,
@@ -513,7 +513,7 @@ def all_attendance(request, vendor_id):
     library = get_object_or_404(Library, id=vendor_id)
     
     # Get all attendance records for this library
-    attendances = Attendance.objects.filter(library=library).order_by('-check_in_time')
+    attendances = LibraryAttendance.objects.filter(library=library).order_by('-check_in_time')
       # This ensures page_obj is always defined
     
     # Add search functionality
@@ -1329,7 +1329,10 @@ def check_nfc_allocation(request):
                     content_type='application/json'
                 )
             # Query database
-            user = CustomUser.objects.filter(nfc_id=nfc_serial).first()
+            # CustomUser does not have nfc_id, so use Attendance to find the user with this nfc_serial
+            # Check LibraryCardLog to find user associated with this NFC serial
+            card_log = LibraryCardLog.objects.filter(card_id=nfc_serial).order_by('-timestamp').first()
+            user = card_log.user if card_log else None
             response_data = {
                 'allocated': bool(user),
                 'nfcid': nfc_serial,
@@ -2082,7 +2085,7 @@ def staff_dashboard(request, library_id):
     ).values('user').distinct().count()
     
     # Filter attendance by check_in_time instead of date
-    todays_attendance_count = Attendance.objects.filter(
+    todays_attendance_count = LibraryAttendance.objects.filter(
         library=library,
         check_in_time__date=today
     ).count()
@@ -2559,7 +2562,7 @@ def mark_attendance_manual(request, user_id):
             library = Library.objects.get(id=library_id)
             
             current_time = timezone.now()
-            latest_attendance = Attendance.objects.filter(
+            latest_attendance = LibraryAttendance.objects.filter(
                 user=user,
                 library=library
             ).order_by('-check_in_time').first()
@@ -2573,7 +2576,7 @@ def mark_attendance_manual(request, user_id):
                     }, status=400)
                 
                 # New check-in
-                Attendance.objects.create(
+                LibraryAttendance.objects.create(
                     user=user,
                     library=library,
                     check_in_time=current_time,
@@ -3074,8 +3077,10 @@ def institution_card_count(request):
         'institutions': institution_data
     })
 
-def create_edit_schedule(request, institution_uid):
-    institution = Institution.objects.get(uid=institution_uid)
+@login_required
+def create_edit_schedule(request,  institution_uid):
+
+    institution = get_object_or_404(Institution, uid=institution_uid)
     subject_faculty_qs = SubjectFacultyMap.objects.filter(institution=institution)
     classroom_names = [c['name'] for c in institution.classrooms.values()]
     subject_names = list(subject_faculty_qs.values_list('subject', flat=True))
@@ -3096,27 +3101,31 @@ def create_edit_schedule(request, institution_uid):
             header_time_map[key] = entry
     
     # Find max col for each day
+    from collections import defaultdict
     max_cols = defaultdict(int)
     for entry in timetable_entries:
         day = entry['day']
         col = entry.get('cell_col', 0)
         if col + 1 > max_cols[day]:
             max_cols[day] = col + 1  # +1 because col is zero-based
-
-    # For template, build a dict: {day: [0, 1, ..., max_col-1]}
     day_col_indices = {day: list(range(max_col)) for day, max_col in max_cols.items()}
-    day_row_indices = {day: [row for row in classroom_names]}  # Or build dynamically if needed
+    
+    # Determine unique classrooms for each day from timetable_entries
+    scheduled_classrooms = defaultdict(set)
+    for entry in timetable_entries:
+        if entry['classroom']:
+            scheduled_classrooms[entry['day']].add(entry['classroom'])
+    day_row_indices = {day: sorted(list(classrooms)) for day, classrooms in scheduled_classrooms.items()}
     
     return render(request, 'coaching/create_edit_schedule.html', {
         'institution': institution,
-        'subject_faculty_list': subject_faculty_list,
-        'classroom_names': classroom_names,
-        'subject_names': subject_names,
-        'timetable_entries': timetable_entries,
         'timetable_map': timetable_map,
         'header_time_map': header_time_map,
         'day_col_indices': day_col_indices,
         'day_row_indices': day_row_indices,
+        'classroom_names': classroom_names,
+        'subject_names': subject_names,
+        'subject_faculty_list': subject_faculty_list,
     })
 
 @login_required

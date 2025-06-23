@@ -1656,13 +1656,12 @@ from django.views.decorators.http import require_GET
 def get_faculty_name_by_ssid(request):
     ssid = request.GET.get('ssid')
     if not ssid:
-        return JsonResponse({'status': 'error', 'message': 'SSID is required.'}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'SSID is required.'})
     try:
         user = CustomUser.objects.get(ssid=ssid)
         return JsonResponse({'status': 'success', 'faculty_name': user.get_full_name()})
     except CustomUser.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Faculty not found.'}, status=404)
-    
+        return JsonResponse({'status': 'error', 'message': 'Faculty not found.'})
 
 @csrf_exempt
 @require_POST
@@ -1835,52 +1834,3 @@ def allocate_card_to_institution(request):
             return JsonResponse({'status': 'success', 'message': f"Card {card_id} allocated to {user_to_allocate.get_full_name()} successfully."})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f"An error occurred: {str(e)}"}, status=500)
-
-@login_required
-def create_edit_schedule(request, uid):
-    institution = get_object_or_404(Institution, uid=uid)
-    subject_faculty_qs = SubjectFacultyMap.objects.filter(institution=institution)
-    classroom_names = [c['name'] for c in institution.classrooms.values()]
-    subject_names = list(subject_faculty_qs.values_list('subject', flat=True))
-    subject_faculty_list = list(subject_faculty_qs.values('subject', 'faculty_ssid', 'faculty_name'))
-    timetable_entries = list(TimetableEntry.objects.filter(institution=institution).values())
-    
-    # Build a mapping: (day, classroom, cell_col) -> entry
-    timetable_map = {}
-    for entry in timetable_entries:
-        key = (entry['day'], entry['classroom'], entry['cell_col'])
-        timetable_map[key] = entry
-    
-    # Build a mapping: (day, cell_col) -> entry for header times
-    header_time_map = {}
-    for entry in timetable_entries:
-        key = (entry['day'], entry['cell_col'])
-        if key not in header_time_map:
-            header_time_map[key] = entry
-    
-    # Find max col for each day
-    max_cols = defaultdict(int)
-    for entry in timetable_entries:
-        day = entry['day']
-        col = entry.get('cell_col', 0)
-        if col + 1 > max_cols[day]:
-            max_cols[day] = col + 1  # +1 because col is zero-based
-    day_col_indices = {day: list(range(max_col)) for day, max_col in max_cols.items()}
-    
-    # Determine unique classrooms for each day from timetable_entries
-    scheduled_classrooms = defaultdict(set)
-    for entry in timetable_entries:
-        if entry['classroom']:
-            scheduled_classrooms[entry['day']].add(entry['classroom'])
-    day_row_indices = {day: sorted(list(classrooms)) for day, classrooms in scheduled_classrooms.items()}
-    
-    return render(request, 'coaching/create_edit_schedule.html', {
-        'institution': institution,
-        'timetable_map': timetable_map,
-        'header_time_map': header_time_map,
-        'day_col_indices': day_col_indices,
-        'day_row_indices': day_row_indices,
-        'classroom_names': classroom_names,
-        'subject_names': subject_names,
-        'subject_faculty_list': subject_faculty_list,
-    })

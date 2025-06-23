@@ -4,7 +4,7 @@ from .models import (
     CustomUser, 
     SubscriptionPlan, 
     Transaction, 
-    Attendance, 
+    LibraryAttendance, 
     Library, 
     UserSubscription
 )
@@ -53,7 +53,7 @@ class TransactionAdmin(admin.ModelAdmin):
         return obj.subscription.cost
     amount.short_description = 'Amount'
 
-@admin.register(Attendance)
+@admin.register(LibraryAttendance)
 class AttendanceAdmin(admin.ModelAdmin):
     list_display = ('user', 'library', 'check_in_time', 'check_out_time')
     search_fields = ('user__email', 'user__nfc_id', 'library__venue_name')
