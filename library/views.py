@@ -1192,7 +1192,7 @@ def allocate(request):
                     user=user,
                     card_id=nfc_serial,
                     allocated_by=request.user,
-                    notes="Card allocated"
+                    notes=f"Card {nfc_serial} allocated to {user.get_full_name()} at {library.venue_name}"
                 )
             return JsonResponse({
                 'success': True,
