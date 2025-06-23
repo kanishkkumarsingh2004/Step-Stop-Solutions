@@ -853,25 +853,23 @@ class InstitutionCardLog(models.Model):
     card_id = models.CharField(max_length=100)
     allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='institution_allocations_logged')
     timestamp = models.DateTimeField(auto_now_add=True)
-    notes = models.CharField(max_length=255, default="Card allocated")
-
-    def __str__(self):
-        return f"Card {self.card_id} allocated to {self.user.get_full_name()} at {self.institution.name} on {self.timestamp}"
-
     class Meta:
+        unique_together = ('institution', 'user', 'card_id')
         ordering = ['-timestamp']
 
+    def __str__(self):
+        return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.institution.name}"
+
 class LibraryCardLog(models.Model):
-    """A log of card allocations for libraries."""
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='card_allocation_logs')
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='library_card_logs')
     card_id = models.CharField(max_length=100)
     allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='library_allocations_logged')
     timestamp = models.DateTimeField(auto_now_add=True)
-    notes = models.CharField(max_length=255, default="Card allocated")
-
-    def __str__(self):
-        return f"Card {self.card_id} allocated to {self.user.get_full_name()} at {self.library.venue_name} on {self.timestamp}"
 
     class Meta:
+        unique_together = ('library', 'user', 'card_id')
         ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.library.venue_name}"

@@ -1179,21 +1179,20 @@ def allocate(request):
                 return JsonResponse({'error': 'This card is allocated to a different library'}, status=400)
             # If we reach here, card is allocated to this library, so allow allocation to user
 
-            # Check if user already has a card (by log)
-            if LibraryCardLog.objects.filter(user_id=user_id, library_id=library_id).exists():
-                return JsonResponse({'error': 'This user already has a card allocated in this library'}, status=400)
+            # Check if user already has a card (by mapping)
+            if LibraryCardLog.objects.filter(user_id=user_id, library_id=library_id, card_id=nfc_serial).exists():
+                return JsonResponse({'error': 'This user already has this card allocated in this library'}, status=400)
 
             user = CustomUser.objects.get(id=user_id)
             library = Library.objects.get(id=library_id)
 
-            # Allocate card (log the allocation)
+            # Allocate card (create the mapping)
             with transaction.atomic():
                 LibraryCardLog.objects.create(
                     library=library,
                     user=user,
                     card_id=nfc_serial,
-                    allocated_by=request.user,
-                    notes="Card allocated"
+                    allocated_by=request.user
                 )
             return JsonResponse({
                 'success': True,
@@ -1225,20 +1224,13 @@ def deallocate_nfc(request):
             if card.library is None:
                 return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
 
-            # Find the user to log the deallocation against
+            # Find the user to deallocate (latest mapping)
             last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
             user_to_deallocate = last_log.user if last_log else None
 
-            # Log the deallocation
-            LibraryCardLog.objects.create(
-                library=card.library,
-                user=user_to_deallocate,
-                card_id=nfc_serial,
-                allocated_by=request.user,
-                notes=f"Card deallocated from user {user_to_deallocate.get_full_name() if user_to_deallocate else 'N/A'}"
-            )
-            card.library = None
-            card.save()
+            # Remove the mapping (delete the entry)
+            if user_to_deallocate:
+                LibraryCardLog.objects.filter(library=card.library, user=user_to_deallocate, card_id=nfc_serial).delete()
             return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
         except Exception as e:
             logger.error(f"Error in deallocate_nfc function: {str(e)}")
@@ -1578,20 +1570,13 @@ def deallocate_nfc(request):
             if card.library is None:
                 return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
 
-            # Find the user to log the deallocation against
+            # Find the user to deallocate (latest mapping)
             last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
             user_to_deallocate = last_log.user if last_log else None
 
-            # Log the deallocation
-            LibraryCardLog.objects.create(
-                library=card.library,
-                user=user_to_deallocate,
-                card_id=nfc_serial,
-                allocated_by=request.user,
-                notes=f"Card deallocated from user {user_to_deallocate.get_full_name() if user_to_deallocate else 'N/A'}"
-            )
-            card.library = None
-            card.save()
+            # Remove the mapping (delete the entry)
+            if user_to_deallocate:
+                LibraryCardLog.objects.filter(library=card.library, user=user_to_deallocate, card_id=nfc_serial).delete()
             return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
         except Exception as e:
             logger.error(f"Error in deallocate_nfc function: {str(e)}")
