@@ -61,23 +61,30 @@
         </div>
     </div>
 
-    <!-- Navigation Buttons -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 md:mb-8">
-        <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-purple-100 text-purple-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
-            <div class="text-3xl sm:text-4xl font-bold">{{ total_enrolled }}</div>
-            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Enrolled Users</div>
+    <!-- Key Metrics Navigation -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 md:mb-10">
+        <!-- Enrolled Users Card -->
+        <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-purple-100 hover:border-purple-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-purple-800 text-center">Enrolled Users</div>
+            <div class="mt-2 text-xs text-purple-500">Manage student enrollments</div>
         </a>
-        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-yellow-100 text-yellow-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
-            <div class="text-3xl sm:text-4xl font-bold">{{ pending_verifications_count }}</div>
-            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Payment Verifications</div>
+
+        <!-- Payment Verifications Card -->
+        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-yellow-100 hover:border-yellow-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-yellow-800 text-center">Payment Verifications</div>
+            <div class="mt-2 text-xs text-yellow-500">Review pending payments</div>
         </a>
-        <a href="{% url 'manage_institution_subscriptions' institution.uid %}" class="bg-indigo-100 text-indigo-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
-            <div class="text-3xl sm:text-4xl font-bold">{{ total_subscriptions }}</div>
-            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Subscription Plans</div>
+
+        <!-- Subscription Plans Card -->
+        <a href="{% url 'manage_institution_subscriptions' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-indigo-100 hover:border-indigo-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-indigo-800 text-center">Subscription Plans</div>
+            <div class="mt-2 text-xs text-indigo-500">Manage pricing plans</div>
         </a>
-        <a href="{% url 'allocate_card_to_institution_page' institution.uid %}" class="bg-teal-100 text-teal-800 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-            <div class="mt-2 text-sm sm:text-base font-semibold text-center">Allocate Card</div>
+
+        <!-- Card Allocation Card -->
+        <a href="{% url 'allocate_card_to_institution_page' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-teal-100 hover:border-teal-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-teal-800 text-center">Allocate Card</div>
+            <div class="mt-2 text-xs text-teal-500">Manage access cards</div>
         </a>
     </div>
 
@@ -223,37 +230,29 @@
                 </a>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold mb-4">Subscription Plans</h3>
-            <p class="text-gray-600 mb-4">Manage your course subscription plans and pricing.</p>
-            <a href="{% url 'manage_institution_subscriptions' uid=institution.uid %}" 
-               class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                Manage Subscriptions
-            </a>
-        </div>
         <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
             <div class="flex items-center space-x-2 mb-2 sm:mb-3">
-                <i class="bi bi-calendar-week text-blue-500 text-lg sm:text-xl"></i>
-                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Institute Timetable</h2>
+                <i class="bi bi-calendar-check text-blue-500 text-lg sm:text-xl"></i>
+                <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Subscription Plans</h2>
             </div>
-            <div class="space-y-2">
-                <a href="{% url 'create_edit_schedule' institution.uid %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                    <span>Create/Update Timetable</span>
-                    <i class="bi bi-upload text-gray-500 text-sm sm:text-base"></i>
-                </a>
+            <div class="space-y-3">
+                <div class="space-y-2">
+                    <a href="{% url 'manage_institution_subscriptions' institution.uid %}" 
+                       class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Manage Subscriptions</span>
+                        <i class="bi bi-gear text-gray-500 text-sm sm:text-base"></i>
+                    </a>
+                </div>
+                
+                <div class="space-y-2">
+                    <a href="{% url 'create_edit_schedule' institution.uid %}" 
+                       class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Create/Update Timetable</span>
+                        <i class="bi bi-upload text-gray-500 text-sm sm:text-base"></i>
+                    </a>
+                </div>
             </div>
-        </div>
-
-        <!-- Card Allocation -->
-        <a href="{% url 'allocate_card_to_institution_page' institution.uid %}" class="bg-white rounded-lg shadow p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Card Allocation</p>
-                <p class="text-2xl font-bold text-gray-800">Assign Cards</p>
-            </div>
-            <div class="text-blue-500">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-            </div>
-        </a>
+        </div>        
     </div>
 </div>
 

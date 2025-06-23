@@ -2779,7 +2779,8 @@ def allocate_card_to_library(request):
 @csrf_exempt
 def allocate_card_to_library_page(request):
     libraries = Library.objects.all()
-    admin_cards = AdminCard.objects.filter(library__isnull=True) # Only unallocated cards
+    # Correctly filter for cards that are not allocated to EITHER a library or an institution.
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True) 
     return render(request, 'admin_page/allocate_card_to_library.html', {
         'libraries': libraries,
         'admin_cards': admin_cards
@@ -3000,7 +3001,8 @@ def allocate_card_to_institution_page(request):
         return redirect('home')
     
     institutions = Institution.objects.all()
-    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True)  # Only unallocated cards
+    # Correctly filter for cards that are not allocated to EITHER a library or an institution.
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True)
     return render(request, 'admin_page/allocate_card_to_institution.html', {
         'institutions': institutions,
         'admin_cards': admin_cards

@@ -1,57 +1,100 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+    // Get all DOM elements
     const nfcForm = document.getElementById('nfc-form');
-    const nfcInput = document.getElementById('nfc_id');
+    const nfcIdInput = document.getElementById('nfc_id');
     const cardDisplay = document.getElementById('card-display');
+    const errorMessageDiv = document.getElementById('error-message');
     const addCardBtn = document.getElementById('add-card-btn');
-    const errorMessage = document.getElementById('error-message');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    if (!('NDEFReader' in window)) {
-        errorMessage.textContent = 'NFC is not supported in this browser.';
-        errorMessage.classList.remove('hidden');
-        return;
-    }
+    // Helper functions for UI updates
+    const showError = (message) => {
+        errorMessageDiv.textContent = message;
+        errorMessageDiv.classList.remove('hidden');
+    };
+    const hideError = () => {
+        errorMessageDiv.classList.add('hidden');
+        errorMessageDiv.textContent = '';
+    };
+    const showSuccessAndReset = (message) => {
+        alert(message); // Simple success feedback
+        nfcIdInput.value = '';
+        cardDisplay.textContent = '';
+        cardDisplay.classList.add('hidden');
+        addCardBtn.disabled = true;
+        addCardBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    };
 
-    const nfcReader = new NDEFReader();
-
-    async function startNFCScan() {
-        try {
-            await nfcReader.scan();
-            console.log('NFC scan started successfully');
-        } catch (error) {
-            console.error('Error starting NFC scan:', error);
-            errorMessage.textContent = 'Error starting NFC scan. Please try again.';
-            errorMessage.classList.remove('hidden');
+    // NFC Reader Logic
+    const initNFC = async () => {
+        if (!('NDEFReader' in window)) {
+            showError('Web NFC is not supported on this device or browser. Please use Chrome on Android.');
+            return;
         }
-    }
-
-    nfcReader.onreading = (event) => {
-        const decoder = new TextDecoder();
-        const serialNumber = event.serialNumber;
-        
-        // Display the card number
-        cardDisplay.textContent = `Card Number: ${serialNumber}`;
-        cardDisplay.classList.remove('hidden');
-        
-        // Enable the Add Card button
-        addCardBtn.disabled = false;
-        addCardBtn.classList.remove('opacity-50');
-        addCardBtn.classList.add('hover:bg-blue-700');
-        
-        // Set the NFC ID in the form
-        nfcInput.value = serialNumber;
+        try {
+            const ndef = new NDEFReader();
+            await ndef.scan();
+            console.log("NFC Scan started successfully.");
+            ndef.addEventListener('reading', ({ serialNumber }) => {
+                hideError();
+                console.log(`NFC card detected: ${serialNumber}`);
+                nfcIdInput.value = serialNumber;
+                cardDisplay.textContent = `Scanned Card ID: ${serialNumber}`;
+                cardDisplay.classList.remove('hidden');
+                addCardBtn.disabled = false;
+                addCardBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+            ndef.addEventListener('readingerror', () => {
+                showError('Could not read NFC card. Please try again.');
+            });
+        } catch (error) {
+            console.error(`Error starting NFC scan: ${error}`);
+            showError('Could not start NFC scanning. Check browser permissions and ensure a secure (HTTPS) connection.');
+        }
     };
 
-    nfcReader.onreadingerror = (error) => {
-        console.error('Error reading NFC card:', error);
-        errorMessage.textContent = 'Error reading NFC card. Please try again.';
-        errorMessage.classList.remove('hidden');
-    };
+    // AJAX Form Submission
+    nfcForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cardId = nfcIdInput.value;
+        if (!cardId) {
+            showError('Please scan a card before submitting.');
+            return;
+        }
 
-    // Start NFC scan when page loads
-    startNFCScan();
+        hideError();
+        addCardBtn.disabled = true;
+        addCardBtn.textContent = 'Adding...';
 
-    // Handle form submission
-    nfcForm.addEventListener('submit', async function(e) {
-        e.preventDefault
+        try {
+            const response = await fetch(nfcForm.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ card_id: cardId }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
+                showSuccessAndReset(result.message);
+            } else {
+                showError(result.message || 'An unknown error occurred.');
+                addCardBtn.disabled = false; // Re-enable on failure
+            }
+        } catch (networkError) {
+            console.error('Network or submission error:', networkError);
+            showError('A network error occurred. Please check your connection and try again.');
+            addCardBtn.disabled = false; // Re-enable on failure
+        } finally {
+            if (!addCardBtn.disabled) {
+                addCardBtn.textContent = 'Add Card';
+            }
+        }
     });
+
+    // Initialize everything
+    initNFC();
 }); 

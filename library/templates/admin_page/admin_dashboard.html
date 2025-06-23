@@ -133,11 +133,11 @@
                 </div>
             </div>
 
-            <!-- Cards Section -->
+            <!-- Library Card Actions -->
             <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
                 <div class="flex items-center space-x-2 mb-2 sm:mb-3">
-                    <i class="bi bi-credit-card text-blue-500 text-lg sm:text-xl"></i>
-                    <h2 class="text-base sm:text-lg font-semibold text-gray-700">Cards</h2>
+                    <i class="bi bi-book text-green-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-700">Library Card Actions</h2>
                 </div>
                 <div class="space-y-2">
                     <a href="{% url 'add_card' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
@@ -145,9 +145,27 @@
                         <i class="bi bi-plus-square text-green-600 text-lg"></i>
                     </a>
                     <a href="{% url 'allocate_card_to_vendor_page' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                        <span>Allocate Card to Vendor</span>
+                        <span>Allocate Card to Library</span>
                         <i class="bi bi-share text-purple-600 text-lg"></i>
                     </a>
+                    <a href="{% url 'allocate_card_count' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Library Card Count</span>
+                        <i class="bi bi-calculator text-indigo-600 text-lg"></i>
+                    </a>
+                    <a href="{% url 'manage_cards' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Manage All Cards</span>
+                        <i class="bi bi-credit-card-2-front text-blue-600 text-lg"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Institution Card Actions -->
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+                <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                    <i class="bi bi-building text-purple-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-700">Institution Card Actions</h2>
+                </div>
+                <div class="space-y-2">
                     <a href="{% url 'allocate_card_to_institution_page' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Allocate Card to Institution</span>
                         <i class="bi bi-building text-indigo-600 text-lg"></i>
@@ -155,14 +173,6 @@
                     <a href="{% url 'institution_card_count' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Institution Card Count</span>
                         <i class="bi bi-calculator text-blue-600 text-lg"></i>
-                    </a>
-                    <a href="{% url 'manage_cards' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                        <span>Manage Cards</span>
-                        <i class="bi bi-credit-card-2-front text-blue-600 text-lg"></i>
-                    </a>
-                    <a href="{% url 'allocate_card_count' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                        <span>Allocate Card count</span>
-                        <i class="bi bi-calculator text-indigo-600 text-lg"></i>
                     </a>
                 </div>
             </div>
