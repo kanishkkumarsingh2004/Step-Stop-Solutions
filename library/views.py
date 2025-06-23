@@ -1168,13 +1168,16 @@ def allocate(request):
             if not nfc_serial or not user_id or not library_id:
                 return JsonResponse({'error': 'NFC serial, user ID, and library ID are required'}, status=400)
 
-            # Check if card exists and is unallocated
+            # Check if card exists and is allocated to this library
             try:
                 card = AdminCard.objects.get(card_id=nfc_serial)
             except AdminCard.DoesNotExist:
                 return JsonResponse({'error': 'This card is not registered in the system'}, status=400)
-            if card.library is not None:
-                return JsonResponse({'error': 'This card is already allocated to a library'}, status=400)
+            if card.library is None:
+                return JsonResponse({'error': 'This card is not yet allocated to any library'}, status=400)
+            if card.library.id != int(library_id):
+                return JsonResponse({'error': 'This card is allocated to a different library'}, status=400)
+            # If we reach here, card is allocated to this library, so allow allocation to user
 
             # Check if user already has a card (by log)
             if LibraryCardLog.objects.filter(user_id=user_id, library_id=library_id).exists():
@@ -1183,16 +1186,14 @@ def allocate(request):
             user = CustomUser.objects.get(id=user_id)
             library = Library.objects.get(id=library_id)
 
-            # Allocate card
+            # Allocate card (log the allocation)
             with transaction.atomic():
-                card.library = library
-                card.save()
                 LibraryCardLog.objects.create(
                     library=library,
                     user=user,
                     card_id=nfc_serial,
                     allocated_by=request.user,
-                    notes=f"Card {nfc_serial} allocated to {user.get_full_name()} at {library.venue_name}"
+                    notes="Card allocated"
                 )
             return JsonResponse({
                 'success': True,
