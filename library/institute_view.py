@@ -155,11 +155,6 @@ def edit_institution_profile(request, uid):
     """Edit institution profile"""
     institution = get_object_or_404(Institution, uid=uid)
     
-    # Check if the user is the owner of the institution
-    if request.user != institution.owner:
-        messages.error(request, "You don't have permission to edit this institution.")
-        return redirect('coaching_dashboard', uid=institution.uid)
-    
     if request.method == 'POST':
         form = InstitutionRegistrationForm(request.POST, instance=institution)
         if form.is_valid():
@@ -252,12 +247,7 @@ def edit_institution_profile(request, uid):
 def manage_institution_users(request, uid):
     """Display all students who have enrolled in the institution through subscriptions"""
     institution = get_object_or_404(Institution, uid=uid)
-    
-    # Check if the logged-in user is the owner of the institution
-    if request.user != institution.owner:
-        messages.error(request, "You don't have permission to view this institution's students.")
-        return redirect('coaching_dashboard')
-    
+
     # Get all students who have subscribed to this institution's subscription plans
     subscriptions = InstitutionSubscription.objects.filter(
         subscription_plan__institution=institution
@@ -292,11 +282,7 @@ def manage_institution_coupons(request, uid):
     """Manage institution coupons"""
     institution = get_object_or_404(Institution, uid=uid)
     
-    # Check if the user is the owner of the institution
-    if request.user != institution.owner:
-        messages.error(request, "You don't have permission to manage coupons for this institution.")
-        return redirect('coaching_dashboard')
-    
+
     coupons = institution.coupons.all()
     return render(request, 'coaching/manage_institution_coupons.html', {
         'institution': institution,
@@ -665,11 +651,6 @@ def delete_institution_banner(request, banner_id):
 def manage_institution_subscriptions(request, uid):
     """Manage subscription plans for an institution."""
     institution = get_object_or_404(Institution, uid=uid)
-    
-    # Check if user has permission to manage subscriptions
-    if request.user != institution.owner:
-        messages.error(request, "You don't have permission to manage subscriptions for this institution.")
-        return redirect('home')
     
     subscriptions = InstitutionSubscriptionPlan.objects.filter(institution=institution).order_by('-created_at')
     
@@ -1437,11 +1418,7 @@ def add_institution_expense(request, uid):
 def expense_analytics(request, uid):
     try:
         institution = Institution.objects.get(uid=uid)
-        
-        # Check if user is the owner
-        if request.user != institution.owner:
-            messages.error(request, "You don't have permission to view this page.")
-            return redirect('home')
+    
         
         # Get all valid subscriptions and expenses
         subscriptions = InstitutionSubscription.objects.filter(
@@ -1737,9 +1714,6 @@ def view_schedule(request, uid):
 @login_required
 def allocate_card_to_institution_page(request, uid):
     institution = get_object_or_404(Institution, uid=uid)
-    if request.user != institution.owner:
-        messages.error(request, "You don't have permission to access this page.")
-        return redirect('coaching_dashboard', uid=uid)
 
     # Get all users who have ever subscribed to this institution
     enrolled_user_ids = InstitutionSubscription.objects.filter(
