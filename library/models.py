@@ -873,3 +873,34 @@ class LibraryCardLog(models.Model):
 
     def __str__(self):
         return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.library.venue_name}"
+
+class InstitutionStaff(models.Model):
+    PERMISSION_CHOICES = [
+        ('manage_profile', 'Manage Institution Profile'),
+        ('manage_staff', 'Manage Staff'),
+        ('manage_users', 'Manage Enrolled Users'),
+        ('manage_coupons', 'Manage Coupons'),
+        ('manage_subscriptions', 'Manage Subscription Plans'),
+        ('manage_payments', 'Verify Payments & View Expenses'),
+        ('manage_schedule', 'Manage Timetable/Schedule'),
+        ('manage_cards', 'Manage NFC Cards'),
+        ('view_dashboard', 'View Dashboard Analytics'),
+    ]
+
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='staff')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='staff_in_institutions')
+    permissions = models.CharField(max_length=500, blank=True, help_text="Comma-separated list of permission keys.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('institution', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Staff {self.user.get_full_name()} at {self.institution.name}"
+
+    def get_permissions(self):
+        return self.permissions.split(',') if self.permissions else []
+
+    def has_perm(self, perm):
+        return perm in self.get_permissions()

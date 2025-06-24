@@ -1454,34 +1454,28 @@ def get_staff(request, library_id):
     return JsonResponse({'staff': staff_data})
 
 @login_required
-@require_POST
 def search_user(request):
-    if request.method == 'POST':
-        ssid = request.POST.get('ssid')
-        if not ssid:
-            return JsonResponse({'success': False, 'message': 'SSID is required'}, status=400)
-        
-        try:
-            user = CustomUser.objects.get(ssid=ssid)
-            return JsonResponse({
-                'success': True,
-                'user': {
-                    'id': user.id,
-                    'full_name': user.get_full_name(),
-                    'email': user.email,
-                    'mobile_number': user.mobile_number,
-                    'ssid': user.ssid
-                }
-            })
-        except CustomUser.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'User not found'
-            }, status=404)
-    return JsonResponse({
-        'success': False,
-        'message': 'Invalid request method'
-    }, status=405)
+    query = request.GET.get('query', '')
+    if len(query) < 3:
+        return JsonResponse({'users': []})
+
+    users = CustomUser.objects.filter(
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(email__icontains=query) |
+        Q(ssid__iexact=query)
+    ).values('id', 'first_name', 'last_name', 'email')[:10]
+
+    user_list = [
+        {
+            'id': user['id'],
+            'full_name': f"{user['first_name']} {user['last_name']}",
+            'email': user['email']
+        }
+        for user in users
+    ]
+
+    return JsonResponse({'users': user_list})
 
 @login_required
 def all_users(request):
@@ -2804,6 +2798,10 @@ def admin_graphs(request):
     libraries = Library.objects.annotate(
         allocated_cards_count=Count('admin_cards')
     ).order_by('-allocated_cards_count')[:10]  # Top 10 libraries
+
+    institutions = Institution.objects.annotate(
+        allocated_cards_count=Count('admin_cards')
+    ).order_by('-allocated_cards_count')[:10] # Top 10 institutions
     
     user_counts = {
         'total': CustomUser.objects.count(),
@@ -2818,6 +2816,7 @@ def admin_graphs(request):
     
     return render(request, 'admin_page/admin_graphs.html', {
         'libraries': libraries,
+        'institutions': institutions,
         'user_counts': user_counts,
         'subscription_data': subscription_data
     })

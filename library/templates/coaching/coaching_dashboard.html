@@ -62,29 +62,35 @@
     </div>
 
     <!-- Key Metrics Navigation -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 md:mb-10">
-        <!-- Enrolled Users Card -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 md:mb-10">
+            <!-- Enrolled Users Card -->
         <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-purple-100 hover:border-purple-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-purple-800 text-center">Enrolled Users</div>
-            <div class="mt-2 text-xs text-purple-500">Manage student enrollments</div>
+            <div class="mt-2 text-xs text-purple-500">Student Enrollments</div>
         </a>
 
         <!-- Payment Verifications Card -->
         <a href="{% url 'payment_verifications' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-yellow-100 hover:border-yellow-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-yellow-800 text-center">Payment Verifications</div>
-            <div class="mt-2 text-xs text-yellow-500">Review pending payments</div>
+            <div class="mt-2 text-xs text-yellow-500">Review Pending Payments</div>
         </a>
 
         <!-- Subscription Plans Card -->
         <a href="{% url 'manage_institution_subscriptions' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-indigo-100 hover:border-indigo-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-indigo-800 text-center">Subscription Plans</div>
-            <div class="mt-2 text-xs text-indigo-500">Manage pricing plans</div>
+            <div class="mt-2 text-xs text-indigo-500">Manage Pricing Plans</div>
         </a>
 
         <!-- Card Allocation Card -->
         <a href="{% url 'allocate_card_to_institution_page' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-teal-100 hover:border-teal-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-teal-800 text-center">Allocate Card</div>
-            <div class="mt-2 text-xs text-teal-500">Manage access cards</div>
+            <div class="mt-2 text-xs text-teal-500">Manage Access Cards</div>
+        </a>
+        
+        <!-- Manage Staff Card -->
+        <a href="{% url 'manage_institution_staff' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-cyan-100 hover:border-cyan-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-cyan-800 text-center">Manage Staff</div>
+            <div class="mt-2 text-xs text-cyan-500">Handle Staff Permissions</div>
         </a>
     </div>
 

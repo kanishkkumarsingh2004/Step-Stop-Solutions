@@ -1,11 +1,23 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import Library, SubscriptionPlan, CustomUser, Expense, Coupon, Banner, LibraryImage, HomePageImageBanner, Review, Institution, InstitutionCoupon, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionExpense
+from .models import (Library, 
+                     SubscriptionPlan, 
+                     CustomUser, 
+                     Expense, 
+                     Coupon, 
+                     Banner, 
+                     LibraryImage, 
+                     HomePageImageBanner, 
+                     Review, 
+                     Institution, 
+                     InstitutionCoupon, 
+                     InstitutionBanner, 
+                     InstitutionSubscriptionPlan, 
+                     InstitutionExpense, 
+                     InstitutionStaff)
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
 from decimal import Decimal
-from django.utils import timezone
 
 User = get_user_model()
 
@@ -456,3 +468,13 @@ class InstitutionExpenseForm(forms.ModelForm):
             raise forms.ValidationError('Transaction ID is required for Card/UPI payments.')
         
         return cleaned_data
+
+class InstitutionStaffForm(forms.ModelForm):
+    class Meta:
+        model = InstitutionStaff
+        fields = ['user', 'permissions']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['permissions'].widget = forms.CheckboxSelectMultiple(choices=InstitutionStaff.PERMISSION_CHOICES)
+        self.fields['permissions'].required = False

@@ -5,7 +5,7 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap, AdminCard, InstitutionCardLog
+from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap, AdminCard, InstitutionCardLog, InstitutionStaff
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from django.core.paginator import Paginator
@@ -1834,3 +1834,111 @@ def allocate_card_to_institution(request):
             return JsonResponse({'status': 'success', 'message': f"Card {card_id} allocated to {user_to_allocate.get_full_name()} successfully."})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f"An error occurred: {str(e)}"}, status=500)
+
+@login_required
+def manage_institution_staff(request, uid):
+    """Manage staff for an institution."""
+    institution = get_object_or_404(Institution, uid=uid)
+
+    # Permission check: only owner can manage staff
+    if request.user != institution.owner:
+        messages.error(request, "You do not have permission to manage staff for this institution.")
+        return redirect('home')
+
+    staff_list = InstitutionStaff.objects.filter(institution=institution)
+    permission_choices = InstitutionStaff.PERMISSION_CHOICES
+
+    # Check if the owner is also a staff member
+    is_staff_member = InstitutionStaff.objects.filter(institution=institution, user=request.user).exists()
+
+    context = {
+        'institution': institution,
+        'staff_list': staff_list,
+        'permission_choices': permission_choices,
+        'is_staff_member': is_staff_member,
+    }
+    return render(request, 'coaching/manage_institution_staff.html', context)
+
+
+@login_required
+@require_POST
+def add_institution_staff(request, uid):
+    institution = get_object_or_404(Institution, uid=uid)
+    if request.user != institution.owner:
+        return JsonResponse({'status': 'error', 'message': 'Permission denied.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        user = CustomUser.objects.get(id=user_id)
+
+        if InstitutionStaff.objects.filter(institution=institution, user=user).exists():
+            return JsonResponse({'status': 'error', 'message': 'This user is already a staff member.'}, status=400)
+
+        staff = InstitutionStaff.objects.create(institution=institution, user=user)
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Staff added successfully.',
+            'staff': {
+                'id': staff.id,
+                'full_name': user.get_full_name(),
+                'email': user.email,
+                'permissions': []
+            }
+        })
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def update_institution_staff_permissions(request, staff_id):
+    staff = get_object_or_404(InstitutionStaff, id=staff_id)
+    institution = staff.institution
+    if request.user != institution.owner:
+        return JsonResponse({'status': 'error', 'message': 'Permission denied.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        permissions = data.get('permissions', [])
+        staff.permissions = ",".join(permissions)
+        staff.save()
+        return JsonResponse({'status': 'success', 'message': 'Permissions updated successfully.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def remove_institution_staff(request, staff_id):
+    staff = get_object_or_404(InstitutionStaff, id=staff_id)
+    institution = staff.institution
+    if request.user != institution.owner:
+        return JsonResponse({'status': 'error', 'message': 'Permission denied.'}, status=403)
+
+    try:
+        staff.delete()
+        return JsonResponse({'status': 'success', 'message': 'Staff member removed successfully.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def institution_staff_dashboard(request, uid):
+    """Display the staff dashboard for an institution."""
+    institution = get_object_or_404(Institution, uid=uid)
+
+    try:
+        staff_member = InstitutionStaff.objects.get(institution=institution, user=request.user)
+        permissions = staff_member.get_permissions()
+    except InstitutionStaff.DoesNotExist:
+        messages.error(request, "You are not registered as a staff member for this institution.")
+        return redirect('home')
+
+    context = {
+        'institution': institution,
+        'permissions': permissions
+    }
+
+    return render(request, 'coaching/institution_staff_dashboard.html', context)

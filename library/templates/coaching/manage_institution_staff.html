@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Staff - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-4">
+        {% if request.user.is_superuser %}
+            <a href="{% url 'coaching_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <i class="bi bi-arrow-left mr-2"></i>
+                Back to Institute Dashboard
+            </a>
+        {% else %}
+            <a href="{% url 'institution_staff_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <i class="bi bi-arrow-left mr-2"></i>
+                Back to Staff Dashboard
+            </a>
+        {% endif %}
+    </div>
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">Manage Staff for {{ institution.name }}</h1>
+
+    <!-- Add Staff Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-2xl font-semibold mb-4">Add New Staff</h2>
+        {% csrf_token %}
+        <div class="flex items-center space-x-4">
+            <div class="relative flex-grow">
+                <input type="text" id="user-search" class="w-full px-4 py-2 border rounded-lg" placeholder="Search for users by email, name, or SSID...">
+                <div id="user-search-results" class="absolute z-10 w-full bg-white border mt-1 rounded-lg shadow-lg hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff List Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-semibold mb-4">Current Staff</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white" id="staff-table">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="py-2 px-4 text-left">Name</th>
+                        <th class="py-2 px-4 text-left">Email</th>
+                        <th class="py-2 px-4 text-left">Permissions</th>
+                        <th class="py-2 px-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for staff in staff_list %}
+                    <tr id="staff-row-{{ staff.id }}">
+                        <td class="py-2 px-4 border-b">{{ staff.user.get_full_name }}</td>
+                        <td class="py-2 px-4 border-b">{{ staff.user.email }}</td>
+                        <td class="py-2 px-4 border-b">
+                            <span id="permissions-display-{{ staff.id }}">
+                                {{ staff.get_permissions|join:", " }}
+                            </span>
+                        </td>
+                        <td class="py-2 px-4 border-b text-center">
+                            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" onclick="openPermissionsModal('{{ staff.id }}')">Manage</button>
+                            <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" onclick="removeStaff('{{ staff.id }}')">Remove</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Permissions Modal -->
+<div id="permissions-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Manage Permissions</h3>
+            <div class="mt-2 px-7 py-3">
+                <form id="permissions-form" class="text-left">
+                    {% for key, name in permission_choices %}
+                    <div class="flex items-center mb-2">
+                        <input type="checkbox" id="perm_{{ key }}" name="permissions" value="{{ key }}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="perm_{{ key }}" class="ml-2 block text-sm text-gray-900">{{ name }}</label>
+                    </div>
+                    {% endfor %}
+                </form>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="save-permissions-btn" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300">
+                    Save Changes
+                </button>
+                 <button id="close-modal-btn" class="mt-2 px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userSearchInput = document.getElementById('user-search');
+    const userSearchResults = document.getElementById('user-search-results');
+    let searchTimeout;
+
+    userSearchInput.addEventListener('keyup', () => {
+        clearTimeout(searchTimeout);
+        const query = userSearchInput.value;
+        if (query.length < 3) {
+            userSearchResults.innerHTML = '';
+            userSearchResults.classList.add('hidden');
+            return;
+        }
+        searchTimeout = setTimeout(() => {
+            fetch(`{% url 'search_user' %}?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    userSearchResults.innerHTML = '';
+                    if (data.users && data.users.length > 0) {
+                        data.users.forEach(user => {
+                            const userDiv = document.createElement('div');
+                            userDiv.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                            userDiv.textContent = `${user.full_name} (${user.email})`;
+                            userDiv.dataset.userId = user.id;
+                            userDiv.addEventListener('click', () => {
+                                addStaff(user.id);
+                                userSearchInput.value = '';
+                                userSearchResults.classList.add('hidden');
+                            });
+                            userSearchResults.appendChild(userDiv);
+                        });
+                        userSearchResults.classList.remove('hidden');
+                    } else {
+                        userSearchResults.classList.add('hidden');
+                    }
+                });
+        }, 300);
+    });
+
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+        document.getElementById('permissions-modal').classList.add('hidden');
+    });
+});
+
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function addStaff(userId) {
+    const url = `{% url 'add_institution_staff' uid=institution.uid %}`;
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            const staff = data.staff;
+            const tableBody = document.getElementById('staff-table').getElementsByTagName('tbody')[0];
+            const newRow = tableBody.insertRow();
+            newRow.id = `staff-row-${staff.id}`;
+            newRow.innerHTML = `
+                <td class="py-2 px-4 border-b">${staff.full_name}</td>
+                <td class="py-2 px-4 border-b">${staff.email}</td>
+                <td class="py-2 px-4 border-b">
+                    <span id="permissions-display-${staff.id}"></span>
+                </td>
+                <td class="py-2 px-4 border-b text-center">
+                    <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" onclick="openPermissionsModal('${staff.id}')">Manage</button>
+                    <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" onclick="removeStaff('${staff.id}')">Remove</button>
+                </td>
+            `;
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+
+function openPermissionsModal(staffId) {
+    const modal = document.getElementById('permissions-modal');
+    const form = document.getElementById('permissions-form');
+    form.dataset.staffId = staffId;
+
+    // Reset checkboxes
+    form.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+    
+    // Fetch current permissions and check corresponding boxes
+    const permissionsText = document.getElementById(`permissions-display-${staffId}`).textContent;
+    const currentPermissions = permissionsText.split(', ').filter(p => p);
+    currentPermissions.forEach(perm => {
+        const checkbox = form.querySelector(`input[value="${perm.trim()}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+    });
+    
+    document.getElementById('save-permissions-btn').onclick = () => savePermissions(staffId);
+    modal.classList.remove('hidden');
+}
+
+function savePermissions(staffId) {
+    const form = document.getElementById('permissions-form');
+    const checkboxes = form.querySelectorAll('input[name="permissions"]:checked');
+    const permissions = Array.from(checkboxes).map(cb => cb.value);
+    
+    const url = `/institution/staff/${staffId}/update-permissions/`;
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ permissions: permissions })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            document.getElementById(`permissions-display-${staffId}`).textContent = permissions.join(', ');
+            document.getElementById('permissions-modal').classList.add('hidden');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+
+function removeStaff(staffId) {
+    if (!confirm('Are you sure you want to remove this staff member?')) {
+        return;
+    }
+    const url = `/institution/staff/${staffId}/remove/`;
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            document.getElementById(`staff-row-${staffId}`).remove();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+</script>
+{% endblock %} 

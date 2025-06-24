@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Dashboard - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="text-center">
+        <h1 class="text-3xl font-bold mb-2 text-gray-800">Staff Dashboard</h1>
+        <h2 class="text-xl font-semibold mb-6 text-gray-600">for {{ institution.name }}</h2>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% if 'view_dashboard' in permissions %}
+        <a href="{% url 'expense_analytics' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-blue-100 hover:border-blue-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-blue-800 text-center">Expense Analytics</div>
+            <div class="mt-2 text-xs text-blue-500">View performance and analytics</div>
+        </a>
+        {% endif %}
+
+        {% if 'manage_profile' in permissions %}
+        <a href="{% url 'edit_institution_profile' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-green-100 hover:border-green-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-green-800 text-center">Manage Profile</div>
+            <div class="mt-2 text-xs text-green-500">Edit institution details</div>
+        </a>
+        {% endif %}
+
+        {% if 'manage_users' in permissions %}
+        <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-purple-100 hover:border-purple-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-purple-800 text-center">Manage Users</div>
+            <div class="mt-2 text-xs text-purple-500">View and manage users</div>
+        </a>
+        {% endif %}
+        
+        {% if 'manage_subscriptions' in permissions %}
+        <a href="{% url 'manage_institution_subscriptions' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-yellow-100 hover:border-yellow-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-yellow-800 text-center">Manage Subscriptions</div>
+            <div class="mt-2 text-xs text-yellow-500">Create subscription plans</div>
+        </a>
+        {% endif %}
+
+        {% if 'manage_coupons' in permissions %}
+        <a href="{% url 'manage_institution_coupons' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-pink-100 hover:border-pink-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-pink-800 text-center">Manage Coupons</div>
+            <div class="mt-2 text-xs text-pink-500">Create promotional coupons</div>
+        </a>
+        {% endif %}
+
+        {% if 'manage_payments' in permissions %}
+        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-red-100 hover:border-red-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-red-800 text-center">Verify Payments</div>
+            <div class="mt-2 text-xs text-red-500">Verify user payments</div>
+        </a>
+        {% endif %}
+
+        {% if 'manage_schedule' in permissions %}
+        <a href="{% url 'create_edit_schedule' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-indigo-100 hover:border-indigo-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-indigo-800 text-center">Manage Schedule</div>
+            <div class="mt-2 text-xs text-indigo-500">Create and edit timetable</div>
+        </a>
+        {% endif %}
+        
+        {% if 'manage_cards' in permissions %}
+        <a href="{% url 'allocate_card_to_institution_page' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-teal-100 hover:border-teal-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-teal-800 text-center">Manage NFC Cards</div>
+            <div class="mt-2 text-xs text-teal-500">Allocate access cards</div>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

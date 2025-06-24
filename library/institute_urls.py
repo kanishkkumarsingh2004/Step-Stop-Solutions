@@ -50,4 +50,10 @@ urlpatterns = [
    path('institution/<str:uid>/schedule/', institute_view.view_schedule, name='view_schedule'),
    path('institution/<str:uid>/allocate-card/', institute_view.allocate_card_to_institution_page, name='allocate_card_to_institution_page'),
    path('institution/allocate-card-action/', institute_view.allocate_card_to_institution, name='allocate_card_to_institution_action'),
+   # Staff Management
+   path('institution/<str:uid>/manage-staff/', institute_view.manage_institution_staff, name='manage_institution_staff'),
+   path('institution/<str:uid>/add-staff/', institute_view.add_institution_staff, name='add_institution_staff'),
+   path('institution/staff/<int:staff_id>/update-permissions/', institute_view.update_institution_staff_permissions, name='update_institution_staff_permissions'),
+   path('institution/staff/<int:staff_id>/remove/', institute_view.remove_institution_staff, name='remove_institution_staff'),
+   path('institution/<str:uid>/staff-dashboard/', institute_view.institution_staff_dashboard, name='institution_staff_dashboard'),
 ]

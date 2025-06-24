@@ -33,10 +33,50 @@ document.addEventListener('DOMContentLoaded', function () {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Number of Cards' }
+                    title: { display: true, text: 'Number of Cards' },
+                    ticks: {
+                        precision: 0
+                    }
                 },
                 x: {
                     title: { display: true, text: 'Libraries' }
+                }
+            }
+        }
+    });
+
+    // Initialize Institution Card Allocation Chart
+    const institutionCardData = getChartData('institutionCardAllocationData');
+    const institutionCardCtx = document.getElementById('institutionCardAllocationChart').getContext('2d');
+    new Chart(institutionCardCtx, {
+        type: 'bar',
+        data: {
+            labels: institutionCardData.labels,
+            datasets: [{
+                label: 'Allocated Cards',
+                data: institutionCardData.values,
+                backgroundColor: 'rgba(234, 179, 8, 0.2)',
+                borderColor: 'rgba(234, 179, 8, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { enabled: true }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Number of Cards' },
+                    ticks: {
+                        precision: 0
+                    }
+                },
+                x: {
+                    title: { display: true, text: 'Institutions' }
                 }
             }
         }
