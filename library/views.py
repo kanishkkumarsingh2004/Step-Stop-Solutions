@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse, Http404
 from django.db.models import Sum, Q, Count
 from django.views.decorators.csrf import csrf_exempt
@@ -3386,3 +3386,42 @@ def admin_gym_details(request, gym_id):
     return render(request, 'admin_page/admin_gym_details.html', {
         'gym': gym,
     })
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def allocate_card_to_gym_page(request):
+    gyms = Gym.objects.all()
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True, gym__isnull=True)
+    return render(request, 'admin_page/allocate_card_to_gym.html', {
+        'gyms': gyms,
+        'admin_cards': admin_cards
+    })
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@csrf_exempt
+def allocate_card_to_gym(request):
+    if request.method == 'POST':
+        gym_id = request.POST.get('gym_id')
+        nfc_serials = request.POST.getlist('nfc_serials')
+        errors = []
+        allocated = []
+        try:
+            gym = Gym.objects.get(id=gym_id)
+        except Gym.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Gym not found.'}, status=404)
+        for serial in nfc_serials:
+            try:
+                card = AdminCard.objects.get(card_id=serial)
+                if card.library or card.institution or card.gym:
+                    errors.append(f'Card {serial} is already allocated.')
+                    continue
+                card.gym = gym
+                card.save()
+                allocated.append(serial)
+            except AdminCard.DoesNotExist:
+                errors.append(f'Card {serial} not found.')
+        if errors:
+            return JsonResponse({'success': False, 'message': 'Some cards could not be allocated.', 'errors': errors, 'allocated': allocated}, status=400)
+        return redirect('allocate_card_to_gym_page')
+    return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)

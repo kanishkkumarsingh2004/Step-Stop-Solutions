@@ -16,7 +16,8 @@ from .models import (Library,
                      InstitutionSubscriptionPlan, 
                      InstitutionExpense, 
                      InstitutionStaff,
-                     Gym)
+                     Gym,
+                     GymProfileImage)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -555,3 +556,22 @@ class GymRegistrationForm(forms.ModelForm):
         if commit:
             gym.save()
         return gym
+
+class GymProfileImageForm(forms.ModelForm):
+    class Meta:
+        model = GymProfileImage
+        fields = ['google_drive_link']
+
+class GymEditForm(forms.ModelForm):
+    class Meta:
+        model = Gym
+        fields = [
+            'name', 'address', 'city', 'state', 'pincode', 'district',
+            'description', 'website_url', 'contact_email', 'contact_phone',
+            'equipment_available', 'additional_services'
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'equipment_available': forms.Textarea(attrs={'rows': 2}),
+            'additional_services': forms.Textarea(attrs={'rows': 2}),
+        }

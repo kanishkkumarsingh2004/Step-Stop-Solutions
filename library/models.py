@@ -874,6 +874,21 @@ class LibraryCardLog(models.Model):
     def __str__(self):
         return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.library.venue_name}"
 
+class GymCardLog(models.Model):
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='card_allocation_logs')
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='gym_card_logs')
+    card_id = models.CharField(max_length=100)
+    allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='gym_allocations_logged')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('gym', 'user', 'card_id')
+        ordering = ['-timestamp']
+        
+    def __str__(self):
+        return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.gym.name}"
+    
+
 class InstitutionStaff(models.Model):
     PERMISSION_CHOICES = [
         ('manage_profile', 'Manage Institution Profile'),
@@ -923,7 +938,28 @@ class Gym(models.Model):
     is_approved = models.BooleanField(default=False, help_text="Approval status of the application")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    upi_id = models.CharField(max_length=100, blank=True, null=True, help_text="UPI ID for gym payments")
+    recipient_name = models.CharField(max_length=100, blank=True, null=True, help_text="Recipient name for UPI payments")
+    thank_you_message = models.TextField(blank=True, null=True, help_text="Thank you message after payment")
     # Add more fields as needed
 
     def __str__(self):
         return f"{self.name} ({self.ssid})"
+
+class GymProfileImage(models.Model):
+    gym = models.OneToOneField(Gym, on_delete=models.CASCADE, related_name='profile_image')
+    google_drive_link = models.URLField(max_length=500)
+    google_drive_id = models.CharField(max_length=100, blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Extract Google Drive file ID if not provided
+        if self.google_drive_link and not self.google_drive_id:
+            import re
+            match = re.search(r'/d/([\w-]+)', self.google_drive_link)
+            if match:
+                self.google_drive_id = match.group(1)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Profile Image for {self.gym.name}"

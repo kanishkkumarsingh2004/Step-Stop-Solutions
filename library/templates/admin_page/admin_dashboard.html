@@ -184,8 +184,33 @@
                         <i class="bi bi-calculator text-indigo-600 text-lg"></i>
                     </a>
                     <a href="{% url 'manage_cards' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
-                        <span>Manage All Cards</span>
+                        <span>Manage Library Cards</span>
                         <i class="bi bi-credit-card-2-front text-blue-600 text-lg"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Gym Card Actions -->
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+                <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 text-lg sm:text-xl">
+                        <path d="m6.5 6.5 11 11"/>
+                        <path d="m21 21-1-1"/>
+                        <path d="m3 3 1 1"/>
+                        <path d="m18 22 4-4"/>
+                        <path d="m2 6 4-4"/>
+                        <path d="m3 10 7-7"/>
+                        <path d="m14 21 7-7"/>
+                    </svg>                    <h2 class="text-base sm:text-lg font-semibold text-gray-700">Gym Card Actions</h2>
+                </div>
+                <div class="space-y-2">
+                    <a href="{% url 'allocate_card_to_gym_page' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Allocate Card To Gym</span>
+                        <i class="bi bi-share text-red-600 text-lg"></i>
+                    </a>
+                    <a href="#" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Gym Card Count</span>
+                        <i class="bi bi-calculator text-purple-600 text-lg"></i>
                     </a>
                 </div>
             </div>
@@ -234,5 +259,6 @@
                 </div>
             </div>
         </div>
+    </div>
 </div>
 {% endblock %}

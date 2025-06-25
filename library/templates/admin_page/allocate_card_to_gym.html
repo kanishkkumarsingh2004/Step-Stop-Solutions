@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Allocate Cards to Gym</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form id="allocate-form" method="post" action="{% url 'allocate_card_to_gym' %}">
+            {% csrf_token %}
+            
+            <!-- Gym Selection -->
+            <div class="mb-6">
+                <label for="gym" class="block text-sm font-medium text-gray-700 mb-2">Select Gym</label>
+                <select name="gym_id" id="gym" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                    {% for gym in gyms %}
+                        <option value="{{ gym.id }}">{{ gym.name }} ({{ gym.owner.get_full_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Card Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Cards</label>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input type="checkbox" id="select-all" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for card in admin_cards %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                                    <label for="card-{{ card.id }}">{{ card.card_id }}</label>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input type="checkbox" name="nfc_serials" value="{{ card.card_id }}" id="card-{{ card.id }}" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200">
+                Allocate Selected Cards
+            </button>
+        </form>
+    </div>
+</div>
+<script>
+// Select all checkboxes functionality
+const selectAll = document.getElementById('select-all');
+if (selectAll) {
+    selectAll.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('input[name="nfc_serials"]');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    });
+}
+</script>
+{% endblock %} 

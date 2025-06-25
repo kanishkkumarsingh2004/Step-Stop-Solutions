@@ -22,8 +22,8 @@ from django.contrib.auth.decorators import login_required
 import logging
 from django.utils.timezone import now
 
-from .models import Gym
-from .forms import GymRegistrationForm
+from .models import Gym, GymProfileImage
+from .forms import GymRegistrationForm, GymProfileImageForm, GymEditForm
 # In my_library/library/views.py
 
 
@@ -72,3 +72,57 @@ def gym_dashboard(request, gim_uid):
         raise PermissionDenied("You do not have permission to view this dashboard.")
     
     return render(request, 'gym/gym_dashboard.html', {'gym': gym})
+
+@require_POST
+@login_required
+def upload_gym_profile_image(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid, owner=request.user)
+    form = GymProfileImageForm(request.POST)
+    if form.is_valid():
+        profile_image, created = GymProfileImage.objects.get_or_create(gym=gym)
+        profile_image.google_drive_link = form.cleaned_data['google_drive_link']
+        profile_image.save()
+        return JsonResponse({'success': True, 'image_url': profile_image.google_drive_link})
+    else:
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+@require_POST
+@login_required
+def remove_gym_profile_image(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid, owner=request.user)
+    if hasattr(gym, 'profile_image'):
+        gym.profile_image.delete()
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'No profile image found.'}, status=404)
+
+@login_required
+def edit_gym_profile(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid, owner=request.user)
+    if request.method == 'POST':
+        form = GymEditForm(request.POST, instance=gym)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Gym profile updated successfully!')
+            return redirect('gym_dashboard', gim_uid=gym.gim_uid)
+    else:
+        form = GymEditForm(instance=gym)
+    return render(request, 'gym/edit_gym_profile.html', {'form': form, 'gym': gym})
+
+@require_POST
+@login_required
+def update_gym_upi_details(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid, owner=request.user)
+    upi_id = request.POST.get('upi_id', '').strip()
+    recipient_name = request.POST.get('recipient_name', '').strip()
+    thank_you_message = request.POST.get('thank_you_message', '').strip()
+    gym.upi_id = upi_id
+    gym.recipient_name = recipient_name
+    gym.thank_you_message = thank_you_message
+    gym.save()
+    return JsonResponse({
+        'success': True,
+        'upi_id': gym.upi_id,
+        'recipient_name': gym.recipient_name,
+        'thank_you_message': gym.thank_you_message,
+    })
