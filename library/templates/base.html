@@ -276,42 +276,5 @@
             dashboardMenu.classList.add('hidden');
         }
     });
-
-    // Request NFC permissions and check hardware
-    async function requestNFC() {
-        try {
-            if ("NDEFReader" in window) {
-                const nfc = new NDEFReader();
-                const permissionStatus = await navigator.permissions.query({ name: "nfc" });
-                
-                if (permissionStatus.state === "granted") {
-                    await nfc.scan();
-                    alert("NFC scanning started successfully. Please bring your RFID/NFC tag near your device.");
-                } else {
-                    // Show a confirmation dialog to request permission
-                    const userConsent = confirm("To use NFC features, we need your permission. Would you like to grant NFC access now?");
-                    if (userConsent) {
-                        try {
-                            await nfc.scan();
-                            alert("NFC scanning started successfully. Please bring your RFID/NFC tag near your device.");
-                        } catch (error) {
-                            alert("Please grant NFC permissions in your browser settings to use this feature.");
-                        }
-                    } else {
-                        alert("NFC features will not be available without permission.");
-                    }
-                }
-            } else {
-                alert("Your device does not support NFC or the browser does not have NFC capabilities.");
-            }
-        } catch (error) {
-            alert("Error accessing NFC hardware: " + error.message);
-        }
-    }
-
-    // Request NFC permissions when page loads
-    if ("NDEFReader" in window) {
-        requestNFC();
-    }
 </script>
 </html>
