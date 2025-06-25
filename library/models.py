@@ -584,29 +584,6 @@ class InstitutionCoupon(models.Model):
             self.status = 'INACTIVE'
         self.save()
         
-        # Create a record of usage
-        CouponUsage.objects.create(
-            coupon=self,
-            user=user,
-            used_at=timezone.now()
-        )
-        return True
-
-class CouponUsage(models.Model):
-    """
-    Tracks which users have used which coupons.
-    """
-    coupon = models.ForeignKey(InstitutionCoupon, on_delete=models.CASCADE, related_name='used_by')
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='used_coupons')
-    used_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ['coupon', 'user']
-        ordering = ['-used_at']
-
-    def __str__(self):
-        return f"{self.user.get_full_name()} used {self.coupon.code} on {self.used_at}"
-
 class InstitutionReview(models.Model):
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -884,7 +861,7 @@ class GymCardLog(models.Model):
     class Meta:
         unique_together = ('gym', 'user', 'card_id')
         ordering = ['-timestamp']
-        
+
     def __str__(self):
         return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.gym.name}"
     
@@ -941,7 +918,8 @@ class Gym(models.Model):
     upi_id = models.CharField(max_length=100, blank=True, null=True, help_text="UPI ID for gym payments")
     recipient_name = models.CharField(max_length=100, blank=True, null=True, help_text="Recipient name for UPI payments")
     thank_you_message = models.TextField(blank=True, null=True, help_text="Thank you message after payment")
-    # Add more fields as needed
+    max_banners = models.PositiveIntegerField(default=2, help_text="Maximum number of banners allowed")
+
 
     def __str__(self):
         return f"{self.name} ({self.ssid})"
@@ -963,3 +941,92 @@ class GymProfileImage(models.Model):
 
     def __str__(self):
         return f"Profile Image for {self.gym.name}"
+    
+
+class GymCoupon(models.Model):
+    DISCOUNT_TYPE_CHOICES = [
+        ('PERCENTAGE', 'Percentage'),
+        ('FIXED', 'Fixed Amount'),
+    ]
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('INACTIVE', 'Inactive'),
+        ('EXPIRED', 'Expired'),
+    ]
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='coupons')
+    code = models.CharField(max_length=20, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    max_usage = models.PositiveIntegerField(default=1)
+    current_usage = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ACTIVE')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.code} - {self.gym.name}"
+
+    def is_valid(self):
+        now = timezone.now()
+        return (
+            self.status == 'ACTIVE' and
+            self.valid_from <= now <= self.valid_to and
+            self.current_usage < self.max_usage
+        )
+    def use_coupon(self):
+        if not self.is_valid():
+            return False
+            
+        self.current_usage += 1
+        if self.current_usage >= self.max_usage:
+            self.status = 'INACTIVE'
+        self.save()
+        return True
+
+    def apply_discount(self, amount):
+        if not self.is_valid():
+            return amount
+        
+        if self.discount_type == 'PERCENTAGE':
+            discount = (amount * self.discount_value) / 100
+        else:  # FIXED
+            discount = self.discount_value
+        
+        return max(0, amount - discount)
+    
+
+# In models.py
+
+class GymBanner(models.Model):
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='banners')
+    google_drive_link = models.CharField(max_length=1000)
+    google_drive_id = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.google_drive_link:
+            self.google_drive_id = self.extract_file_id(self.google_drive_link)
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def extract_file_id(url):
+        import re
+        patterns = [
+            r'/file/d/([^/]+)',
+            r'/open\?id=([^&]+)',
+            r'/uc\?id=([^&]+)',
+            r'/uc\?export=view&id=([^&]+)'
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return None
+
+    def __str__(self):
+        return f"Banner for {self.gym.name}"

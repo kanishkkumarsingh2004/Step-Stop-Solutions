@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Banners for {{ gym.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6 text-gray-800">Manage Banners for {{ gym.name }}</h1>
+
+    <div id="banner-message" class="mb-4"></div>
+
+    <div class="mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6 mb-4">
+            <h2 class="text-lg font-semibold mb-4 text-blue-700 flex items-center gap-2">
+                <i class="bi bi-plus-circle text-blue-500"></i> Add New Banner
+            </h2>
+            <div id="add-banner-error" class="text-red-600 mb-2 font-medium hidden"></div>
+            <form id="add-banner-form" class="space-y-4" autocomplete="off" {% if banners|length >= max_banners %}style="display:none;"{% endif %}>
+                {% csrf_token %}
+                <div>
+                    <label for="id_google_drive_link" class="block text-sm font-medium text-gray-700 mb-1">Google Drive Link</label>
+                    <input type="url" name="google_drive_link" id="id_google_drive_link" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Paste Google Drive link here" pattern="https://drive\.google\.com/.*" required>
+                    <div id="add-banner-link-error" class="text-red-600 text-xs mt-1"></div>
+                </div>
+                <button type="submit" id="add-banner-btn" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition disabled:opacity-50">
+                    <i class="bi bi-upload mr-1"></i> Add Banner
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-lg font-semibold mb-4 text-green-700 flex items-center gap-2">
+            <i class="bi bi-images"></i> Current Banners <span class="ml-2 text-xs text-gray-500" id="banner-count">({{ banners|length }}/{{ max_banners }})</span>
+        </h2>
+        <div id="banners-list">
+        {% if banners %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {% for banner in banners %}
+                    <div class="relative group banner-card" data-banner-id="{{ banner.id }}">
+                        <div class="w-full h-48 bg-white rounded-lg shadow-md overflow-hidden">
+                            <img src="https://drive.google.com/thumbnail?id={{ banner.google_drive_id }}&sz=s800" 
+                                 alt="Banner for {{ gym.name }}" 
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center space-x-2">
+                            <button type="button" class="bg-transparent hover:bg-transparent text-red-500 hover:text-red-600 px-2 py-1 rounded-md remove-banner-btn" data-banner-id="{{ banner.id }}">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-gray-500">No banners added yet.</div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+const addBannerForm = document.getElementById('add-banner-form');
+const addBannerBtn = document.getElementById('add-banner-btn');
+const addBannerError = document.getElementById('add-banner-error');
+const addBannerLinkError = document.getElementById('add-banner-link-error');
+const bannerMessage = document.getElementById('banner-message');
+const bannersList = document.getElementById('banners-list');
+const bannerCount = document.getElementById('banner-count');
+
+addBannerForm.onsubmit = function(e) {
+    e.preventDefault();
+    addBannerError.classList.add('hidden');
+    addBannerLinkError.textContent = '';
+    addBannerBtn.disabled = true;
+    bannerMessage.textContent = '';
+
+    const formData = new FormData(addBannerForm);
+    fetch(window.location.pathname, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': addBannerForm.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+    })
+    .then(res => {
+        if (res.redirected) {
+            window.location.href = res.url;
+            return;
+        }
+        return res.json().catch(() => null);
+    })
+    .then(data => {
+        addBannerBtn.disabled = false;
+        if (!data) {
+            return;
+        }
+        if (data.success) {
+            bannerMessage.innerHTML = '<div class="text-green-600 font-medium mb-2">Banner added successfully!</div>';
+            addBannerForm.reset();
+            fetch(window.location.pathname + '?ajax=1')
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newList = doc.getElementById('banners-list');
+                    const newCount = doc.getElementById('banner-count');
+                    if (newList && bannersList) bannersList.innerHTML = newList.innerHTML;
+                    if (newCount && bannerCount) bannerCount.innerHTML = newCount.innerHTML;
+                    attachRemoveHandlers();
+                    if (newCount && newCount.innerText) {
+                        var matches = newCount.innerText.match(/\d+/g);
+                        var countVal = matches ? parseInt(matches[0]) : 0;
+                        if (countVal >= '{{ max_banners }}') {
+                            addBannerForm.style.display = 'none';
+                        } else {
+                            addBannerForm.style.display = '';
+                        }
+                    }
+                });
+        } else if (data.errors) {
+            try {
+                const errors = JSON.parse(data.errors);
+                if (errors.google_drive_link) {
+                    addBannerLinkError.textContent = errors.google_drive_link[0].message || errors.google_drive_link[0];
+                }
+            } catch {
+                addBannerError.textContent = 'Invalid input.';
+                addBannerError.classList.remove('hidden');
+            }
+        } else {
+            addBannerError.textContent = data.message || 'An error occurred.';
+            addBannerError.classList.remove('hidden');
+        }
+    })
+    .catch(() => {
+        addBannerBtn.disabled = false;
+    });
+};
+
+function attachRemoveHandlers() {
+    document.querySelectorAll('.remove-banner-btn').forEach(btn => {
+        btn.onclick = function() {
+            const bannerId = btn.getAttribute('data-banner-id');
+            if (!bannerId) return;
+            if (!confirm('Are you sure you want to remove this banner?')) return;
+            btn.disabled = true;
+            fetch("{% url 'remove_gym_banner' gym.gim_uid %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'banner_id=' + encodeURIComponent(bannerId)
+            })
+            .then(res => {
+                if (res.redirected) {
+                    window.location.href = res.url;
+                    return;
+                }
+                return res.json().catch(() => null);
+            })
+            .then(data => {
+                btn.disabled = false;
+                if (data && data.success) {
+                    bannerMessage.innerHTML = '<div class="text-green-600 font-medium mb-2">Banner removed successfully!</div>';
+                    const card = btn.closest('.banner-card');
+                    if (card) card.remove();
+                    fetch(window.location.pathname + '?ajax=1')
+                        .then(r => r.text())
+                        .then(html => {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            const newCount = doc.getElementById('banner-count');
+                            if (newCount && bannerCount) bannerCount.innerHTML = newCount.innerHTML;
+                            if (newCount && newCount.innerText) {
+                                var matches = newCount.innerText.match(/\d+/g);
+                                var countVal = matches ? parseInt(matches[0]) : 0;
+                                if (countVal < '{{ max_banners }}') {
+                                    if (addBannerForm) addBannerForm.style.display = '';
+                                }
+                            }
+                        });
+                } else {
+                    bannerMessage.innerHTML = '<div class="text-red-600 font-medium mb-2">' + (data && data.message ? data.message : 'An error occurred.') + '</div>';
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                bannerMessage.innerHTML = '<div class="text-red-600 font-medium mb-2">An error occurred.</div>';
+            });
+        };
+    });
+}
+attachRemoveHandlers();
+</script>
+{% endblock %}

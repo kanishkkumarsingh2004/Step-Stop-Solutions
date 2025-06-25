@@ -104,10 +104,18 @@ def public_institute_details(request, uid):
     if not institution.is_approved:
         messages.error(request, "This institution is not yet approved.")
         return redirect('home')
+    
+    has_active_subscription = False
+    if request.user.is_authenticated:
+        has_active_subscription = InstitutionSubscription.objects.filter(
+            user=request.user,
+        ).exists()
+        
     return render(request, 'coaching/public_institute_details.html', {
         'institution': institution,
         'images': images,
-        'has_timetable': TimetableEntry.objects.filter(institution=institution).exists()
+        'has_timetable': TimetableEntry.objects.filter(institution=institution).exists(),
+        'has_active_subscription': has_active_subscription
     })
 
 @login_required

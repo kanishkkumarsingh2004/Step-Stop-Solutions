@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Coupons for {{ gym.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">Coupons for {{ gym.name }}</h1>
+        <button id="add-coupon-btn" class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            <i class="bi bi-plus-circle mr-2"></i>
+            Add New Coupon
+        </button>
+    </div>
+
+    <!-- Coupons List -->
+    <div class="bg-white rounded-lg shadow-md p-3 sm:p-6">
+        <h2 class="text-lg sm:text-xl md:text-2xl font-semibold mb-3 sm:mb-4">All Coupons</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-xs sm:text-sm bg-white border border-gray-200" id="coupons-table">
+                <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                        <th class="py-2 px-2 sm:px-4 text-left border-b">Code</th>
+                        <th class="py-2 px-2 sm:px-4 text-left border-b">Discount</th>
+                        <th class="py-2 px-2 sm:px-4 text-left border-b hidden sm:table-cell">Validity</th>
+                        <th class="py-2 px-2 sm:px-4 text-center border-b">Usage</th>
+                        <th class="py-2 px-2 sm:px-4 text-center border-b">Status</th>
+                        <th class="py-2 px-2 sm:px-4 text-center border-b">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coupon in coupons %}
+                    <tr id="coupon-row-{{ coupon.id }}" class="hover:bg-gray-50 transition">
+                        <td class="py-2 px-2 sm:px-4 border-b font-mono">{{ coupon.code }}</td>
+                        <td class="py-2 px-2 sm:px-4 border-b">
+                            {% if coupon.discount_type == 'PERCENTAGE' %}
+                                {{ coupon.discount_value|floatformat:0 }}%
+                            {% else %}
+                                ₹{{ coupon.discount_value|floatformat:2 }}
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-2 sm:px-4 border-b hidden sm:table-cell">{{ coupon.valid_from|date:"d M Y, H:i" }} - {{ coupon.valid_to|date:"d M Y, H:i" }}</td>
+                        <td class="py-2 px-2 sm:px-4 border-b text-center">{{ coupon.current_usage }} / {{ coupon.max_usage }}</td>
+                        <td class="py-2 px-2 sm:px-4 border-b text-center">
+                            <span class="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-medium 
+                                {% if coupon.status == 'ACTIVE' and coupon.is_valid %} bg-green-100 text-green-800 
+                                {% elif coupon.status == 'EXPIRED' or not coupon.is_valid %} bg-yellow-100 text-yellow-800
+                                {% else %} bg-red-100 text-red-800 {% endif %}">
+                                {{ coupon.status }}
+                            </span>
+                        </td>
+                        <td class="py-2 px-2 sm:px-4 border-b text-center space-x-1 sm:space-x-2">
+                            <button class="text-blue-500 hover:text-blue-700 text-sm sm:text-base" onclick="openEditModal('{{ coupon.id }}')">Edit</button>
+                            <button class="text-red-500 hover:text-red-700 text-sm sm:text-base" onclick="deleteCoupon('{{ coupon.id }}')">Delete</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-3 px-2 sm:px-4 text-center text-gray-500 text-sm sm:text-base">No coupons found for this gym.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Coupon Modal -->
+<div id="coupon-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 id="modal-title" class="text-lg leading-6 font-medium text-gray-900">Add New Coupon</h3>
+            <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 transition duration-150 ease-in-out">
+                <span class="text-2xl">&times;</span>
+            </button>
+        </div>
+        <form id="coupon-form" class="space-y-6" novalidate>
+            {% csrf_token %}
+            <input type="hidden" id="coupon-id" name="coupon_id">
+            {{ form.non_field_errors }}
+            
+            <div>
+                <label for="code" class="block text-sm font-medium text-gray-700 mb-2">Coupon Code</label>
+                <input type="text" id="code" name="code" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Enter coupon code" required>
+                <div class="error-container text-red-500 text-sm mt-2"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="discount_type" class="block text-sm font-medium text-gray-700 mb-2">Discount Type</label>
+                    <select id="discount_type" name="discount_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" required>
+                        <option value="PERCENTAGE">Percentage</option>
+                        <option value="FIXED">Fixed Amount</option>
+                    </select>
+                    <div class="error-container text-red-500 text-sm mt-2"></div>
+                </div>
+                <div>
+                    <label for="discount_value" class="block text-sm font-medium text-gray-700 mb-2">Discount Value</label>
+                    <input type="number" id="discount_value" name="discount_value" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Enter value" required>
+                    <div class="error-container text-red-500 text-sm mt-2"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="valid_from" class="block text-sm font-medium text-gray-700 mb-2">Valid From</label>
+                    <input type="datetime-local" id="valid_from" name="valid_from" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" required>
+                    <div class="error-container text-red-500 text-sm mt-2"></div>
+                </div>
+                <div>
+                    <label for="valid_to" class="block text-sm font-medium text-gray-700 mb-2">Valid To</label>
+                    <input type="datetime-local" id="valid_to" name="valid_to" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" required>
+                    <div class="error-container text-red-500 text-sm mt-2"></div>
+                </div>
+            </div>
+
+            <div>
+                <label for="max_usage" class="block text-sm font-medium text-gray-700 mb-2">Max Uses</label>
+                <input type="number" id="max_usage" name="max_usage" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Enter maximum uses" required>
+                <div class="error-container text-red-500 text-sm mt-2"></div>
+            </div>
+
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select id="status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" required>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                    <option value="EXPIRED">Expired</option>
+                </select>
+                <div class="error-container text-red-500 text-sm mt-2"></div>
+            </div>
+
+            <div class="pt-6 flex justify-end space-x-4">
+                <button type="button" id="cancel-btn" class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
+                    Cancel
+                </button>
+                <button type="submit" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
+                    Save Coupon
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('coupon-modal');
+    const addBtn = document.getElementById('add-coupon-btn');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const form = document.getElementById('coupon-form');
+    const modalTitle = document.getElementById('modal-title');
+    const couponIdField = document.getElementById('coupon-id');
+    const gymUid = "{{ gym.gim_uid }}";
+    const couponUrl = `{% url 'manage_gym_coupons' 'GIM_UID' %}`.replace('GIM_UID', gymUid);
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    function openModal() { modal.classList.remove('hidden'); }
+    function closeModal() { 
+        modal.classList.add('hidden');
+        form.reset();
+        couponIdField.value = '';
+        form.querySelectorAll('.error-container').forEach(el => el.innerHTML = '');
+    }
+
+    addBtn.addEventListener('click', () => {
+        modalTitle.textContent = 'Add New Coupon';
+        form.reset();
+        couponIdField.value = '';
+        openModal();
+    });
+
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        
+        fetch(couponUrl, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': csrftoken }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                const errors = JSON.parse(data.errors);
+                form.querySelectorAll('.error-container').forEach(el => el.innerHTML = '');
+                for (const field in errors) {
+                    const el = form.querySelector(`[name=${field}]`);
+                    const errorContainer = el.parentElement.querySelector('.error-container');
+                    if(errorContainer){
+                        errorContainer.innerHTML = `<p>${errors[field][0].message}</p>`;
+                    }
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    window.openEditModal = function(couponId) {
+        modalTitle.textContent = 'Edit Coupon';
+        fetch(`${couponUrl}?id=${couponId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                couponIdField.value = data.id;
+                form.querySelector('[name=code]').value = data.code;
+                form.querySelector('[name=discount_type]').value = data.discount_type;
+                form.querySelector('[name=discount_value]').value = data.discount_value;
+                form.querySelector('[name=valid_from]').value = data.valid_from;
+                form.querySelector('[name=valid_to]').value = data.valid_to;
+                form.querySelector('[name=max_usage]').value = data.max_usage;
+                form.querySelector('[name=status]').value = data.status;
+                openModal();
+            });
+    }
+
+    window.deleteCoupon = function(couponId) {
+        if (confirm('Are you sure you want to delete this coupon?')) {
+            fetch(couponUrl, {
+                method: 'DELETE',
+                body: JSON.stringify({ id: couponId }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error deleting coupon: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+});
+</script>
+{% endblock %} 

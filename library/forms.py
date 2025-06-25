@@ -17,7 +17,9 @@ from .models import (Library,
                      InstitutionExpense, 
                      InstitutionStaff,
                      Gym,
-                     GymProfileImage)
+                     GymCoupon,
+                     GymProfileImage,
+                     GymBanner)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -575,3 +577,32 @@ class GymEditForm(forms.ModelForm):
             'equipment_available': forms.Textarea(attrs={'rows': 2}),
             'additional_services': forms.Textarea(attrs={'rows': 2}),
         }
+class GymCouponForm(forms.ModelForm):
+    class Meta:
+        model = GymCoupon
+        fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'max_usage', 'status']
+        widgets = {
+            'valid_from': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'valid_to': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+class GymBannerForm(forms.ModelForm):
+    class Meta:
+        model = GymBanner
+        fields = ['google_drive_link']
+        widgets = {
+            'google_drive_link': forms.URLInput(attrs={
+                'pattern': 'https://drive\.google\.com/.*',
+                'placeholder': 'Enter Google Drive link',
+                'required': True
+            })
+        }
+
+    def clean_google_drive_link(self):
+        link = self.cleaned_data.get('google_drive_link')
+        if not link.startswith('https://drive.google.com/'):
+            raise forms.ValidationError("Please provide a valid Google Drive link")
+        # Check if we can extract a file ID
+        if not GymBanner.extract_file_id(link):
+            raise forms.ValidationError("Could not extract file ID from the provided link")
+        return link

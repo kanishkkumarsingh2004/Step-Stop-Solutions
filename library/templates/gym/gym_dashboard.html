@@ -125,20 +125,50 @@
             </div>
         </div>
 
-        <!-- Blank Card 2 -->
+        <!-- Coupons Card -->
         <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
             <div class="flex items-center justify-between mb-2 sm:mb-3">
                 <div class="flex items-center space-x-2">
-                    <i class="bi bi-lightning-charge text-blue-500 text-lg sm:text-xl"></i>
-                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Coming Soon</h2>
+                    <i class="bi bi-ticket-perforated text-blue-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Gym Coupons</h2>
                 </div>
             </div>
             <div class="space-y-1 sm:space-y-2">
-                <div class="p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
-                    <p class="text-xs sm:text-sm text-gray-600">Exciting updates on the way!</p>
+                <a href="{% url 'manage_gym_coupons' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-blue-50 rounded-md sm:rounded-lg hover:bg-blue-100 transition-colors">
+                    <span class="text-xs sm:text-sm text-blue-600">Manage Coupons</span>
+                    <i class="bi bi-arrow-right-short text-blue-600 ml-1"></i>
+                </a>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Total Coupons</span>
+                    <span class="font-semibold text-yellow-600 text-sm sm:text-base md:text-lg">{{ total_coupon_count }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Active Coupons</span>
+                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ active_coupon_count }}</span>
                 </div>
             </div>
         </div>
+
+        <!-- Banners Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4 mb-6">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="bi bi-image text-green-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Gym Banners</h2>
+                </div>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs text-gray-600">Banners:</span>
+                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ gym.banners.count }}</span>
+                </div>
+                <a href="{% url 'manage_gym_banners' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-green-50 rounded-md sm:rounded-lg hover:bg-green-100 transition-colors">
+                    <span class="text-xs sm:text-sm text-green-600">Manage Banners</span>
+                    <i class="bi bi-arrow-right-short text-green-600 ml-1"></i>
+                </a>
+            </div>
+        </div>
+
     </div>
 
 </div>
