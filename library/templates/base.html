@@ -288,7 +288,18 @@
                     await nfc.scan();
                     alert("NFC scanning started successfully. Please bring your RFID/NFC tag near your device.");
                 } else {
-                    alert("Please grant NFC permissions to use this feature.");
+                    // Show a confirmation dialog to request permission
+                    const userConsent = confirm("To use NFC features, we need your permission. Would you like to grant NFC access now?");
+                    if (userConsent) {
+                        try {
+                            await nfc.scan();
+                            alert("NFC scanning started successfully. Please bring your RFID/NFC tag near your device.");
+                        } catch (error) {
+                            alert("Please grant NFC permissions in your browser settings to use this feature.");
+                        }
+                    } else {
+                        alert("NFC features will not be available without permission.");
+                    }
                 }
             } else {
                 alert("Your device does not support NFC or the browser does not have NFC capabilities.");
