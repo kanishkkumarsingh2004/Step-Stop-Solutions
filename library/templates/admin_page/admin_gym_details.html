@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <a href="{% url 'manage_gyms' %}" class="text-blue-500 hover:underline mb-6 inline-block">&larr; Back to Manage Gyms</a>
+    <h1 class="text-3xl font-bold mb-6">{{ gym.name }} - Details</h1>
+    
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-semibold mb-4">Gym Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p><strong>Owner:</strong> {{ gym.owner.get_full_name }}</p>
+                <p><strong>Email:</strong> {{ gym.owner.email }}</p>
+                <p><strong>Phone:</strong> {{ gym.owner.mobile_number }}</p>
+            </div>
+            <div>
+                <p><strong>Status:</strong> 
+                    <span class="px-2 py-1 text-xs rounded-full {% if gym.is_approved %}bg-green-200 text-green-800{% else %}bg-yellow-200 text-yellow-800{% endif %}">
+                        {% if gym.is_approved %}Approved{% else %}Pending Review{% endif %}
+                    </span>
+                </p>
+                <p><strong>Registration Date:</strong> {{ gym.created_at|date:"Y-m-d" }}</p>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-2">Address</h3>
+            <p>{{ gym.address }}, {{ gym.city }}, {{ gym.state }} - {{ gym.pincode }}</p>
+            <p><strong>District:</strong> {{ gym.district }}</p>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-2">Contact</h3>
+            <p><strong>Contact Email:</strong> {{ gym.contact_email }}</p>
+            <p><strong>Contact Phone:</strong> {{ gym.contact_phone }}</p>
+        </div>
+        
+        {% if gym.website_url %}
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-2">Website</h3>
+            <p><a href="{{ gym.website_url }}" target="_blank" class="text-blue-500 hover:underline">{{ gym.website_url }}</a></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

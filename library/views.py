@@ -43,7 +43,8 @@ from .models import (
     SubjectFacultyMap,
     TimetableEntry,
     LibraryCardLog,
-    InstitutionCardLog
+    InstitutionCardLog,
+    Gym
 )
 # Python standard library imports
 import json
@@ -168,16 +169,21 @@ def dashboard(request):
 
 @login_required
 def admin_dashboard(request):
-    if not request.user.is_staff:
+    if not request.user.is_superuser:
         return redirect('home')
     
     total_users = CustomUser.objects.count()
     total_libraries = Library.objects.count()
     total_institutions = Institution.objects.count()
+    total_gyms = Gym.objects.count()
+
     approved_libraries = Library.objects.filter(is_approved=True).count()
     approved_institutions = Institution.objects.filter(is_approved=True).count()
+    approved_gyms = Gym.objects.filter(is_approved=True).count()
+    
     pending_libraries = total_libraries - approved_libraries
     pending_institutions = total_institutions - approved_institutions
+    pending_gyms = total_gyms - approved_gyms
     
     # Card allocation stats
     allocated_cards_count = AdminCard.objects.filter(
@@ -201,12 +207,15 @@ def admin_dashboard(request):
         'total_institutions': total_institutions,
         'approved_libraries': approved_libraries,
         'approved_institutions': approved_institutions,
+        'approved_gyms': approved_gyms,
         'pending_libraries': pending_libraries,
         'pending_institutions': pending_institutions,
+        'pending_gyms': pending_gyms,
         'active_subscriptions': active_subscriptions,
         'recent_activities_count': recent_activities_count,
         'allocated_cards_count': allocated_cards_count,
         'non_allocated_cards_count': non_allocated_cards_count,
+        'total_gyms': total_gyms,
     })
 
 def user_login(request):
@@ -3324,3 +3333,56 @@ def check_institution_nfc_allocation(request):
             logger.error(f"Error checking institution NFC allocation: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def manage_gyms(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied("You don't have permission to access this page")
+    
+    gyms = Gym.objects.all().select_related('owner')
+    
+    # Filter by status
+    status = request.GET.get('status')
+    if status == 'approved':
+        gyms = gyms.filter(is_approved=True)
+    elif status == 'pending':
+        gyms = gyms.filter(is_approved=False)
+    
+    # Search by name or owner
+    search_query = request.GET.get('search')
+    if search_query:
+        gyms = gyms.filter(
+            Q(name__icontains=search_query) |
+            Q(owner__first_name__icontains=search_query) |
+            Q(owner__last_name__icontains=search_query) |
+            Q(city__icontains=search_query) |
+            Q(pincode__icontains=search_query)
+        )
+    
+    return render(request, 'admin_page/manage_gyms.html', {
+        'gyms': gyms,
+        'status': status,
+        'search_query': search_query
+    })
+
+@login_required
+@require_POST
+def toggle_gym_approval(request, gym_id):
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': "You don't have permission to perform this action"}, status=403)
+    
+    gym = get_object_or_404(Gym, id=gym_id)
+    gym.is_approved = not gym.is_approved
+    gym.save()
+    
+    return JsonResponse({'status': 'success', 'is_approved': gym.is_approved})
+
+@login_required
+def admin_gym_details(request, gym_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied("You don't have permission to access this page")
+    
+    gym = get_object_or_404(Gym, id=gym_id)
+    return render(request, 'admin_page/admin_gym_details.html', {
+        'gym': gym,
+    })

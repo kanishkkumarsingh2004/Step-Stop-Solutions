@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block title %}Staff Dashboard - {{ institution.name }}{% endblock %}
 
@@ -9,11 +10,34 @@
         <h2 class="text-xl font-semibold mb-6 text-gray-600">for {{ institution.name }}</h2>
     </div>
 
+    <!-- Institute Info Card -->
+    <div class="max-w-2xl mx-auto mb-8">
+        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+            <h3 class="text-lg font-bold text-blue-700 mb-2">Institute Information</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div><span class="font-semibold text-gray-700">Name:</span> {{ institution.name }}</div>
+                <div><span class="font-semibold text-gray-700">Email:</span> {{ institution.contact_email }}</div>
+                <div><span class="font-semibold text-gray-700">Phone:</span> {{ institution.contact_phone }}</div>
+                <div><span class="font-semibold text-gray-700">Address:</span> {{ institution.address|default:'-' }}</div>
+                {% if institution.website_url %}
+                <div class="col-span-2"><span class="font-semibold text-gray-700">Website:</span> <a href="{{ institution.website_url }}" class="text-blue-600 hover:underline" target="_blank">{{ institution.website_url }}</a></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {% if 'view_dashboard' in permissions %}
         <a href="{% url 'expense_analytics' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-blue-100 hover:border-blue-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-blue-800 text-center">Expense Analytics</div>
             <div class="mt-2 text-xs text-blue-500">View performance and analytics</div>
+        </a>
+        {% endif %}
+        
+        {% if 'manage_staff' in permissions %}
+        <a href="{% url 'manage_institution_staff' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-orange-100 hover:border-orange-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-orange-800 text-center">Manage Staff</div>
+            <div class="mt-2 text-xs text-orange-500">Add and manage staff members</div>
         </a>
         {% endif %}
 
@@ -65,6 +89,54 @@
             <div class="mt-2 text-xs text-teal-500">Allocate access cards</div>
         </a>
         {% endif %}
+    </div>
+    <!-- End of dashboard cards -->
+
+    <div class="mt-10">
+        <div class="text-center mb-4 sm:mb-8">
+            <h2 class="text-2xl font-bold text-gray-800">Weekly Schedule</h2>
+            <p class="text-base text-gray-600">Your Weekly Schedule</p>
+        </div>
+        {% for day in days_of_week %}
+            {% if day_classrooms|get_item:day %}
+            <div class="mb-4 sm:mb-8">
+                <h3 class="text-lg sm:text-xl font-bold text-blue-800 mb-2 sm:mb-4 text-center underline">{{ day }}</h3>
+                <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm sm:shadow-md">
+                    <table class="min-w-full w-full bg-white text-xs sm:text-sm">
+                        <thead class="bg-blue-50">
+                            <tr>
+                                <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-r border-gray-200">Classroom / Time</th>
+                                {% for col in day_col_indices|get_item:day %}
+                                    {% get_entry header_time_map day col as entry %}
+                                    <th class="p-2 sm:p-4 text-center text-blue-800 font-semibold border-b border-r border-gray-200 whitespace-nowrap">
+                                        {{ entry.start_time|time:'h:i A' }} - {{ entry.end_time|time:'h:i A' }}
+                                    </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for classroom in day_classrooms|get_item:day %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="p-2 sm:p-4 text-center font-semibold bg-blue-50 border-r border-gray-200 whitespace-nowrap">{{ classroom }}</td>
+                                {% for col in day_col_indices|get_item:day %}
+                                <td class="p-2 sm:p-4 text-center">
+                                    {% get_entry timetable_map day classroom col as entry %}
+                                    {% if entry %}
+                                        <div class="font-semibold text-xs sm:text-sm">{{ entry.subject }}</div>
+                                        <div class="text-gray-600 text-xs">{{ entry.faculty_name }}</div>
+                                    {% else %}
+                                        <span class="text-gray-400">-</span>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

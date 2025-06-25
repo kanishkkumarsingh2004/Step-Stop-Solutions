@@ -904,3 +904,26 @@ class InstitutionStaff(models.Model):
 
     def has_perm(self, perm):
         return perm in self.get_permissions()
+
+class Gym(models.Model):
+    gim_uid = ShortUUIDField(length=20, max_length=20, unique=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz')
+    name = models.CharField(max_length=200)
+    address = models.TextField()
+    pincode = models.CharField(max_length=6)
+    state = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
+    district = models.CharField(max_length=100)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='owned_gyms')
+    description = models.TextField()
+    website_url = models.URLField(blank=True, null=True)
+    contact_email = models.EmailField()
+    contact_phone = models.CharField(max_length=15)
+    equipment_available = models.TextField(blank=True, null=True, help_text="List of available equipment")
+    additional_services = models.TextField(blank=True, null=True, help_text="Any additional services offered")
+    is_approved = models.BooleanField(default=False, help_text="Approval status of the application")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    # Add more fields as needed
+
+    def __str__(self):
+        return f"{self.name} ({self.ssid})"

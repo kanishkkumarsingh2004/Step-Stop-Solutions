@@ -24,7 +24,10 @@ urlpatterns = [
    path('registered-institute/', views.register_institute, name='register_institute'),
    path('manage-libraries/', views.manage_libraries, name='manage_libraries'),
    path('toggle-library-approval/<int:library_id>/', views.toggle_library_approval, name='toggle_library_approval'),
-   path('manage-institutions/', views.manage_institutions, name='manage_institutions'),
+   path('admin-dashboard/manage_institutions/', views.manage_institutions, name='manage_institutions'),
+   path('admin-dashboard/manage-gyms/', views.manage_gyms, name='manage_gyms'),
+   path('admin-dashboard/gym/<int:gym_id>/toggle-approval/', views.toggle_gym_approval, name='toggle_gym_approval'),
+   path('admin-dashboard/gym/<int:gym_id>/details/', views.admin_gym_details, name='admin_gym_details'),
    
    # Library Details
    path('library-details/<int:library_id>/', views.public_library_details, name='library_details'),

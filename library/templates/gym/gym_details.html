@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gym.name }} - Gym Details{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:shadow-3xl">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-200">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <!-- Gym Name -->
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                    {{ gym.name }}
+                </h1>
+                
+                <!-- Back to Search Link -->
+                <a href="{% url 'search_gyms' %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                    &larr; Back to Search
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="p-6 sm:p-10 space-y-8 sm:space-y-10">
+            <!-- About Card -->
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 sm:p-8 shadow-lg w-full md:w-2/5">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">About Us</h2>
+                    <p class="text-gray-600 leading-relaxed text-base sm:text-lg">
+                        {{ gym.description|default:"No description provided." }}
+                    </p>
+                </div>
+
+                <!-- Contact Info Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg w-full md:w-3/5">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Contact Info</h3>
+                    <div class="space-y-3 text-gray-600">
+                        <p class="flex items-center">
+                            <i class="bi bi-envelope-fill mr-2 text-gray-500"></i>
+                            {{ gym.contact_email }}
+                        </p>
+                        <p class="flex items-center">
+                            <i class="bi bi-telephone-fill mr-2 text-gray-500"></i>
+                            {{ gym.contact_phone }}
+                        </p>
+                        {% if gym.website_url %}
+                        <p class="flex items-center">
+                            <i class="bi bi-globe mr-2 text-gray-500"></i>
+                            <a href="{{ gym.website_url }}" target="_blank" class="text-blue-600 hover:text-blue-800">Visit Website</a>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <!-- Location Card -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">📍 Location</h2>
+                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">
+                        {{ gym.address }}, {{ gym.city }}, {{ gym.state }} - {{ gym.pincode }}
+                    </p>
+                </div>
+
+                <!-- Equipment Available Card -->
+                {% if gym.equipment_available %}
+                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">🏋️ Equipment Available</h2>
+                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ gym.equipment_available }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Additional Services Card -->
+                {% if gym.additional_services %}
+                <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">✨ Additional Services</h2>
+                    <p class="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">{{ gym.additional_services }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer Section -->
+        <div class="px-6 sm:px-10 py-6 sm:py-8 border-t border-gray-100 bg-gray-50">
+            <a href="{% url 'search_gyms' %}" 
+               class="inline-flex items-center justify-center bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 text-base sm:text-lg font-semibold shadow-md hover:shadow-lg">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Gyms
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

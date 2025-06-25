@@ -15,7 +15,8 @@ from .models import (Library,
                      InstitutionBanner, 
                      InstitutionSubscriptionPlan, 
                      InstitutionExpense, 
-                     InstitutionStaff)
+                     InstitutionStaff,
+                     Gym)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -478,3 +479,79 @@ class InstitutionStaffForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['permissions'].widget = forms.CheckboxSelectMultiple(choices=InstitutionStaff.PERMISSION_CHOICES)
         self.fields['permissions'].required = False
+
+class GymRegistrationForm(forms.ModelForm):
+    class Meta:
+        model = Gym
+        fields = ['name', 'address', 'pincode', 'state', 'city', 'district', 'description', 
+                 'website_url', 'contact_email', 'contact_phone', 
+                 'equipment_available', 'additional_services']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter gym name'}),
+            'address': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Enter complete address'}),
+            'pincode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter 6-digit pincode'}),
+            'state': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter state'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter city'}),
+            'district': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter district'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control', 'placeholder': 'Describe your gym facilities and services'}),
+            'website_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Enter website URL (optional)'}),
+            'contact_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter contact email'}),
+            'contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter contact phone number'}),
+            'equipment_available': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'List available equipment (optional)'}),
+            'additional_services': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Additional services offered (optional)'}),
+        }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if len(name) < 3:
+            raise ValidationError("Gym name must be at least 3 characters long.")
+        return name
+
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if len(description) < 20:
+            raise ValidationError("Description must be at least 20 characters long.")
+        return description
+
+    def clean_pincode(self):
+        pincode = self.cleaned_data.get('pincode')
+        if not pincode.isdigit() or len(pincode) != 6:
+            raise ValidationError("Pincode must be exactly 6 digits.")
+        return pincode
+
+    def clean_contact_email(self):
+        email = self.cleaned_data.get('contact_email')
+        if Gym.objects.filter(contact_email=email).exists():
+            raise ValidationError("This email is already registered with another gym.")
+        return email
+
+    def clean_contact_phone(self):
+        phone = self.cleaned_data.get('contact_phone')
+        # Remove any non-digit characters
+        phone_clean = ''.join(filter(str.isdigit, phone))
+        if len(phone_clean) < 10:
+            raise ValidationError("Please enter a valid phone number with at least 10 digits.")
+        return phone
+
+    def clean_address(self):
+        address = self.cleaned_data.get('address')
+        if len(address) < 10:
+            raise ValidationError("Please provide a complete address (at least 10 characters).")
+        return address
+
+    def clean_website_url(self):
+        website_url = self.cleaned_data.get('website_url')
+        if website_url and not website_url.startswith(('http://', 'https://')):
+            website_url = 'https://' + website_url
+        return website_url
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Add any cross-field validation here if needed
+        return cleaned_data
+
+    def save(self, commit=True):
+        gym = super().save(commit=False)
+        if commit:
+            gym.save()
+        return gym

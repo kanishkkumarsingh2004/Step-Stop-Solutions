@@ -82,6 +82,11 @@
                                             </a>
                                         {% endfor %}
                                     {% endif %}
+                                    {% if approved_gym %}
+                                        <a href="{% url 'gym_dashboard' approved_gym.gim_uid %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                            Gym Dashboard ({{ approved_gym.name }})
+                                        </a>
+                                    {% endif %}
                                     <a href="/dashboard/" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Dashboard</a>
                                     {% if user.libraries_staffed.all %}
                                         {% for library in user.libraries_staffed.all %}
@@ -146,6 +151,12 @@
                                 <span>Staff Dashboard ({{ staff_role.institution.name }})</span>
                             </a>
                         {% endfor %}
+                    {% endif %}
+                    {% if approved_gym %}
+                        <a href="{% url 'gym_dashboard' approved_gym.gim_uid %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <i class="bi bi-heart-pulse text-xl mr-3"></i>
+                            <span>Gym Dashboard ({{ approved_gym.name }})</span>
+                        </a>
                     {% endif %}
                     <a href="/dashboard/" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
                         <i class="bi bi-speedometer2 text-xl mr-3"></i>

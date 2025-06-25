@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+    <h1 class="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">Manage Gyms</h1>
+
+    <!-- Search and Filter Form -->
+    <div class="mb-4 sm:mb-6 bg-white p-2 sm:p-4 rounded-lg shadow">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+            {% csrf_token %}
+            <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Search by name, owner, city..." class="p-2 text-sm sm:text-base border rounded">
+            <select name="status" class="p-2 text-sm sm:text-base border rounded">
+                <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+                <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+            </select>
+            <button type="submit" class="bg-blue-500 text-white p-2 text-sm sm:text-base rounded hover:bg-blue-600">Filter</button>
+        </form>
+    </div>
+
+    <!-- Gyms Table -->
+    <div class="bg-white overflow-x-auto rounded-lg shadow">
+        <table class="min-w-full bg-white">
+            <thead class="bg-gray-200 text-gray-600">
+                <tr>
+                    <th class="py-2 px-2 sm:py-3 sm:px-6 text-left text-sm sm:text-base">Gym Name</th>
+                    <th class="py-2 px-2 sm:py-3 sm:px-6 text-left text-sm sm:text-base">Owner</th>
+                    <th class="py-2 px-2 sm:py-3 sm:px-6 text-center text-sm sm:text-base">Status</th>
+                    <th class="py-2 px-2 sm:py-3 sm:px-6 text-center text-sm sm:text-base">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700">
+                {% for gym in gyms %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100" id="gym-row-{{ gym.id }}">
+                    <td class="py-2 px-2 sm:py-3 sm:px-6 text-left text-sm sm:text-base whitespace-nowrap">{{ gym.name }}</td>
+                    <td class="py-2 px-2 sm:py-3 sm:px-6 text-left text-sm sm:text-base">{{ gym.owner.get_full_name }}</td>
+                    <td class="py-2 px-2 sm:py-3 sm:px-6 text-center">
+                        <span id="status-{{ gym.id }}" class="px-2 py-1 text-xs rounded-full {% if gym.is_approved %}bg-green-200 text-green-800{% else %}bg-yellow-200 text-yellow-800{% endif %}">
+                            {% if gym.is_approved %}Approved{% else %}Pending{% endif %}
+                        </span>
+                    </td>
+                    <td class="py-2 px-2 sm:py-3 sm:px-6 text-center space-x-2">
+                        <a href="{% url 'admin_gym_details' gym.id %}" class="text-blue-500 hover:text-blue-700 text-sm sm:text-base">Details</a>
+                        <button onclick="toggleApproval('{{ gym.id }}')" id="toggle-btn-{{ gym.id }}" class="px-2 py-1 sm:px-3 sm:py-1 text-white text-sm sm:text-base rounded {% if gym.is_approved %}bg-red-500 hover:bg-red-600{% else %}bg-green-500 hover:bg-green-600{% endif %}">
+                            {% if gym.is_approved %}Disapprove{% else %}Approve{% endif %}
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="py-4 px-6 text-center text-gray-500 text-sm sm:text-base">No gyms found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function toggleApproval(gymId) {
+    const url = `/admin-dashboard/gym/${gymId}/toggle-approval/`;
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            const statusSpan = document.getElementById(`status-${gymId}`);
+            const toggleBtn = document.getElementById(`toggle-btn-${gymId}`);
+            if (data.is_approved) {
+                statusSpan.textContent = 'Approved';
+                statusSpan.className = 'px-2 py-1 text-xs rounded-full bg-green-200 text-green-800';
+                toggleBtn.textContent = 'Disapprove';
+                toggleBtn.className = 'px-2 py-1 sm:px-3 sm:py-1 text-white text-sm sm:text-base rounded bg-red-500 hover:bg-red-600';
+            } else {
+                statusSpan.textContent = 'Pending';
+                statusSpan.className = 'px-2 py-1 text-xs rounded-full bg-yellow-200 text-yellow-800';
+                toggleBtn.textContent = 'Approve';
+                toggleBtn.className = 'px-2 py-1 sm:px-3 sm:py-1 text-white text-sm sm:text-base rounded bg-green-500 hover:bg-green-600';
+            }
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+</script>
+{% endblock %}

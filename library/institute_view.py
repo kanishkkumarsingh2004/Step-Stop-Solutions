@@ -1812,12 +1812,7 @@ def allocate_card_to_institution(request):
 @login_required
 def manage_institution_staff(request, uid):
     """Manage staff for an institution."""
-    institution = get_object_or_404(Institution, uid=uid)
-
-    # Permission check: only owner can manage staff
-    if request.user != institution.owner:
-        messages.error(request, "You do not have permission to manage staff for this institution.")
-        return redirect('home')
+    institution = get_object_or_404(Institution, uid=uid)   
 
     staff_list = InstitutionStaff.objects.filter(institution=institution)
     permission_choices = InstitutionStaff.PERMISSION_CHOICES
@@ -1910,9 +1905,42 @@ def institution_staff_dashboard(request, uid):
         messages.error(request, "You are not registered as a staff member for this institution.")
         return redirect('home')
 
+    # Schedule context (copied from view_schedule)
+    timetable_entries = list(TimetableEntry.objects.filter(institution=institution).values())
+    timetable_map = {}
+    for entry in timetable_entries:
+        key = (entry['day'], entry['classroom'], entry['cell_col'])
+        timetable_map[key] = entry
+    header_time_map = {}
+    for entry in timetable_entries:
+        key = (entry['day'], entry['cell_col'])
+        if key not in header_time_map:
+            header_time_map[key] = entry
+    from collections import defaultdict
+    max_cols = defaultdict(int)
+    for entry in timetable_entries:
+        day = entry['day']
+        col = entry.get('cell_col', 0)
+        if col + 1 > max_cols[day]:
+            max_cols[day] = col + 1
+    day_col_indices = {day: list(range(max_col)) for day, max_col in max_cols.items()}
+    scheduled_classrooms = defaultdict(set)
+    for entry in timetable_entries:
+        if entry['classroom']:
+            scheduled_classrooms[entry['day']].add(entry['classroom'])
+    sorted_scheduled_classrooms = {}
+    for day, classrooms in scheduled_classrooms.items():
+        sorted_scheduled_classrooms[day] = sorted(list(classrooms))
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
     context = {
         'institution': institution,
-        'permissions': permissions
+        'permissions': permissions,
+        'days_of_week': days_of_week,
+        'timetable_map': timetable_map,
+        'header_time_map': header_time_map,
+        'day_col_indices': day_col_indices,
+        'day_classrooms': sorted_scheduled_classrooms,
     }
 
     return render(request, 'coaching/institution_staff_dashboard.html', context)
