@@ -473,6 +473,7 @@ class AdminCard(models.Model):
     card_id = models.CharField(max_length=100, unique=True)
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -480,13 +481,18 @@ class AdminCard(models.Model):
             return f"{self.card_id} - {self.library.venue_name}"
         elif self.institution:
             return f"{self.card_id} - {self.institution.name}"
+        elif self.gym:
+            return f"{self.card_id} - {self.gym.name}"
         return f"{self.card_id} - Unallocated"
 
     def clean(self):
-        if self.library and self.institution:
-            raise ValidationError("A card cannot be allocated to both a library and an institution")
-        if not self.library and not self.institution:
-            raise ValidationError("A card must be allocated to either a library or an institution")
+        allocations = [self.library, self.institution, self.gym]
+        num_allocations = sum(1 for item in allocations if item is not None)
+
+        if num_allocations > 1:
+            raise ValidationError("A card can only be allocated to one entity (library, institution, or gym) at a time.")
+        if num_allocations == 0:
+            raise ValidationError("A card must be allocated to either a library, an institution, or a gym.")
     
 class AdminExpense(models.Model):
     TYPE_CHOICES = [

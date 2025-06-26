@@ -187,10 +187,10 @@ def admin_dashboard(request):
     
     # Card allocation stats
     allocated_cards_count = AdminCard.objects.filter(
-        Q(library__isnull=False) | Q(institution__isnull=False)
+        Q(library__isnull=False) | Q(institution__isnull=False) | Q(gym__isnull=False)
     ).count()
     non_allocated_cards_count = AdminCard.objects.filter(
-        library__isnull=True, institution__isnull=True
+        library__isnull=True, institution__isnull=True, gym__isnull=True
     ).count()
 
     # Get active subscriptions
@@ -2764,7 +2764,7 @@ def allocate_card_to_library(request):
 def allocate_card_to_library_page(request):
     libraries = Library.objects.all()
     # Correctly filter for cards that are not allocated to EITHER a library or an institution.
-    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True) 
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True, gym__isnull=True)
     return render(request, 'admin_page/allocate_card_to_library.html', {
         'libraries': libraries,
         'admin_cards': admin_cards
@@ -2991,7 +2991,7 @@ def allocate_card_to_institution_page(request):
     
     institutions = Institution.objects.all()
     # Correctly filter for cards that are not allocated to EITHER a library or an institution.
-    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True)
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True, gym__isnull=True)
     return render(request, 'admin_page/allocate_card_to_institution.html', {
         'institutions': institutions,
         'admin_cards': admin_cards

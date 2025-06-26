@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error(`Error starting NFC scan: ${error}`);
-            showError(`Could not start NFC scanning. Check browser permissions and ensure a secure (HTTPS) connection.\n${error}`);
+            showError('Could not start NFC scanning. Check browser permissions and ensure a secure (HTTPS) connection.');
         }
     };
 
