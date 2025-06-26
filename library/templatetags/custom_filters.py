@@ -25,6 +25,10 @@ def get_item(dictionary, key):
         return dictionary.get(key)
     return None
 
+@register.filter(name='is_list')
+def is_list(value):
+    return isinstance(value, list)
+
 @register.simple_tag
 def get_entry(dictionary, day, arg2, col=None):
     """

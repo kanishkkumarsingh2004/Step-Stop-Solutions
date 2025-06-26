@@ -915,7 +915,7 @@ class Gym(models.Model):
     description = models.TextField()
     website_url = models.URLField(blank=True, null=True)
     contact_email = models.EmailField()
-    contact_phone = models.CharField(max_length=15)
+    contact_phone = models.JSONField(default=list, blank=True, help_text="A list of contact phone numbers.")
     equipment_available = models.TextField(blank=True, null=True, help_text="List of available equipment")
     additional_services = models.TextField(blank=True, null=True, help_text="Any additional services offered")
     is_approved = models.BooleanField(default=False, help_text="Approval status of the application")
@@ -928,7 +928,7 @@ class Gym(models.Model):
 
 
     def __str__(self):
-        return f"{self.name} ({self.ssid})"
+        return f"{self.name} ({self.gim_uid})"
 
 class GymProfileImage(models.Model):
     gym = models.OneToOneField(Gym, on_delete=models.CASCADE, related_name='profile_image')

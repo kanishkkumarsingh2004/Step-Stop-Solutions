@@ -80,9 +80,23 @@
                     <span class="text-xs sm:text-sm text-gray-600">Email</span>
                     <span class="font-semibold text-blue-600 text-sm sm:text-base md:text-lg">{{ gym.contact_email }}</span>
                 </div>
-                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                <div class="flex items-start justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                     <span class="text-xs sm:text-sm text-gray-600">Phone</span>
-                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ gym.contact_phone }}</span>
+                    <div class="flex flex-col items-end">
+                        {% if gym.contact_phone|is_list %}
+                            {% if gym.contact_phone %}
+                                <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg" style="max-width: 18ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ gym.contact_phone|join:", " }}
+                                </span>
+                            {% else %}
+                                <span class="font-semibold text-gray-500 text-sm sm:text-base md:text-lg">Not provided</span>
+                            {% endif %}
+                        {% else %}
+                             <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg" style="max-width: 15ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ gym.contact_phone }}
+                             </span>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                     <span class="text-xs sm:text-sm text-gray-600">Address</span>

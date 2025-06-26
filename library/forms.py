@@ -524,17 +524,29 @@ class GymRegistrationForm(forms.ModelForm):
 
     def clean_contact_email(self):
         email = self.cleaned_data.get('contact_email')
-        if Gym.objects.filter(contact_email=email).exists():
+        # On edit, the gym instance exists.
+        if self.instance and self.instance.pk:
+            if Gym.objects.filter(contact_email=email).exclude(pk=self.instance.pk).exists():
+                raise ValidationError("This email is already registered with another gym.")
+        elif Gym.objects.filter(contact_email=email).exists():
             raise ValidationError("This email is already registered with another gym.")
         return email
 
     def clean_contact_phone(self):
-        phone = self.cleaned_data.get('contact_phone')
-        # Remove any non-digit characters
-        phone_clean = ''.join(filter(str.isdigit, phone))
-        if len(phone_clean) < 10:
-            raise ValidationError("Please enter a valid phone number with at least 10 digits.")
-        return phone
+        contact_phone_list = self.data.getlist('contact_phone')
+        
+        cleaned_phones = []
+        for phone in contact_phone_list:
+            if phone:
+                phone_clean = ''.join(filter(str.isdigit, phone))
+                if len(phone_clean) < 10:
+                    raise ValidationError(f"Phone number '{phone}' must have at least 10 digits.")
+                cleaned_phones.append(phone)
+        
+        if not cleaned_phones:
+            raise ValidationError("At least one contact phone number is required.")
+            
+        return cleaned_phones
 
     def clean_address(self):
         address = self.cleaned_data.get('address')
@@ -555,6 +567,7 @@ class GymRegistrationForm(forms.ModelForm):
 
     def save(self, commit=True):
         gym = super().save(commit=False)
+        gym.contact_phone = self.cleaned_data['contact_phone']
         if commit:
             gym.save()
         return gym
@@ -563,6 +576,13 @@ class GymProfileImageForm(forms.ModelForm):
     class Meta:
         model = GymProfileImage
         fields = ['google_drive_link']
+
+    def save(self, commit=True):
+        gym = super().save(commit=False)
+        gym.contact_phone = self.cleaned_data['contact_phone']
+        if commit:
+            gym.save()
+        return gym
 
 class GymEditForm(forms.ModelForm):
     class Meta:
@@ -577,6 +597,30 @@ class GymEditForm(forms.ModelForm):
             'equipment_available': forms.Textarea(attrs={'rows': 2}),
             'additional_services': forms.Textarea(attrs={'rows': 2}),
         }
+
+    def clean_contact_phone(self):
+        contact_phone_list = self.data.getlist('contact_phone')
+        
+        cleaned_phones = []
+        for phone in contact_phone_list:
+            if phone:
+                phone_clean = ''.join(filter(str.isdigit, phone))
+                if len(phone_clean) < 10:
+                    raise ValidationError(f"Phone number '{phone}' must have at least 10 digits.")
+                cleaned_phones.append(phone)
+        
+        if not cleaned_phones:
+            raise ValidationError("At least one contact phone number is required.")
+            
+        return cleaned_phones
+        
+    def save(self, commit=True):
+        gym = super().save(commit=False)
+        gym.contact_phone = self.cleaned_data['contact_phone']
+        if commit:
+            gym.save()
+        return gym
+
 class GymCouponForm(forms.ModelForm):
     class Meta:
         model = GymCoupon
