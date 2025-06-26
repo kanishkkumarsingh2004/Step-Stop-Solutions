@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Balance Sheet - {{ gym.name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Balance Sheet for {{ gym.name }}</h1>
+        <a href="{% url 'gym_dashboard' gym.gim_uid %}" class="text-green-600 hover:underline">&larr; Back to Dashboard</a>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+            <div>
+                <span class="text-sm text-gray-600">Total Profit: <span class="font-bold text-green-700">₹{{ total_profit }}</span></span>
+                <span class="mx-2">|</span>
+                <span class="text-sm text-gray-600">Total Loss: <span class="font-bold text-red-600">₹{{ total_loss }}</span></span>
+            </div>
+            <div>
+                <span class="text-sm text-gray-600">Net Balance: 
+                    <span class="font-bold {% if net_balance >= 0 %}text-green-700{% else %}text-red-600{% endif %}">₹{{ net_balance }}</span>
+                </span>
+            </div>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                        <th class="px-4 py-2 text-left font-semibold text-gray-700">Date</th>
+                        <th class="px-4 py-2 text-left font-semibold text-gray-700">Type</th>
+                        <th class="px-4 py-2 text-left font-semibold text-gray-700">Description</th>
+                        <th class="px-4 py-2 text-right font-semibold text-gray-700">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    {% for txn in transactions %}
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ txn.date|date:'Y-m-d' }}</td>
+                        <td class="px-4 py-2">
+                            {% if txn.type == 'profit' %}
+                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-700">Profit</span>
+                            {% else %}
+                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-700">Loss</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-2">{{ txn.description }}</td>
+                        <td class="px-4 py-2 text-right font-mono {% if txn.type == 'profit' %}text-green-700{% else %}text-red-600{% endif %}">₹{{ txn.amount }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-gray-400 py-4">No transactions found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

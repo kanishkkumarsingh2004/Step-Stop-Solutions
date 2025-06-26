@@ -3,7 +3,7 @@ from django.views.decorators.http import require_POST, require_http_methods, req
 import re
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Q, Sum
 import json
 import base64
 from io import BytesIO
@@ -22,8 +22,8 @@ from django.urls import reverse
 from django.contrib.auth.models import AnonymousUser
 from django.utils.safestring import mark_safe
 
-from .models import Gym, GymProfileImage, GymCoupon, GymBanner, GymSubscriptionPlan, GymSubscription, GymCardLog, AdminCard
-from .forms import GymRegistrationForm, GymProfileImageForm, GymEditForm, GymCouponForm, GymBannerForm, GymSubscriptionPlanForm, GymSubscriptionPublicPaymentForm
+from .models import Gym, GymProfileImage, GymCoupon, GymBanner, GymSubscriptionPlan, GymSubscription, GymCardLog, AdminCard, GymExpense
+from .forms import GymRegistrationForm, GymProfileImageForm, GymEditForm, GymCouponForm, GymBannerForm, GymSubscriptionPlanForm, GymSubscriptionPublicPaymentForm, GymExpenseForm
 # In my_library/library/views.py
 
 
@@ -558,3 +558,196 @@ def ajax_allocate_gym_card(request, gim_uid):
     card.gym = gym
     card.save(update_fields=['gym'])
     return JsonResponse({'success': True, 'message': 'Card allocated successfully.'})
+
+@login_required
+def gym_expense_dashboard(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid)
+    if request.user != gym.owner and not request.user.is_superuser:
+        raise PermissionDenied("You do not have permission to view this gym's expenses.")
+    expenses = GymExpense.objects.filter(gym=gym).order_by('-date', '-created_at')
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
+    form = GymExpenseForm()
+    return render(request, 'gym/gym_expense_dashboard.html', {
+        'gym': gym,
+        'expenses': expenses,
+        'total_expenses': total_expenses,
+        'form': form,
+    })
+
+@login_required
+@require_POST
+@csrf_exempt
+def add_gym_expense(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid)
+    if request.user != gym.owner and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Permission denied.'}, status=403)
+    form = GymExpenseForm(request.POST)
+    if form.is_valid():
+        expense = form.save(commit=False)
+        expense.gym = gym
+        expense.save()
+        return JsonResponse({'success': True, 'message': 'Expense added successfully.'})
+    else:
+        return JsonResponse({'success': False, 'message': ' '.join([str(e) for e in form.errors.values()])}, status=400)
+
+@login_required
+def gym_balance_sheet(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid)
+    if request.user != gym.owner and not request.user.is_superuser:
+        raise PermissionDenied("You do not have permission to view this gym's balance sheet.")
+    expenses = GymExpense.objects.filter(gym=gym).order_by('date', 'created_at')
+    from .models import GymSubscription
+    profits = GymSubscription.objects.filter(
+        subscription_plan__gym=gym,
+        payment_status='valid'
+    ).order_by('created_at')
+    # Build a unified list of transactions
+    txn_list = []
+    for exp in expenses:
+        txn_list.append({
+            'date': exp.date,
+            'type': 'loss',
+            'description': exp.expense_description or exp.expense_name,
+            'amount': exp.amount,
+            'sort_time': exp.created_at,
+        })
+    for sub in profits:
+        txn_list.append({
+            'date': sub.created_at.date(),
+            'type': 'profit',
+            'description': f"Subscription payment by {sub.user.get_full_name()} ({sub.subscription_plan.name})",
+            'amount': sub.amount_paid,
+            'sort_time': sub.created_at,
+        })
+    # Sort all transactions by date and time
+    txn_list.sort(key=lambda x: (x['date'], x['sort_time']))
+    # Calculate running balance, total profit, total loss
+    balance = 0
+    total_profit = 0
+    total_loss = 0
+    transactions = []
+    for txn in txn_list:
+        if txn['type'] == 'profit':
+            balance += txn['amount']
+            total_profit += txn['amount']
+        else:
+            balance -= txn['amount']
+            total_loss += txn['amount']
+        transactions.append({
+            'date': txn['date'],
+            'type': txn['type'],
+            'description': txn['description'],
+            'amount': txn['amount'],
+            'balance': balance,
+        })
+    net_balance = total_profit - total_loss
+    context = {
+        'gym': gym,
+        'transactions': transactions,
+        'total_profit': total_profit,
+        'total_loss': total_loss,
+        'net_balance': net_balance,
+    }
+    return render(request, 'gym/gym_balance_sheet.html', context)
+
+@login_required
+def gym_analytics_page(request, gim_uid):
+    gym = get_object_or_404(Gym, gim_uid=gim_uid)
+    if request.user != gym.owner and not request.user.is_superuser:
+        raise PermissionDenied("You do not have permission to view this gym's analytics.")
+    # Get all valid profits (subscriptions) and all expenses
+    from .models import GymSubscription, GymExpense
+    profits = GymSubscription.objects.filter(subscription_plan__gym=gym, payment_status='valid').order_by('created_at')
+    expenses = GymExpense.objects.filter(gym=gym).order_by('date', 'created_at')
+    # 1. Income vs Expenses Over Time (by date)
+    date_income = defaultdict(float)
+    date_expense = defaultdict(float)
+    for sub in profits:
+        date_income[sub.created_at.date()] += float(sub.amount_paid)
+    for exp in expenses:
+        date_expense[exp.date] += float(exp.amount)
+    all_dates = sorted(set(date_income.keys()) | set(date_expense.keys()))
+    income_expense_data = {
+        'labels': [d.strftime('%Y-%m-%d') for d in all_dates],
+        'income': [date_income[d] for d in all_dates],
+        'expenses': [date_expense[d] for d in all_dates],
+    }
+    # 2. Profit vs Loss Pie
+    total_profit = sum(float(sub.amount_paid) for sub in profits)
+    total_loss = sum(float(exp.amount) for exp in expenses)
+    profit_loss_data = {
+        'profit': total_profit,
+        'loss': total_loss,
+    }
+    monthly_income = defaultdict(float)
+    monthly_expense = defaultdict(float)
+    for sub in profits:
+        key = sub.created_at.strftime('%Y-%m')
+        monthly_income[key] += float(sub.amount_paid)
+    for exp in expenses:
+        key = exp.date.strftime('%Y-%m')
+        monthly_expense[key] += float(exp.amount)
+    all_months = sorted(set(monthly_income.keys()) | set(monthly_expense.keys()))
+    monthly_trend_data = {
+        'labels': all_months,
+        'income': [monthly_income[m] for m in all_months],
+        'expenses': [monthly_expense[m] for m in all_months],
+    }
+    # 4. Payment Method Breakdown
+    payment_method_map = defaultdict(float)
+    for sub in profits:
+        if sub.payment_method:
+            payment_method_map[sub.payment_method] += float(sub.amount_paid)
+    for exp in expenses:
+        if exp.payment_mode:
+            payment_method_map[exp.payment_mode] -= float(exp.amount)
+    payment_method_data = {
+        'labels': list(payment_method_map.keys()),
+        'amounts': [payment_method_map[k] for k in payment_method_map.keys()],
+    }
+    # 5. Expense Category Bar
+    expense_category_map = defaultdict(float)
+    for exp in expenses:
+        if exp.expense_name:
+            expense_category_map[exp.expense_name] += float(exp.amount)
+    expense_category_data = {
+        'labels': list(expense_category_map.keys()),
+        'amounts': [expense_category_map[k] for k in expense_category_map.keys()],
+    }
+    # 6. Cumulative Balance Over Time
+    txn_list = []
+    for exp in expenses:
+        txn_list.append({'date': exp.date, 'type': 'loss', 'amount': float(exp.amount), 'sort_time': exp.created_at})
+    for sub in profits:
+        txn_list.append({'date': sub.created_at.date(), 'type': 'profit', 'amount': float(sub.amount_paid), 'sort_time': sub.created_at})
+    txn_list.sort(key=lambda x: (x['date'], x['sort_time']))
+    cum_balance = 0
+    cum_labels = []
+    cum_balances = []
+    for txn in txn_list:
+        if txn['type'] == 'profit':
+            cum_balance += txn['amount']
+        else:
+            cum_balance -= txn['amount']
+        cum_labels.append(txn['date'].strftime('%Y-%m-%d'))
+        cum_balances.append(cum_balance)
+    cumulative_balance_data = {
+        'labels': cum_labels,
+        'balances': cum_balances,
+    }
+
+    context = {
+        'gym': gym,
+        'income_expense_data': json.dumps(income_expense_data),
+        'profit_loss_data': json.dumps(profit_loss_data),
+        'monthly_trend_data': json.dumps(monthly_trend_data),
+        'payment_method_data': json.dumps(payment_method_data),
+        'expense_category_data': json.dumps(expense_category_data),
+        'cumulative_balance_data': json.dumps(cumulative_balance_data),
+        'total_profit': total_profit,
+        'total_loss': total_loss,
+        'net_balance': float(total_profit - total_loss)
+
+
+    }
+    return render(request, 'gym/gym_analytics.html', context)

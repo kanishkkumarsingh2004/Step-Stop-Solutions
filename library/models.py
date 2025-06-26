@@ -1096,3 +1096,39 @@ class GymSubscription(models.Model):
     def use_coupon(self):
         if self.coupon_applied:
             self.coupon_applied.use_coupon()
+
+class GymExpense(models.Model):
+    PAYMENT_MODE_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('upi', 'UPI'),
+    ]
+    EXPENSE_NAME_CHOICES = [
+        ('Wifi', 'Wifi'),
+        ('Water', 'Water'),
+        ('Chair', 'Chair'),
+        ('Table', 'Table'),
+        ('Light', 'Light'),
+        ('Books', 'Books'),
+        ('Electricity Bills', 'Electricity Bills'),
+        ('Rent Paid', 'Rent Paid'),
+        ('Stationary Items', 'Stationary Items'),
+        ('Legal Charges', 'Legal Charges'),
+        ('Others', 'Others'),
+    ]
+    
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='expenses')
+    expense_name = models.CharField(max_length=50, choices=EXPENSE_NAME_CHOICES, blank=True, null=True, help_text="Expense name for allocation log.")
+    expense_description = models.TextField(blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField()
+    payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='cash')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.expense_name} - ₹{self.amount} ({self.date})"
+
+    def clean(self):
+        if self.payment_mode in ['card', 'upi'] and not self.transaction_id:
+            raise ValidationError("Transaction ID is required for Card/UPI payments")

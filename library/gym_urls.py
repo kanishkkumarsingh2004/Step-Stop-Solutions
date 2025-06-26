@@ -26,4 +26,8 @@ urlpatterns = [
     path('gyms/<str:gim_uid>/enrolled-users/', gym_views.manage_gym_enrolled_users, name='manage_gym_enrolled_users'),
     path('gyms/<str:gim_uid>/allocate-card/', gym_views.allocate_gym_card_page, name='allocate_gym_card_page'),
     path('gyms/<str:gim_uid>/ajax-allocate-card/', gym_views.ajax_allocate_gym_card, name='ajax_allocate_gym_card'),
+    path('gyms/<str:gim_uid>/expenses/', gym_views.gym_expense_dashboard, name='gym_expense_dashboard'),
+    path('gyms/<str:gim_uid>/add-expense/', gym_views.add_gym_expense, name='add_gym_expense'),
+    path('gyms/<str:gim_uid>/balance-sheet/', gym_views.gym_balance_sheet, name='gym_balance_sheet'),
+    path('gyms/<str:gim_uid>/analytics/', gym_views.gym_analytics_page, name='gym_analytics'),
 ]

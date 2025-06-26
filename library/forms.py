@@ -20,7 +20,8 @@ from .models import (Library,
                      GymCoupon,
                      GymProfileImage,
                      GymBanner,
-                     GymSubscriptionPlan)
+                     GymSubscriptionPlan,
+                     GymExpense,)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -703,4 +704,21 @@ class GymSubscriptionPublicPaymentForm(forms.Form):
         transaction_id = cleaned_data.get('transaction_id')
         if payment_method == 'upi' and not transaction_id:
             self.add_error('transaction_id', 'Transaction ID is required for UPI payments.')
+        return cleaned_data
+    
+class GymExpenseForm(forms.ModelForm):
+    class Meta:
+        model = GymExpense
+        fields = ['expense_name', 'expense_description', 'amount', 'date', 'payment_mode', 'transaction_id']
+        widgets = {
+            'expense_description': forms.Textarea(attrs={'rows': 3}),
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_mode = cleaned_data.get('payment_mode')
+        transaction_id = cleaned_data.get('transaction_id')
+        if payment_mode in ['card', 'upi'] and not transaction_id:
+            raise forms.ValidationError("Transaction ID is required for Card/UPI payments")
         return cleaned_data

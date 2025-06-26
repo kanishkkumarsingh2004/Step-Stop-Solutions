@@ -73,8 +73,8 @@
 
         <a href="{% url 'allocate_gym_card_page' gym.gim_uid %}" 
            class="inline-flex items-center justify-center px-3 py-1.5 sm:px-5 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium text-xs sm:text-base focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
-            <i class="bi bi-people-fill mr-1 sm:mr-2 text-xs sm:text-base"></i>
-            <span class="whitespace-nowrap text-xs sm:text-sm">View Enrolled Users</span>
+            <i class="bi bi-credit-card-fill mr-1 sm:mr-2 text-xs sm:text-base"></i>
+            <span class="whitespace-nowrap text-xs sm:text-sm">Allocate NFC Card</span>
         </a>
 
         <!-- Coming Soon 2 -->
@@ -191,12 +191,12 @@
                     <i class="bi bi-image text-green-500 text-lg sm:text-xl"></i>
                     <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Gym Banners</h2>
                 </div>
-            </div>
-            <div class="space-y-1 sm:space-y-2">
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-xs text-gray-600">Banners:</span>
                     <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ gym.banners.count }}</span>
                 </div>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
                 <a href="{% url 'manage_gym_banners' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-green-50 rounded-md sm:rounded-lg hover:bg-green-100 transition-colors">
                     <span class="text-xs sm:text-sm text-green-600">Manage Banners</span>
                     <i class="bi bi-arrow-right-short text-green-600 ml-1"></i>
@@ -211,12 +211,12 @@
                     <i class="bi bi-card-list text-indigo-500 text-lg sm:text-xl"></i>
                     <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Subscription Plans</h2>
                 </div>
-            </div>
-            <div class="space-y-1 sm:space-y-2">
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-xs text-gray-600">Plans:</span>
                     <span class="font-semibold text-indigo-600 text-sm sm:text-base md:text-lg">{{ gym.subscription_plans.count }}</span>
                 </div>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
                 <a href="{% url 'manage_gym_subscription_plans' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-indigo-50 rounded-md sm:rounded-lg hover:bg-indigo-100 transition-colors">
                     <span class="text-xs sm:text-sm text-indigo-600">Manage Plans</span>
                     <i class="bi bi-arrow-right-short text-indigo-600 ml-1"></i>
@@ -236,6 +236,18 @@
                 <a href="{% url 'gym_verify_payments' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-purple-50 rounded-md sm:rounded-lg hover:bg-purple-100 transition-colors">
                     <span class="text-xs sm:text-sm text-purple-600">Go to Payment Verification</span>
                     <i class="bi bi-arrow-right-short text-purple-600 ml-1"></i>
+                </a>
+                <a href="{% url 'gym_expense_dashboard' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-green-50 rounded-md sm:rounded-lg hover:bg-green-100 transition-colors">
+                    <span class="text-xs sm:text-sm text-green-600">View Expenses</span>
+                    <i class="bi bi-arrow-right-short text-green-600 ml-1"></i>
+                </a>
+                <a href="{% url 'gym_balance_sheet' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-yellow-50 rounded-md sm:rounded-lg hover:bg-yellow-100 transition-colors">
+                    <span class="text-xs sm:text-sm text-yellow-600">View Balance Sheet</span>
+                    <i class="bi bi-arrow-right-short text-yellow-600 ml-1"></i>
+                </a>
+                <a href="{% url 'gym_analytics' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-red-50 rounded-md sm:rounded-lg hover:bg-red-100 transition-colors">
+                    <span class="text-xs sm:text-sm text-red-600">View Analytics</span>
+                    <i class="bi bi-arrow-right-short text-red-600 ml-1"></i>
                 </a>
             </div>
         </div>
