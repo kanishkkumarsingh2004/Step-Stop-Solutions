@@ -50,8 +50,7 @@
                         {% for phone in form.instance.contact_phone %}
                         <div class="relative flex items-center">
                             <input type="tel" name="contact_phone" value="{{ phone }}"
-                                   class="w-full px-3 py-2 border rounded-lg {% if forloop.first %}bg-gray-100 cursor-not-allowed{% else %}focus:ring-blue-500 focus:border-blue-500{% endif %}" 
-                                   {% if forloop.first %}readonly{% endif %}>
+                                   class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
                             {% if not forloop.first %}
                             <button type="button" class="ml-2 text-red-500 hover:text-red-700 remove-phone-btn">
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,13 +62,13 @@
                         {% empty %}
                         <div class="relative flex items-center">
                              <input type="tel" name="contact_phone" value=""
-                                class="w-full px-3 py-2 border rounded-lg bg-gray-100 cursor-not-allowed" readonly>
-                            </div>
+                                   class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
                         {% endfor %}
                     {% else %}
                          <div class="relative flex items-center">
                              <input type="tel" name="contact_phone" value="{{ form.instance.contact_phone }}"
-                                   class="w-full px-3 py-2 border rounded-lg bg-gray-100 cursor-not-allowed" readonly>
+                                   class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
                         </div>
                     {% endif %}
                 </div>

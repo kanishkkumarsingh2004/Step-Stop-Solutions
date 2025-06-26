@@ -39,7 +39,7 @@
                                 ₹{{ coupon.discount_value|floatformat:2 }}
                             {% endif %}
                         </td>
-                        <td class="py-2 px-2 sm:px-4 border-b hidden sm:table-cell">{{ coupon.valid_from|date:"d M Y, H:i" }} - {{ coupon.valid_to|date:"d M Y, H:i" }}</td>
+                        <td class="py-2 px-2 sm:px-4 border-b hidden sm:table-cell">{{ coupon.valid_from|date:"d M Y" }} - {{ coupon.valid_to|date:"d M Y" }}</td>
                         <td class="py-2 px-2 sm:px-4 border-b text-center">{{ coupon.current_usage }} / {{ coupon.max_usage }}</td>
                         <td class="py-2 px-2 sm:px-4 border-b text-center">
                             <span class="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-medium 
@@ -229,8 +229,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.querySelector('[name=code]').value = data.code;
                 form.querySelector('[name=discount_type]').value = data.discount_type;
                 form.querySelector('[name=discount_value]').value = data.discount_value;
-                form.querySelector('[name=valid_from]').value = data.valid_from;
-                form.querySelector('[name=valid_to]').value = data.valid_to;
+                
+                if (data.valid_from) {
+                    form.querySelector('[name=valid_from]').value = data.valid_from.split('T')[0];
+                }
+                if (data.valid_to) {
+                    form.querySelector('[name=valid_to]').value = data.valid_to.split('T')[0];
+                }
+                
                 form.querySelector('[name=max_usage]').value = data.max_usage;
                 form.querySelector('[name=status]').value = data.status;
                 openModal();
