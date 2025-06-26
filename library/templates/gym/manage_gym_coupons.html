@@ -130,6 +130,20 @@
                 <div class="error-container text-red-500 text-sm mt-2"></div>
             </div>
 
+            <div>
+                <label for="applicable_plans" class="block text-sm font-medium text-gray-700 mb-2">Applicable Plans</label>
+                <div class="flex flex-col gap-1">
+                    {% for plan in form.fields.applicable_plans.queryset %}
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="applicable_plans" value="{{ plan.id }}" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded" {% if plan.id in selected_plan_ids %}checked{% endif %}>
+                            <span class="ml-2 text-gray-700">{{ plan.name }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Leave all unchecked to apply this coupon to all plans.</p>
+                <div class="error-container text-red-500 text-sm mt-2"></div>
+            </div>
+
             <div class="pt-6 flex justify-end space-x-4">
                 <button type="button" id="cancel-btn" class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
                     Cancel
@@ -239,6 +253,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 form.querySelector('[name=max_usage]').value = data.max_usage;
                 form.querySelector('[name=status]').value = data.status;
+
+                // --- Checkbox logic for applicable_plans ---
+                // Uncheck all first
+                form.querySelectorAll('input[name=\"applicable_plans\"]').forEach(cb => {
+                    cb.checked = false;
+                });
+                // Check those in data.applicable_plans
+                if (Array.isArray(data.applicable_plans)) {
+                    data.applicable_plans.forEach(function(planId) {
+                        const cb = form.querySelector('input[name=\"applicable_plans\"][value=\"' + planId + '\"]');
+                        if (cb) cb.checked = true;
+                    });
+                }
+                // --- End checkbox logic ---
                 openModal();
             });
     }

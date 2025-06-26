@@ -44,7 +44,8 @@ from .models import (
     TimetableEntry,
     LibraryCardLog,
     InstitutionCardLog,
-    Gym
+    Gym,
+    GymSubscription,
 )
 # Python standard library imports
 import json
@@ -157,13 +158,31 @@ def dashboard(request):
         }
         institute_subscriptions.append(subscription_data)
 
-    # Get recent attendance records
-    attendances = LibraryAttendance.objects.filter(user=request.user).order_by('-check_in_time')[:10]
+    # Get gym subscriptions for the user
+    gym_subscriptions = []
+    for sub in GymSubscription.objects.filter(user=request.user).select_related('subscription_plan__gym'):
+        plan = sub.subscription_plan
+        gym = plan.gym
+        payment_status = sub.payment_status
+        payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
+        gym_subscriptions.append({
+            'plan': plan,
+            'gym': gym,
+            'start_date': sub.start_date,
+            'end_date': sub.end_date,
+            'amount_paid': sub.amount_paid,
+            'payment_status': {
+                'status': payment_status,
+                'color': payment_color
+            },
+            'status': sub.status,
+            'transaction_id': sub.transaction_id,
+        })
 
     context = {
         'active_subscriptions': active_subscriptions,
         'institute_subscriptions': institute_subscriptions,
-        'attendances': attendances,
+        'gym_subscriptions': gym_subscriptions,  # <-- add to context
     }
     return render(request, 'users_pages/dashboard.html', context)
 
@@ -2252,23 +2271,41 @@ def manage_banner_counts(request):
     
     if request.method == 'POST':
         library_id = request.POST.get('library_id')
+        institution_id = request.POST.get('institution_id')
+        gym_id = request.POST.get('gym_id')
         max_banners = request.POST.get('max_banners')
+        msg = ''
         if library_id:
             library = get_object_or_404(Library, id=library_id)
             library.max_banners = max_banners
             library.save()
-            messages.success(request, 'Library banner count updated successfully!')
-        else:
-            institution_id = request.POST.get('institution_id')
+            msg = 'Library banner count updated successfully!'
+        elif institution_id:
             institution = get_object_or_404(Institution, id=institution_id)
             institution.max_banners = max_banners
             institution.save()
-            messages.success(request, 'Institution banner count updated successfully!')
+            msg = 'Institution banner count updated successfully!'
+        elif gym_id:
+            gym = get_object_or_404(Gym, id=gym_id)
+            gym.max_banners = max_banners
+            gym.save()
+            msg = 'Gym banner count updated successfully!'
+        else:
+            msg = 'No valid entity provided for banner update.'
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': msg})
+            messages.error(request, msg)
+            return redirect('manage_banner_counts')
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': msg})
+        messages.success(request, msg)
         return redirect('manage_banner_counts')
     
     search_query = request.GET.get('search', '')
     libraries = Library.objects.all()
     institutions = Institution.objects.all()
+    gyms = Gym.objects.all()
     
     if search_query:
         libraries = libraries.filter(
@@ -2281,10 +2318,16 @@ def manage_banner_counts(request):
             Q(owner__last_name__icontains=search_query) |
             Q(name__icontains=search_query)
         )
+        gyms = gyms.filter(
+            Q(owner__first_name__icontains=search_query) |
+            Q(owner__last_name__icontains=search_query) |
+            Q(name__icontains=search_query)
+        )
     
     return render(request, 'admin_page/manage_banner_counts.html', {
         'libraries': libraries,
         'institutions': institutions,
+        'gyms': gyms,
         'search_query': search_query
     })
 

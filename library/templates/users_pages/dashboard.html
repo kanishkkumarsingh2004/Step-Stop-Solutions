@@ -79,25 +79,11 @@
                             </p>
                         </div>
                     </div>
-                    
-                    <div class="grid grid-cols-1 gap-2 sm:gap-4 bg-gray-100 p-2 sm:p-3 rounded-md">
-                        <div class="text-center">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Amount Paid</p>
-                            <p class="text-sm sm:text-base font-bold text-blue-600">₹{{ subscription.amount_paid }}</p>
-                        </div>
-                    </div>
                     {% if subscription.has_timetable and subscription.status == 'Valid' and subscription.payment_status.status == 'valid' %}
                     <div class="mt-2 text-center">
                         <a href="{% url 'view_schedule' uid=subscription.subscription_plan.institution.uid %}" class="text-sm text-blue-600 hover:underline">View Timetable</a>
                     </div>
                     {% endif %}
-    <!--                     
-                        {% if subscription.coupon_applied %}
-                        <div class="mt-2 text-center">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Coupon Applied</p>
-                            <p class="text-sm font-bold text-green-600">{{ subscription.coupon_applied.code }}</p>
-                        </div>
-                        {% endif %} -->
                 </div>
                 {% endfor %}
             </div>
@@ -123,10 +109,13 @@
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
                                 Payment: {{ subscription.payment_status.status|title }}
                             </span>
-                        </div>
-                        <div class="flex items-end justify-end">
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.subscription_status.color }}-100 text-{{ subscription.subscription_status.color }}-800">
                                 Subscription: {{ subscription.subscription_status.status|title }}
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
+                                {{ subscription.subscription.library.venue_name }}
                             </span>
                         </div>
                     </div>
@@ -172,36 +161,55 @@
             </div>
             {% endif %}
         </div>
-    </div>
 
-    <!-- Attendance Section - Responsive Table Format -->
-    <div class="bg-white p-4 rounded-lg shadow">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4 text-center">Recent Attendance</h2>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
-                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for attendance in attendances %}
-                    <tr>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">{{ attendance.check_in_time|date:"M d, Y" }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-center">{{ attendance.check_in_time|time:"H:i:s" }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-center">
-                            {% if attendance.check_out_time %}
-                                {{ attendance.check_out_time|time:"H:i:s" }}
-                            {% else %}
-                                <span class="text-gray-400">-</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- Gym Subscription Status Card -->
+        {% if gym_subscriptions %}
+        <div class="bg-white p-4 rounded-lg shadow">
+            <div class="flex flex-col space-y-2 mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">Gym Subscriptions</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for sub in gym_subscriptions %}
+                <div class="p-3 border rounded-lg bg-gray-50">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div class="flex flex-col space-y-1">
+                            <h3 class="text-sm font-bold text-gray-900">{{ sub.plan.name }}</h3>
+                            <div class="flex flex-col space-y-1">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium 
+                                    bg-{% if sub.status == 'valid' %}green{% else %}red{% endif %}-100 
+                                    text-{% if sub.status == 'valid' %}green{% else %}red{% endif %}-800">
+                                    Subscription: {{ sub.status|title }}
+                                </span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ sub.payment_status.color }}-100 text-{{ sub.payment_status.color }}-800">
+                                    Payment: {{ sub.payment_status.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
+                                {{ sub.gym.name }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                        <div>
+                            <p class="text-xs text-gray-500">Start Date</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ sub.start_date|date:"F d, Y" }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">End Date</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ sub.end_date|date:"F d, Y" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
+        {% endif %}
     </div>
+</div>
 {% endblock %}

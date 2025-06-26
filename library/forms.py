@@ -19,7 +19,8 @@ from .models import (Library,
                      Gym,
                      GymCoupon,
                      GymProfileImage,
-                     GymBanner)
+                     GymBanner,
+                     GymSubscriptionPlan)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -539,9 +540,9 @@ class GymRegistrationForm(forms.ModelForm):
         for phone in contact_phone_list:
             if phone:
                 phone_clean = ''.join(filter(str.isdigit, phone))
-                if len(phone_clean) < 10:
-                    raise ValidationError(f"Phone number '{phone}' must have at least 10 digits.")
-                cleaned_phones.append(phone)
+        if len(phone_clean) < 10:
+            raise ValidationError(f"Phone number '{phone}' must have at least 10 digits.")
+        cleaned_phones.append(phone)
         
         if not cleaned_phones:
             raise ValidationError("At least one contact phone number is required.")
@@ -624,11 +625,20 @@ class GymEditForm(forms.ModelForm):
 class GymCouponForm(forms.ModelForm):
     class Meta:
         model = GymCoupon
-        fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'max_usage', 'status']
+        fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'max_usage', 'status', 'applicable_plans']
         widgets = {
             'valid_from': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'valid_to': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'applicable_plans': forms.SelectMultiple(attrs={'class': 'select2'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        gym = kwargs.pop('gym', None)
+        super().__init__(*args, **kwargs)
+        if gym:
+            self.fields['applicable_plans'].queryset = gym.subscription_plans.all()
+        else:
+            self.fields['applicable_plans'].queryset = GymSubscriptionPlan.objects.none()
 
 class GymBannerForm(forms.ModelForm):
     class Meta:
@@ -650,3 +660,47 @@ class GymBannerForm(forms.ModelForm):
         if not GymBanner.extract_file_id(link):
             raise forms.ValidationError("Could not extract file ID from the provided link")
         return link
+
+class GymSubscriptionPlanForm(forms.ModelForm):
+    class Meta:
+        model = GymSubscriptionPlan
+        fields = [
+            'name',
+            'description',
+            'duration_in_months',
+            'duration_in_hours',
+            'price',
+            'discount_price',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Describe the plan'}),
+            'price': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'discount_price': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'duration_in_months': forms.NumberInput(attrs={'min': '1', 'class': 'form-control'}),
+            'duration_in_hours': forms.NumberInput(attrs={'min': '0', 'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        price = cleaned_data.get('price')
+        discount_price = cleaned_data.get('discount_price')
+        if discount_price is not None and price is not None and discount_price > price:
+            self.add_error('discount_price', 'Discount price cannot be greater than the original price.')
+        return cleaned_data
+
+class GymSubscriptionPublicPaymentForm(forms.Form):
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('upi', 'UPI'),
+    ]
+    payment_method = forms.ChoiceField(choices=PAYMENT_METHOD_CHOICES, required=True)
+    transaction_id = forms.CharField(max_length=100, required=False)
+    coupon_code = forms.CharField(max_length=20, required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_method = cleaned_data.get('payment_method')
+        transaction_id = cleaned_data.get('transaction_id')
+        if payment_method == 'upi' and not transaction_id:
+            self.add_error('transaction_id', 'Transaction ID is required for UPI payments.')
+        return cleaned_data

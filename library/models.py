@@ -970,6 +970,7 @@ class GymCoupon(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ACTIVE')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    applicable_plans = models.ManyToManyField('GymSubscriptionPlan', blank=True, help_text="Plans this coupon can be applied to")
 
     class Meta:
         ordering = ['-created_at']
@@ -1004,6 +1005,11 @@ class GymCoupon(models.Model):
             discount = self.discount_value
         
         return max(0, amount - discount)
+
+    def is_applicable_to_plan(self, plan):
+        if not self.applicable_plans.exists():
+            return True
+        return plan in self.applicable_plans.all()
     
 
 # In models.py
@@ -1036,3 +1042,57 @@ class GymBanner(models.Model):
 
     def __str__(self):
         return f"Banner for {self.gym.name}"
+
+class GymSubscriptionPlan(models.Model):
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='subscription_plans')
+    name = models.CharField(max_length=255, help_text="Name of the subscription plan")
+    description = models.TextField(blank=True, null=True, help_text="Description of the plan")
+    duration_in_months = models.PositiveIntegerField(help_text="Duration of the subscription in months")
+    duration_in_hours = models.PositiveIntegerField(default=0, help_text="Duration in hours (if applicable)")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of the subscription plan")
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Discounted price (if any)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.gym.name}"
+
+    @property
+    def has_discount(self):
+        return self.discount_price is not None and self.discount_price < self.price
+
+class GymSubscription(models.Model):
+    STATUS_CHOICES = [
+        ('valid', 'Valid'),
+        ('expired', 'Expired'),
+    ]
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('valid', 'Valid'),
+        ('invalid', 'Invalid'),
+    ]
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='gym_subscriptions')
+    subscription_plan = models.ForeignKey(GymSubscriptionPlan, on_delete=models.CASCADE, related_name='subscriptions')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='valid')
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=20, blank=True, null=True)
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    coupon_applied = models.ForeignKey('GymCoupon', on_delete=models.SET_NULL, null=True, blank=True, related_name='applied_subscriptions')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.subscription_plan.name}"
+
+    def save(self, *args, **kwargs):
+        today = timezone.now().date()
+        if self.end_date < today:
+            self.status = 'expired'
+        super().save(*args, **kwargs)
+
+    def use_coupon(self):
+        if self.coupon_applied:
+            self.coupon_applied.use_coupon()

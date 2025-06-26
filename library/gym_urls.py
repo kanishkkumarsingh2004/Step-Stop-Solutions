@@ -17,4 +17,13 @@ urlpatterns = [
     path('gyms/<str:gim_uid>/update-upi/', gym_views.update_gym_upi_details, name='update_gym_upi_details'),
     path('gyms/<str:gim_uid>/banners/', gym_views.manage_gym_banners, name='manage_gym_banners'),
     path('gyms/<str:gim_uid>/remove-banner/', gym_views.remove_gym_banner, name='remove_gym_banner'),
+    path('gyms/<str:gim_uid>/subscription-plans/', gym_views.manage_gym_subscription_plans, name='manage_gym_subscription_plans'),
+    path('gyms/<str:gim_uid>/plans/', gym_views.public_gym_subscription_plans, name='public_gym_subscription_plans'),
+    path('gyms/<str:gim_uid>/apply-coupon/', gym_views.ajax_apply_gym_coupon, name='ajax_apply_gym_coupon'),
+    path('gyms/<str:gim_uid>/plans/<int:plan_id>/payment/', gym_views.public_gym_subscription_payment, name='public_gym_subscription_payment'),
+    path('gyms/<str:gim_uid>/plans/<int:plan_id>/payment/success/', gym_views.public_gym_subscription_success, name='public_gym_subscription_success'),
+    path('gyms/<str:gim_uid>/verify-payments/', gym_views.gym_verify_payments, name='gym_verify_payments'),
+    path('gyms/<str:gim_uid>/enrolled-users/', gym_views.manage_gym_enrolled_users, name='manage_gym_enrolled_users'),
+    path('gyms/<str:gim_uid>/allocate-card/', gym_views.allocate_gym_card_page, name='allocate_gym_card_page'),
+    path('gyms/<str:gim_uid>/ajax-allocate-card/', gym_views.ajax_allocate_gym_card, name='ajax_allocate_gym_card'),
 ]

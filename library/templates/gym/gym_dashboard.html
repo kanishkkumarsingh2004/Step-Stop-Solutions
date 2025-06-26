@@ -62,6 +62,27 @@
             </div>
         </div>
     </div>
+    <!-- Enrolled Users Button -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <!-- Enrolled Users -->
+        <a href="{% url 'manage_gym_enrolled_users' gym.gim_uid %}" 
+           class="inline-flex items-center justify-center px-3 py-1.5 sm:px-5 sm:py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium text-xs sm:text-base focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+            <i class="bi bi-people-fill mr-1 sm:mr-2 text-xs sm:text-base"></i>
+            <span class="whitespace-nowrap text-xs sm:text-sm">View Enrolled Users</span>
+        </a>
+
+        <a href="{% url 'allocate_gym_card_page' gym.gim_uid %}" 
+           class="inline-flex items-center justify-center px-3 py-1.5 sm:px-5 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium text-xs sm:text-base focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+            <i class="bi bi-people-fill mr-1 sm:mr-2 text-xs sm:text-base"></i>
+            <span class="whitespace-nowrap text-xs sm:text-sm">View Enrolled Users</span>
+        </a>
+
+        <!-- Coming Soon 2 -->
+        <div class="inline-flex items-center justify-center px-3 py-1.5 sm:px-5 sm:py-2.5 bg-gray-400 text-white rounded-lg shadow-md font-medium text-xs sm:text-base cursor-not-allowed">
+            <i class="bi bi-clock-history mr-1 sm:mr-2 text-xs sm:text-base"></i>
+            <span class="whitespace-nowrap text-xs sm:text-sm">Coming Soon</span>
+        </div>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <!-- Gym Details Card -->
         <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
@@ -179,6 +200,42 @@
                 <a href="{% url 'manage_gym_banners' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-green-50 rounded-md sm:rounded-lg hover:bg-green-100 transition-colors">
                     <span class="text-xs sm:text-sm text-green-600">Manage Banners</span>
                     <i class="bi bi-arrow-right-short text-green-600 ml-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Subscription Plans Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4 mb-6">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="bi bi-card-list text-indigo-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Subscription Plans</h2>
+                </div>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs text-gray-600">Plans:</span>
+                    <span class="font-semibold text-indigo-600 text-sm sm:text-base md:text-lg">{{ gym.subscription_plans.count }}</span>
+                </div>
+                <a href="{% url 'manage_gym_subscription_plans' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-indigo-50 rounded-md sm:rounded-lg hover:bg-indigo-100 transition-colors">
+                    <span class="text-xs sm:text-sm text-indigo-600">Manage Plans</span>
+                    <i class="bi bi-arrow-right-short text-indigo-600 ml-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Verify Payments Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4 mb-6">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="bi bi-person-check text-purple-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Verify Payments</h2>
+                </div>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
+                <a href="{% url 'gym_verify_payments' gym.gim_uid %}" class="flex items-center justify-center p-1.5 sm:p-2 md:p-3 bg-purple-50 rounded-md sm:rounded-lg hover:bg-purple-100 transition-colors">
+                    <span class="text-xs sm:text-sm text-purple-600">Go to Payment Verification</span>
+                    <i class="bi bi-arrow-right-short text-purple-600 ml-1"></i>
                 </a>
             </div>
         </div>
