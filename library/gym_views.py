@@ -22,7 +22,7 @@ from django.urls import reverse
 from django.contrib.auth.models import AnonymousUser
 from django.utils.safestring import mark_safe
 
-from .models import Gym, GymProfileImage, GymCoupon, GymBanner, GymSubscriptionPlan, GymSubscription, GymCardLog, AdminCard, GymExpense
+from .models import Gym, GymProfileImage, GymCoupon, GymBanner, GymSubscriptionPlan, GymSubscription, GymCardLog, AdminCard, GymExpense, CustomUser
 from .forms import GymRegistrationForm, GymProfileImageForm, GymEditForm, GymCouponForm, GymBannerForm, GymSubscriptionPlanForm, GymSubscriptionPublicPaymentForm, GymExpenseForm
 # In my_library/library/views.py
 
@@ -558,6 +558,111 @@ def ajax_allocate_gym_card(request, gim_uid):
     card.gym = gym
     card.save(update_fields=['gym'])
     return JsonResponse({'success': True, 'message': 'Card allocated successfully.'})
+
+@require_POST
+@login_required
+def check_gym_nfc_allocation(request, gim_uid):
+    """Check if an NFC card is allocated to a specific gym and to which user."""
+    gym = get_object_or_404(Gym, gim_uid=gim_uid)
+    
+    try:
+        data = json.loads(request.body)
+        nfc_serial = data.get('nfc_serial')
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'success': False, 'error': 'Invalid request body.'}, status=400)
+
+    if not nfc_serial:
+        return JsonResponse({'success': False, 'error': 'NFC serial is required.'}, status=400)
+
+    # Check if the card is assigned to this gym in the AdminCard table
+    try:
+        admin_card = AdminCard.objects.get(card_id=nfc_serial, gym=gym)
+    except AdminCard.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'This card is not allocated to this gym.'})
+
+    # Check the log to see which user (if any) it's currently assigned to
+    card_log = GymCardLog.objects.filter(gym=gym, card_id=nfc_serial).order_by('-timestamp').first()
+
+    if card_log and card_log.user:
+        return JsonResponse({
+            'success': True,
+            'allocated': True,
+            'user_full_name': card_log.user.get_full_name(),
+            'user_email': card_log.user.email,
+        })
+    else:
+        # Card is for the gym but not assigned to a specific user yet
+        return JsonResponse({
+            'success': True,
+            'allocated': False,
+            'message': 'Card is available for allocation.'
+        })
+
+@require_POST
+@login_required
+def allocate_gym_nfc(request, gim_uid):
+    """AJAX view to allocate an NFC card to a user for a specific gym."""
+    gym = get_object_or_404(Gym, gim_uid=gim_uid)
+    if gym.owner != request.user:
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        nfc_serial = data.get('nfc_serial')
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'success': False, 'error': 'Invalid request body.'}, status=400)
+
+    if not user_id or not nfc_serial:
+        return JsonResponse({'success': False, 'error': 'User and NFC serial are required.'}, status=400)
+
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    # Ensure the card is allocated to this gym and is available
+    admin_card = get_object_or_404(AdminCard, card_id=nfc_serial, gym=gym)
+
+    # Check if the user is already assigned a card for this gym
+    if GymCardLog.objects.filter(gym=gym, user=user).exists():
+        return JsonResponse({'success': False, 'error': 'This user is already allocated a card.'}, status=400)
+
+    # Log the new allocation
+    GymCardLog.objects.create(
+        gym=gym,
+        user=user,
+        card_id=nfc_serial,
+        allocated_by=request.user
+    )
+    
+    return JsonResponse({'success': True, 'message': 'Card allocated successfully.'})
+
+@require_POST
+@login_required
+def deallocate_gym_nfc(request, gim_uid):
+    """AJAX view to deallocate an NFC card from a user for a specific gym."""
+    gym = get_object_or_404(Gym, gim_uid=gim_uid)
+    if gym.owner != request.user:
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        nfc_serial = data.get('nfc_serial')
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'success': False, 'error': 'Invalid request body.'}, status=400)
+
+    if not nfc_serial:
+        return JsonResponse({'success': False, 'error': 'NFC serial is required.'}, status=400)
+
+    # Find the log entry to deallocate
+    card_log = GymCardLog.objects.filter(gym=gym, card_id=nfc_serial).order_by('-timestamp').first()
+
+    if not card_log or not card_log.user:
+        return JsonResponse({'success': False, 'error': 'Card is not allocated to a user or cannot be found.'}, status=404)
+
+    # We can "deallocate" by creating a new log entry with user=None, or by deleting the log.
+    # For simplicity here, we'll just delete the log.
+    card_log.delete()
+    
+    return JsonResponse({'success': True, 'message': 'Card deallocated successfully.'})
 
 @login_required
 def gym_expense_dashboard(request, gim_uid):

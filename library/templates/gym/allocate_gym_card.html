@@ -43,26 +43,6 @@
                 <div id="nfc-user-info" class="bg-gray-50 p-4 sm:p-6 rounded-lg border border-gray-200">
                     <!-- Dynamic user info will be displayed here -->
                 </div>
-
-                <!-- Expense Name Dropdown for Allocation Log -->
-                <div class="space-y-2">
-                    <label for="expense-name-select" class="block text-xs sm:text-sm font-medium text-gray-700">Expense Name (for allocation log)</label>
-                    <select id="expense-name-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-xs sm:text-sm transition-all duration-200">
-                        <option value="">-- Select Expense --</option>
-                        <option value="Wifi">Wifi</option>
-                        <option value="Water">Water</option>
-                        <option value="Chair">Chair</option>
-                        <option value="Table">Table</option>
-                        <option value="Light">Light</option>
-                        <option value="Books">Books</option>
-                        <option value="Electricity Bills">Electricity Bills</option>
-                        <option value="Rent Paid">Rent Paid</option>
-                        <option value="Stationary Items">Stationary Items</option>
-                        <option value="Legal Charges">Legal Charges</option>
-                        <option value="Others">Others</option>
-                    </select>
-                </div>
-
                 <!-- User Selection -->
                 <div class="space-y-2">
                     <label for="user-select" class="block text-xs sm:text-sm font-medium text-gray-700">Select User for Activation</label>
@@ -104,7 +84,7 @@
 </div>
 
 <!-- Hidden Elements -->
-<input type="hidden" id="gym_id" value="{{ gym.id }}">
+<input type="hidden" id="gym_id" value="{{ gym.gim_uid }}">
 <div id="deallocate-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-2xl p-6 max-w-md w-full">
         <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Confirm Deallocation</h3>
