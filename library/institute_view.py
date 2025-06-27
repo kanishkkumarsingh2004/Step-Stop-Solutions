@@ -1728,11 +1728,21 @@ def allocate_card_to_institution_page(request, uid):
         subscription_plan__institution=institution
     ).values_list('user_id', flat=True).distinct()
 
-    enrolled_users = CustomUser.objects.filter(id__in=enrolled_user_ids)
+    # Get users without card by checking InstitutionCardLog
+    users_with_card = InstitutionCardLog.objects.filter(
+        institution=institution
+    ).values_list('user_id', flat=True).distinct()
 
-    # Augment user data with card and subscription status
+    # Get enrolled users who don't have a card assigned
+    users_without_card = CustomUser.objects.filter(
+        id__in=enrolled_user_ids
+    ).exclude(
+        id__in=users_with_card
+    )
+
+    # Augment user data with subscription status
     users_with_status = []
-    for user in enrolled_users:
+    for user in users_without_card:
         has_active_subscription = InstitutionSubscription.objects.filter(
             user=user,
             subscription_plan__institution=institution,

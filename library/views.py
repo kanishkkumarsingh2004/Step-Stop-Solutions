@@ -3301,7 +3301,6 @@ def allocate_institution_card(request):
             logger.error(f"Error in allocate_institution_card: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 @login_required
 @csrf_exempt
 def deallocate_institution_nfc(request):
@@ -3318,21 +3317,14 @@ def deallocate_institution_nfc(request):
             if card.institution is None:
                 return JsonResponse({'error': 'This card is not allocated to any institution'}, status=400)
 
-            # Find the user to log the deallocation against
-            last_log = InstitutionCardLog.objects.filter(card_id=nfc_serial, institution=card.institution).order_by('-timestamp').first()
-            user_to_deallocate = last_log.user if last_log else None
-
-            # Log the deallocation
-            InstitutionCardLog.objects.create(
-                institution=card.institution,
-                user=user_to_deallocate,
-                card_id=nfc_serial,
-                allocated_by=request.user,
-                notes=f"Card deallocated from user {user_to_deallocate.get_full_name() if user_to_deallocate else 'N/A'}"
-            )
+            # Delete all allocation logs for this card
+            InstitutionCardLog.objects.filter(card_id=nfc_serial, institution=card.institution).delete()
+            
+            # Remove institution association from the card
             card.institution = None
             card.save()
-            return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
+            
+            return JsonResponse({'success': True, 'message': 'NFC ID deallocated and all related data deleted successfully'})
         except Exception as e:
             logger.error(f"Error in deallocate_institution_nfc: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
