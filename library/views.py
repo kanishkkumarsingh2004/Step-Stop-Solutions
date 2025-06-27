@@ -3445,18 +3445,27 @@ def allocate_card_to_gym_page(request):
 @csrf_exempt
 def allocate_card_to_gym(request):
     if request.method == 'POST':
-        gym_id = request.POST.get('gym_id')
-        nfc_serials = request.POST.getlist('nfc_serials')
+        try:
+            data = json.loads(request.body)
+            gym_id = data.get('gym_id')
+            nfc_serials = data.get('nfc_serials', [])
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON.'}, status=400)
+
+        if not gym_id or not nfc_serials:
+            return JsonResponse({'success': False, 'message': 'Missing gym ID or NFC serials.'}, status=400)
+
         errors = []
         allocated = []
         try:
-            gym = Gym.objects.get(id=gym_id)
+            gym = Gym.objects.get(id=gym_id)  # Using ID as per the form
         except Gym.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Gym not found.'}, status=404)
+
         for serial in nfc_serials:
             try:
                 card = AdminCard.objects.get(card_id=serial)
-                if card.library or card.institution or card.gym:
+                if card.is_allocated():
                     errors.append(f'Card {serial} is already allocated.')
                     continue
                 card.gym = gym
@@ -3464,7 +3473,15 @@ def allocate_card_to_gym(request):
                 allocated.append(serial)
             except AdminCard.DoesNotExist:
                 errors.append(f'Card {serial} not found.')
+
         if errors:
-            return JsonResponse({'success': False, 'message': 'Some cards could not be allocated.', 'errors': errors, 'allocated': allocated}, status=400)
-        return redirect('allocate_card_to_gym_page')
-    return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
+            return JsonResponse({
+                'success': False, 
+                'message': 'Some cards could not be allocated.', 
+                'errors': errors, 
+                'allocated': allocated
+            }, status=400)
+        
+        return JsonResponse({'success': True, 'message': 'Cards allocated successfully.'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)

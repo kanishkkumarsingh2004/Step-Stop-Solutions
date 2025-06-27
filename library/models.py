@@ -485,6 +485,10 @@ class AdminCard(models.Model):
             return f"{self.card_id} - {self.gym.name}"
         return f"{self.card_id} - Unallocated"
 
+    def is_allocated(self):
+        """Check if the card is allocated to any entity."""
+        return self.library is not None or self.institution is not None or self.gym is not None
+
     def clean(self):
         allocations = [self.library, self.institution, self.gym]
         num_allocations = sum(1 for item in allocations if item is not None)
