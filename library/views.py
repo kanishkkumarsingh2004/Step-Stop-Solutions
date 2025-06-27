@@ -3261,35 +3261,33 @@ def allocate_institution_card(request):
             user_id = data.get("user_id")
             institution_id = data.get("institution_id")
 
-            if not nfc_serial or not user_id or not institution_id:
+            if not all([nfc_serial, user_id, institution_id]):
                 return JsonResponse({'error': 'NFC serial, user ID, and institution ID are required'}, status=400)
 
-            # Check if card exists and is unallocated
+            institution = get_object_or_404(Institution, id=institution_id)
+            user = get_object_or_404(CustomUser, id=user_id)
+
+            # Check if card is registered and allocated to THIS institution
             try:
-                card = AdminCard.objects.get(card_id=nfc_serial)
+                admin_card = AdminCard.objects.get(card_id=nfc_serial, institution=institution)
             except AdminCard.DoesNotExist:
-                return JsonResponse({'error': 'This card is not registered in the system'}, status=400)
-            if card.institution is not None:
-                return JsonResponse({'error': 'This card is already allocated to an institution'}, status=400)
+                return JsonResponse({'error': 'This card is not allocated to this institution.'}, status=400)
 
-            # Check if user already has a card (by log)
-            if InstitutionCardLog.objects.filter(user_id=user_id, institution_id=institution_id).exists():
-                return JsonResponse({'error': 'This user already has a card allocated in this institution'}, status=400)
+            # Check if the user already has a card allocated in this institution
+            if InstitutionCardLog.objects.filter(user=user, institution=institution).exists():
+                return JsonResponse({'error': 'This user already has a card allocated in this institution.'}, status=400)
+            
+            # Check if the specific card is already assigned to another user in this institution
+            if InstitutionCardLog.objects.filter(card_id=nfc_serial, institution=institution).exists():
+                return JsonResponse({'error': 'This card is already assigned to another user.'}, status=400)
 
-            user = CustomUser.objects.get(id=user_id)
-            institution = Institution.objects.get(id=institution_id)
-
-            # Allocate card
-            with transaction.atomic():
-                card.institution = institution
-                card.save()
-                InstitutionCardLog.objects.create(
-                    institution=institution,
-                    user=user,
-                    card_id=nfc_serial,
-                    allocated_by=request.user,
-                    notes="Card allocated"
-                )
+            # Log the allocation
+            InstitutionCardLog.objects.create(
+                institution=institution,
+                user=user,
+                card_id=nfc_serial,
+                allocated_by=request.user
+            )
             return JsonResponse({
                 'success': True,
                 'message': 'User activated successfully',
