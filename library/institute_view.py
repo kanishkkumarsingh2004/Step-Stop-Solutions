@@ -1962,3 +1962,24 @@ def institution_staff_dashboard(request, uid):
     }
 
     return render(request, 'coaching/institution_staff_dashboard.html', context)
+
+@login_required
+def manage_institution_cards(request):
+    # Only get cards that are allocated to an institution
+    allocated_cards = AdminCard.objects.filter(institution__isnull=False).select_related('institution')
+    
+    search_query = request.GET.get('search')
+    if search_query:
+        allocated_cards = allocated_cards.filter(
+            Q(card_id__icontains=search_query) |
+            Q(institution__name__icontains=search_query)
+        )
+    
+    paginator = Paginator(allocated_cards, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'allocated_cards': page_obj,
+    }
+    return render(request, 'coaching/manage_institution_cards.html', context)

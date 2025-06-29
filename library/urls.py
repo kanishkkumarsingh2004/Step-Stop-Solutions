@@ -201,4 +201,8 @@ urlpatterns = [
    path('check_institution_nfc_allocation/', views.check_institution_nfc_allocation, name='check_institution_nfc_allocation'),
    path('admin-dashboard/allocate-card-to-gym/', views.allocate_card_to_gym_page, name='allocate_card_to_gym_page'),
    path('admin-dashboard/allocate-card-to-gym/submit/', views.allocate_card_to_gym, name='allocate_card_to_gym'),
+   path('manage-gym-cards/', views.manage_gym_cards, name='manage_gym_cards'),
+   path('delete-gym-card/<int:card_id>/', views.delete_gym_card, name='delete_gym_card'),
+   path('deallocate-gym-nfc/', views.deallocate_gym_nfc, name='deallocate_gym_nfc'),
+   path('gym-card-count/', views.gym_card_count, name='gym_card_count'),
  ]

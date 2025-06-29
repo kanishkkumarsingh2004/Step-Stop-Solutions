@@ -14,6 +14,7 @@ import logging
 from django.core.paginator import Paginator
 from django.utils.timezone import now
 from django.db import transaction
+from django.views.decorators.http import require_POST
 
 
 # Set up logging
@@ -2654,7 +2655,8 @@ def mark_attendance_manual(request, user_id):
 
 @login_required
 def manage_cards(request):
-    cards = AdminCard.objects.all().select_related('library')
+    # Only get cards that are allocated to a library
+    cards = AdminCard.objects.filter(library__isnull=False).select_related('library')
     
     search_query = request.GET.get('search')
     if search_query:
@@ -3475,3 +3477,66 @@ def allocate_card_to_gym(request):
         return JsonResponse({'success': True, 'message': 'Cards allocated successfully.'})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def manage_gym_cards(request):
+    # Only get allocated gym cards
+    allocated_cards = AdminCard.objects.filter(gym__isnull=False).select_related('gym')
+    context = {
+        'allocated_cards': allocated_cards,
+        'total_allocated': allocated_cards.count(),
+    }
+    return render(request, 'gym/manage_gym_cards.html', context)
+
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def delete_gym_card(request, card_id):
+    try:
+        card = AdminCard.objects.get(id=card_id)
+        card.delete()
+        return JsonResponse({'success': True})
+    except AdminCard.DoesNotExist:
+        return JsonResponse({'error': 'Card not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@user_passes_test(lambda u: u.is_superuser)
+@csrf_exempt
+def deallocate_gym_nfc(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get("nfc_serial")
+            if not nfc_serial:
+                return JsonResponse({'error': 'NFC serial is required'}, status=400)
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
+            if card.gym is None:
+                return JsonResponse({'error': 'This card is not allocated to any gym'}, status=400)
+            # Remove gym association
+            card.gym = None
+            card.save()
+            return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def gym_card_count(request):
+    gyms = Gym.objects.annotate(
+        allocated_cards_count=Count('admin_cards', distinct=True)
+    ).order_by('name')
+    
+    gym_data = [{
+        'name': gym.name,
+        'allocated_cards_count': gym.allocated_cards_count,
+        'owner': gym.owner
+    } for gym in gyms]
+    
+    return render(request, 'admin_page/gym_card_count.html', {
+        'gyms': gym_data
+    })
