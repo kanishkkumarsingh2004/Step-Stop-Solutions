@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Attendance</h1>
+        <div class="space-y-6">
+            <div class="text-center">
+                <p class="text-gray-600">Tap your NFC card to record attendance.</p>
+            </div>
+            <form id="nfc-form" method="post" class="hidden">
+                {% csrf_token %}
+                <input type="hidden" name="nfc_id" id="nfc_id">
+                <input type="hidden" value="{{ library.id }}" id="library_id">
+            </form>
+            <div id="attendance-status" class="hidden text-center font-semibold space-y-2">
+                <!-- Messages will be dynamically inserted here -->
+            </div>
+            <div id="nfc-error" class="hidden text-center text-red-600 p-4 rounded-lg bg-red-50">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p id="error-message"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{% static 'js/coaching_attendance.js' %}"></script>
+{% endblock %}

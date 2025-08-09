@@ -57,4 +57,7 @@ urlpatterns = [
    path('institution/staff/<int:staff_id>/remove/', institute_view.remove_institution_staff, name='remove_institution_staff'),
    path('institution/<str:uid>/staff-dashboard/', institute_view.institution_staff_dashboard, name='institution_staff_dashboard'),
    path('admin-dashboard/manage-cards/', institute_view.manage_institution_cards, name='manage_institution_cards'),
+   path('institution/<str:uid>/attendance/', institute_view.coaching_attendance_page, name='attendance_page'),
+   path('mark-institute-attendance/', institute_view.mark_institute_attendance, name='mark_attendance'),
+
    ]

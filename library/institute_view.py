@@ -5,7 +5,23 @@ import logging
 from django.utils.timezone import now
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
 from django.contrib import messages
-from .models import Institution, CustomUser, InstitutionCoupon, InstitutionReview, InstitutionImage, InstitutionBanner, InstitutionSubscriptionPlan, InstitutionSubscription, PaymentVerification, InstitutionExpense, TimetableEntry, Institution, SubjectFacultyMap, AdminCard, InstitutionCardLog, InstitutionStaff
+from .models import (Institution, 
+                    CustomUser, 
+                    InstitutionCoupon, 
+                    InstitutionReview, 
+                    InstitutionImage, 
+                    InstitutionBanner, 
+                    InstitutionSubscriptionPlan, 
+                    InstitutionSubscription, 
+                    PaymentVerification, 
+                    InstitutionExpense, 
+                    TimetableEntry, 
+                    Institution, 
+                    SubjectFacultyMap, 
+                    AdminCard, 
+                    InstitutionCardLog, 
+                    InstitutionStaff, 
+                    CoachingAttendance)
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from django.core.paginator import Paginator
@@ -20,7 +36,7 @@ from decimal import Decimal
 import decimal
 import base64
 from io import BytesIO
-from datetime import timedelta
+from datetime import timedelta, datetime
 import qrcode
 from collections import defaultdict
 
@@ -1985,3 +2001,103 @@ def manage_institution_cards(request):
         'allocated_cards': page_obj,
     }
     return render(request, 'coaching/manage_institution_cards.html', context)
+
+@login_required
+def coaching_attendance_page(request, uid):
+    institute = get_object_or_404(Institution, uid=uid)
+    return render(request, 'coaching/coaching_attendance_page.html', {'library': institute})
+
+@csrf_exempt
+def mark_institute_attendance(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get("nfc_serial")
+            institute_id = data.get("institute_id") or data.get("institution_id") or data.get("library_id")
+
+            if not nfc_serial or not institute_id:
+                return JsonResponse({"error": "NFC serial and Institution ID are required"}, status=400)
+
+            user = CustomUser.objects.get(nfc_id=nfc_serial)
+            institution = Institution.objects.get(uid=institute_id)
+
+            # Get current time in IST (UTC+5:30)
+            current_time = timezone.now() + timedelta(hours=5, minutes=30)
+
+            # Find active subscription for this institution using InstitutionSubscription
+            active_subscription = InstitutionSubscription.objects.filter(
+                user=user,
+                subscription_plan__institution=institution,
+                start_date__lte=current_time.date(),
+                end_date__gte=current_time.date(),
+                status='valid'
+            ).first()
+
+            if not active_subscription:
+                return JsonResponse({"error": "User does not have an active subscription"}, status=403)
+
+            # Find latest attendance for this user and institution
+            latest_attendance = CoachingAttendance.objects.filter(
+                user=user,
+                institution=institution
+            ).order_by('-check_in_time').first()
+
+            # Handle time comparisons with date adjustments
+            start_time = active_subscription.start_time
+            end_time = active_subscription.end_time
+
+            if start_time and end_time and start_time > end_time:
+                end_date = active_subscription.start_date + timedelta(days=1)
+                start_date = active_subscription.start_date
+            else:
+                start_date = active_subscription.start_date
+                end_date = active_subscription.start_date
+
+            # Create datetime objects with adjusted dates
+            if start_time and end_time:
+                start_datetime = timezone.make_aware(datetime.combine(start_date, start_time))
+                end_datetime = timezone.make_aware(datetime.combine(end_date, end_time))
+                current_datetime = timezone.make_aware(datetime.combine(current_time.date(), current_time.time()))
+                is_within_time = (start_datetime <= current_datetime <= end_datetime)
+            else:
+                is_within_time = True  # If no time window, always allow
+
+            check_out_color = 0 if is_within_time else 1
+            current_time = timezone.now()
+            ist_time = current_time + timedelta(hours=5, minutes=30)
+
+            if not latest_attendance or latest_attendance.check_out_time:
+                # New check-in
+                attendance = CoachingAttendance.objects.create(
+                    user=user,
+                    institution=institution,
+                    check_in_time=current_time,
+                    check_in_color=check_out_color,
+                    check_out_color=0,
+                    nfc_id=nfc_serial
+                )
+                return JsonResponse({
+                    "message": f"Checked in: {user.get_full_name()}",
+                    "action": "checkin",
+                    "date": current_time.date().isoformat(),
+                    "time": ist_time.strftime("%H:%M:%S"),
+                })
+            else:
+                # Check-out
+                latest_attendance.check_out_time = current_time
+                latest_attendance.check_out_color = check_out_color
+                latest_attendance.save()
+                return JsonResponse({
+                    "message": f"Checked out: {user.get_full_name()}",
+                    "action": "checkout",
+                    "date": current_time.date().isoformat(),
+                    "time": ist_time.strftime("%H:%M:%S"),
+                })
+        except CustomUser.DoesNotExist:
+            return JsonResponse({"error": "User not found"}, status=404)
+        except Institution.DoesNotExist:
+            return JsonResponse({"error": "Institution not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
