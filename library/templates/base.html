@@ -238,10 +238,10 @@
                 </div>
  
                 <!-- Become a Vendor Section -->
-                <div>
+                <div class="flex flex-col">
                     <h3 class="text-lg font-bold mb-3 sm:mb-4">Become a Vendor</h3>
                     <p class="text-sm text-gray-300 mb-3 sm:mb-4">Want to register your library with us?</p>
-                    <div class="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:space-x-4">
+                    <div class="flex flex-col space-y-3">
                         {% if user.is_authenticated and not user.is_vendor %}
                         <a href="{% url 'apply_vendor' %}" class="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200 text-center">
                             Apply for Vendor
@@ -250,6 +250,13 @@
                         <a href="{% url 'signup' %}" class="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200 text-center">
                             Sign Up to Apply
                         </a>
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            {% if user.owned_libraries.all or user.staff_in_institutions.all or approved_gym %}
+                                <button id="nfcread" type="button" class="bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 text-sm transition-colors duration-200 text-center">
+                                    Start NFC Scan
+                                </button>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
@@ -277,4 +284,5 @@
         }
     });
 </script>
+<script src="{% static 'js/nfc_scan.js' %}"></script>
 </html>

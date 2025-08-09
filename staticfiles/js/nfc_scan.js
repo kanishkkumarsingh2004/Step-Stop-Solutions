@@ -34,10 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const ndef = new NDEFReader();
             await ndef.scan();
-            console.log("NFC Scan started successfully.");
             ndef.addEventListener('reading', ({ serialNumber }) => {
                 hideError();
-                console.log(`NFC card detected: ${serialNumber}`);
                 nfcIdInput.value = serialNumber;
                 cardDisplay.textContent = `Scanned Card ID: ${serialNumber}`;
                 cardDisplay.classList.remove('hidden');
@@ -49,8 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error(`Error starting NFC scan: ${error}`);
-            showError('Could not start NFC scanning. Check browser permissions and ensure a secure (HTTPS) connection.');
-        }
+            alert(error)
+            showError(`${error}`)
+
+            // showError('Could not start NFC scanning. Check browser  and ensure a secure (HTTPS) connection.');
+        }   
     };
 
     // AJAX Form Submission
@@ -94,7 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    document.getElementById('nfcread').addEventListener('click', async (event)=> {
+        alert('NFC started scanning. Please tap your card.')
+        await initNFC()
+    });
+});
 
-    // Initialize everything
-    initNFC();
-}); 

@@ -1,15 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing expense management');
-
     // Add event listeners to all edit buttons
     const editButtons = document.querySelectorAll('.edit-expense-btn');
-    console.log(`Found ${editButtons.length} edit buttons`);
-
     editButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('Edit button clicked', this.dataset);
-
             // Verify all required data attributes are present
             const requiredAttributes = ['expenseId', 'expenseName', 'expenseAmount', 'expenseDate'];
             const missingAttributes = requiredAttributes.filter(attr => !this.dataset[attr]);
@@ -34,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editForm) {
         editForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            console.log('Edit form submitted');
 
             const formData = new FormData(this);
             const expenseId = formData.get('expense_id');
@@ -62,7 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Edit modal functions
     function openEditModal(expense) {
-        console.log('Opening edit modal with expense:', expense);
         
         const modal = document.getElementById('editExpenseModal');
         if (!modal) {
@@ -79,14 +71,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show modal
         modal.classList.remove('hidden');
-        console.log('Modal should be visible now');
     }
 
     function closeEditModal() {
         const modal = document.getElementById('editExpenseModal');
         if (modal) {
             modal.classList.add('hidden');
-            console.log('Modal closed');
         }
     }
 

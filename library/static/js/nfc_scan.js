@@ -34,10 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const ndef = new NDEFReader();
             await ndef.scan();
-            console.log("NFC Scan started successfully.");
             ndef.addEventListener('reading', ({ serialNumber }) => {
                 hideError();
-                console.log(`NFC card detected: ${serialNumber}`);
                 nfcIdInput.value = serialNumber;
                 cardDisplay.textContent = `Scanned Card ID: ${serialNumber}`;
                 cardDisplay.classList.remove('hidden');
@@ -97,13 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    // document.getElementById('read').addEventListener('click', async (event)=> {
-    //     console.log("clicked");
-    //     await initNFC()
-    // });
-
-
-    // Initialize everything
-    initNFC();
+    document.getElementById('nfcread').addEventListener('click', async (event)=> {
+        alert('NFC started scanning. Please tap your card.')
+        await initNFC()
+    });
 });
 
