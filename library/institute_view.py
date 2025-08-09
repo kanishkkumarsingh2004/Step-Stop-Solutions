@@ -942,10 +942,12 @@ def institute_subscription_payment(request, uid, subscription_id):
             applied_coupon = None
             discount_amount = Decimal('0')
             original_price = subscription_plan.old_price
-        
-        # Generate UPI payment URL with the correct price
-        upi_url = f"upi://pay?pa={institution.upi_id}&pn={institution.recipient_name}&am={float(current_price)}&cu=INR&tn=Subscription Payment"
-        
+        # Generate a timestamp for the transaction reference
+        import time
+        timestamp = int(time.time())
+        tr = f"{timestamp}"
+        # Generate UPI payment URL with the correct price and timestamp as 'tr'
+        upi_url = f"upi://pay?pa={institution.upi_id}&pn={institution.recipient_name}&am={float(current_price)}&cu=INR&tn=Subscription Payment&tr={tr}"
         # Generate QR code for UPI payment
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(upi_url)

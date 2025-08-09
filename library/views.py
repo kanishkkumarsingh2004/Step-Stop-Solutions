@@ -15,7 +15,7 @@ from django.core.paginator import Paginator
 from django.utils.timezone import now
 from django.db import transaction
 from django.views.decorators.http import require_POST
-
+import time
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -1009,10 +1009,11 @@ def payment_page(request, plan_id):
     upi_id = library.upi_id
     recipient_name = library.recipient_name
     thank_you_message = library.thank_you_message
-    
-    # Generate UPI payment link
-    upi_link = f"upi://pay?pa={upi_id}&pn={recipient_name}&mc=1234&tid=transaction123&tr=ref12345&tn={thank_you_message}&am={final_price}&cu=INR"
-    
+    # Generate a timestamp for the transaction reference
+    timestamp = int(time.time())
+    tr = f"{timestamp}"
+    # Generate UPI payment link with timestamp in 'tr'
+    upi_link = f"upi://pay?pa={upi_id}&pn={recipient_name}&mc=1234&tid=transaction123&tr={tr}&tn={thank_you_message}&am={final_price}&cu=INR"
     # Create QR code for UPI payment
     qr = qrcode.QRCode(
         version=1,

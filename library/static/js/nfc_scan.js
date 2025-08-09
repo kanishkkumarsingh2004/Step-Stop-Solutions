@@ -49,8 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error(`Error starting NFC scan: ${error}`);
-            showError('Could not start NFC scanning. Check browser permissions and ensure a secure (HTTPS) connection.');
-        }
+            alert(error)
+            showError(`${error}`)
+
+            // showError('Could not start NFC scanning. Check browser  and ensure a secure (HTTPS) connection.');
+        }   
     };
 
     // AJAX Form Submission
@@ -94,7 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    // document.getElementById('read').addEventListener('click', async (event)=> {
+    //     console.log("clicked");
+    //     await initNFC()
+    // });
+
 
     // Initialize everything
     initNFC();
-}); 
+});
+

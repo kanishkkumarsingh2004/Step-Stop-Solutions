@@ -28,7 +28,7 @@ class CustomUserAdmin(UserAdmin):
             'classes': ('wide',),
             'fields': ('email', 'first_name', 'last_name', 'mobile_number', 'address', 'category', 'password1', 'password2'),
         }),
-    )
+    )   
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
     filter_horizontal = ('library',)

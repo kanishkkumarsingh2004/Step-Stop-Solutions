@@ -438,7 +438,10 @@ def public_gym_subscription_payment(request, gim_uid, plan_id):
     upi_url = None
     qr_code_base64 = None
     if gym.upi_id and gym.recipient_name:
-        upi_url = f"upi://pay?pa={gym.upi_id}&pn={gym.recipient_name}&am={discounted_price}&cu=INR&tn=Gym Subscription Payment"
+        import time
+        timestamp = int(time.time())
+        tr = f"{timestamp}"
+        upi_url = f"upi://pay?pa={gym.upi_id}&pn={gym.recipient_name}&am={discounted_price}&cu=INR&tn=Gym Subscription Payment&tr={tr}"
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(upi_url)
         qr.make(fit=True)
