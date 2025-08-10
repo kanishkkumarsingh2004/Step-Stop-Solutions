@@ -2039,8 +2039,6 @@ def mark_institute_attendance(request):
             active_subscription = InstitutionSubscription.objects.filter(
                 user=user,
                 subscription_plan__institution=institution,
-                start_date__lte=current_time.date(),
-                end_date__gte=current_time.date(),
                 status='valid'
             ).first()
 

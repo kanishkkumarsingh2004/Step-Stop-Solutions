@@ -354,16 +354,14 @@ def mark_attendance(request):
             user = card_log.user
 
             library = Library.objects.get(id=library_id)
-            
+             
             # Get current time in IST (UTC+5:30)
             current_time = timezone.now() + timedelta(hours=5, minutes=30)
             active_subscription = UserSubscription.objects.filter(
                 user=user,
                 subscription__library=library,
-                start_date__lte=current_time.date(),
-                end_date__gte=current_time.date()
+                status='valid'
             ).first()
-
             if not active_subscription:
                 return JsonResponse({"error": "User does not have an active subscription"}, status=403)
             
@@ -1491,29 +1489,27 @@ def get_staff(request, library_id):
 
 @login_required
 def search_user(request):
-    query = request.GET.get('query', '')
-    if len(query) < 3:
-        return JsonResponse({'users': []})
-
-    users = CustomUser.objects.filter(
-        Q(first_name__icontains=query) |
-        Q(last_name__icontains=query) |
-        Q(email__icontains=query) |
-        Q(ssid__iexact=query)
-    ).values('id', 'first_name', 'last_name', 'email')[:10]
-
-    user_list = [
-        {
-            'id': user['id'],
-            'full_name': f"{user['first_name']} {user['last_name']}",
-            'email': user['email']
-        }
-        for user in users
-    ]
-
-    return JsonResponse({'users': user_list})
-
-@login_required
+    """
+    Search for a user by SSID (for staff management page).
+    Returns a single user if found, or an error message.
+    """
+    if request.method == 'POST':
+        ssid = request.POST.get('ssid', '').strip()
+        if not ssid:
+            return JsonResponse({'success': False, 'message': 'SSID is required'}, status=400)
+        try:
+            user = CustomUser.objects.get(ssid=ssid)
+            user_data = {
+                'id': user.id,
+                'full_name': user.get_full_name(),
+                'email': user.email,
+                'mobile_number': getattr(user, 'mobile_number', ''),  # fallback to empty string if not present
+                'ssid': user.ssid,
+            }
+            return JsonResponse({'success': True, 'user': user_data})
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'User with this SSID not found'}, status=404)
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 def all_users(request):
     users = CustomUser.objects.all()
     return render(request, 'admin_page/all_users.html', {'users': users})

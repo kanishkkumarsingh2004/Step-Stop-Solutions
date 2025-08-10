@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 nfcIdInput.value = serialNumber;
                 
                 try {
-                    const response = await fetch("/mark-attendance/", {
+                    const response = await fetch("/library/mark-attendance/", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
