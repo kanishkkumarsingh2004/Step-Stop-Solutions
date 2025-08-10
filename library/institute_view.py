@@ -2018,12 +2018,14 @@ def mark_institute_attendance(request):
             if not nfc_serial or not institute_id:
                 return JsonResponse({"error": "NFC serial and Institution ID are required"}, status=400)
 
-            # Since there is no 'nfc_id' field, try to use 'ssid' (ShortUUIDField) or another identifier
-            # If you have mapped nfc_serial to ssid, use that. Otherwise, adjust as needed.
-            try:
-                user = CustomUser.objects.get(ssid=nfc_serial)
-            except CustomUser.DoesNotExist:
-                return JsonResponse({"error": "User not found"}, status=404)
+            # Use InstitutionCardLog to look up the user by card_id (NFC serial) and institution
+            card_log = InstitutionCardLog.objects.filter(
+                card_id=nfc_serial,
+                institution__uid=institute_id
+            ).order_by('-timestamp').first()
+            if not card_log or not card_log.user:
+                return JsonResponse({"error": "User not found for this NFC serial"}, status=404)
+            user = card_log.user
 
             try:
                 institution = Institution.objects.get(uid=institute_id)

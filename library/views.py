@@ -344,13 +344,14 @@ def mark_attendance(request):
             if not nfc_serial or not library_id:
                 return JsonResponse({"error": "NFC serial and Library ID are required"}, status=400)
             
-            # The CustomUser model does not have an 'nfc_id' field.
-            # Instead, we need to look up the user by their LibraryAttendance record with the given nfc_id.
-            # We'll find the most recent LibraryAttendance with this nfc_id and get the user from it.
-            attendance_with_nfc = LibraryAttendance.objects.filter(nfc_id=nfc_serial).order_by('-check_in_time').first()
-            if not attendance_with_nfc:
+            # Use LibraryCardLog to look up the user by card_id (NFC serial) and library
+            card_log = LibraryCardLog.objects.filter(
+                card_id=nfc_serial,
+                library_id=library_id
+            ).order_by('-timestamp').first()
+            if not card_log or not card_log.user:
                 return JsonResponse({"error": "User not found for this NFC serial"}, status=404)
-            user = attendance_with_nfc.user
+            user = card_log.user
 
             library = Library.objects.get(id=library_id)
             
@@ -1975,28 +1976,29 @@ def handle_payment_success(request):
 def edit_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
     library = coupon.library
-    
-    # Check if the user has permission to edit this coupon
-    if request.user != coupon.created_by:
+
+    # Only allow the coupon creator or the library owner to edit
+    if request.user != coupon.created_by and request.user != library.owner:
         raise PermissionDenied("You don't have permission to edit this coupon")
 
     if request.method == 'POST':
         form = CouponForm(request.POST, instance=coupon, library_id=library.id)
         if form.is_valid():
             coupon = form.save(commit=False)
-            
+
             # Handle "All Plans" selection
             if 'all' in form.cleaned_data['applicable_plans']:
+                coupon.save()
                 coupon.applicable_plans.set(SubscriptionPlan.objects.filter(library=library))
             else:
                 coupon.save()
                 form.save_m2m()
-            
+
             messages.success(request, "Coupon updated successfully!")
             return redirect('manage_coupons', library_id=library.id)
     else:
         form = CouponForm(instance=coupon, library_id=library.id)
-    
+
     return render(request, 'library/edit_coupon.html', {
         'library': library,
         'form': form,
