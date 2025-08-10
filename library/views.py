@@ -344,7 +344,14 @@ def mark_attendance(request):
             if not nfc_serial or not library_id:
                 return JsonResponse({"error": "NFC serial and Library ID are required"}, status=400)
             
-            user = CustomUser.objects.get(nfc_id=nfc_serial)
+            # The CustomUser model does not have an 'nfc_id' field.
+            # Instead, we need to look up the user by their LibraryAttendance record with the given nfc_id.
+            # We'll find the most recent LibraryAttendance with this nfc_id and get the user from it.
+            attendance_with_nfc = LibraryAttendance.objects.filter(nfc_id=nfc_serial).order_by('-check_in_time').first()
+            if not attendance_with_nfc:
+                return JsonResponse({"error": "User not found for this NFC serial"}, status=404)
+            user = attendance_with_nfc.user
+
             library = Library.objects.get(id=library_id)
             
             # Get current time in IST (UTC+5:30)
@@ -441,8 +448,6 @@ def mark_attendance(request):
                     "time": ist_time.strftime("%H:%M:%S"),
                     "available_seats": library.available_seats
                 })
-        except CustomUser.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=404)
         except Library.DoesNotExist:
             return JsonResponse({"error": "Library not found"}, status=404)
         except Exception as e:

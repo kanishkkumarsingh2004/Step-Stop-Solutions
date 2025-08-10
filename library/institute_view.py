@@ -2018,8 +2018,17 @@ def mark_institute_attendance(request):
             if not nfc_serial or not institute_id:
                 return JsonResponse({"error": "NFC serial and Institution ID are required"}, status=400)
 
-            user = CustomUser.objects.get(nfc_id=nfc_serial)
-            institution = Institution.objects.get(uid=institute_id)
+            # Since there is no 'nfc_id' field, try to use 'ssid' (ShortUUIDField) or another identifier
+            # If you have mapped nfc_serial to ssid, use that. Otherwise, adjust as needed.
+            try:
+                user = CustomUser.objects.get(ssid=nfc_serial)
+            except CustomUser.DoesNotExist:
+                return JsonResponse({"error": "User not found"}, status=404)
+
+            try:
+                institution = Institution.objects.get(uid=institute_id)
+            except Institution.DoesNotExist:
+                return JsonResponse({"error": "Institution not found"}, status=404)
 
             # Get current time in IST (UTC+5:30)
             current_time = timezone.now() + timedelta(hours=5, minutes=30)
@@ -2074,7 +2083,7 @@ def mark_institute_attendance(request):
                     check_in_time=current_time,
                     check_in_color=check_out_color,
                     check_out_color=0,
-                    nfc_id=nfc_serial
+                    # nfc_id=nfc_serial  # Remove this if CoachingAttendance does not have nfc_id
                 )
                 return JsonResponse({
                     "message": f"Checked in: {user.get_full_name()}",
@@ -2093,10 +2102,6 @@ def mark_institute_attendance(request):
                     "date": current_time.date().isoformat(),
                     "time": ist_time.strftime("%H:%M:%S"),
                 })
-        except CustomUser.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=404)
-        except Institution.DoesNotExist:
-            return JsonResponse({"error": "Institution not found"}, status=404)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
