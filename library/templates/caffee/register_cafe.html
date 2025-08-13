@@ -1,59 +1,225 @@
-{% extends "base.html" %}
+{% extends "base.html" %}   
 {% load static %}
 
 {% block content %}
-<div class="max-w-lg mx-auto mt-10 bg-white p-8 rounded-lg shadow-md">
-    <h2 class="mb-6 text-2xl font-bold text-center text-gray-800">Register Your Cafe</h2>
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <div class="mb-4">
-            <label for="id_name" class="block text-gray-700 font-semibold mb-1">Cafe Name</label>
-            <input type="text" name="name" id="id_name" placeholder="Cafe Name"
-                   class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                   value="{{ form.name.value|default_if_none:'' }}">
-            {% if form.name.errors %}
-                <div class="text-red-600 text-sm mt-1">{{ form.name.errors }}</div>
-            {% endif %}
+<div class="max-w-3xl mx-auto py-12">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <!-- Top-Level Heading for Form -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Café Registration Form</h1>
+        <!-- Error Messages -->
+        {% if form.errors %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-8" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">Please correct the following errors:</span>
+            <ul class="mt-2 list-disc list-inside">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
         </div>
-        <div class="mb-4">
-            <label for="id_owner_name" class="block text-gray-700 font-semibold mb-1">Owner Name</label>
-            <input type="text" name="owner_name" id="id_owner_name" placeholder="Owner Name"
-                   class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                   value="{{ form.owner_name.value|default_if_none:'' }}">
-            {% if form.owner_name.errors %}
-                <div class="text-red-600 text-sm mt-1">{{ form.owner_name.errors }}</div>
-            {% endif %}
-        </div>
-        <div class="mb-4">
-            <label for="id_email" class="block text-gray-700 font-semibold mb-1">Email</label>
-            <input type="email" name="email" id="id_email" placeholder="Email"
-                   class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                   value="{{ form.email.value|default_if_none:'' }}">
-            {% if form.email.errors %}
-                <div class="text-red-600 text-sm mt-1">{{ form.email.errors }}</div>
-            {% endif %}
-        </div>
-        <div class="mb-4">
-            <label for="id_phone" class="block text-gray-700 font-semibold mb-1">Phone</label>
-            <input type="text" name="phone" id="id_phone" placeholder="Phone"
-                   class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                   value="{{ form.phone.value|default_if_none:'' }}">
-            {% if form.phone.errors %}
-                <div class="text-red-600 text-sm mt-1">{{ form.phone.errors }}</div>
-            {% endif %}
-        </div>
-        <div class="mb-6">
-            <label for="id_address" class="block text-gray-700 font-semibold mb-1">Address</label>
-            <textarea name="address" id="id_address" placeholder="Address" rows="2"
-                      class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400">{{ form.address.value|default_if_none:'' }}</textarea>
-            {% if form.address.errors %}
-                <div class="text-red-600 text-sm mt-1">{{ form.address.errors }}</div>
-            {% endif %}
-        </div>
-        <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-200">
-            Register Cafe
-        </button>
-    </form>
+        {% endif %}
+
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Owner Information Section -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Owner's Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name <span class="text-red-500">*</span></label>
+                        {{ form.first_name }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name <span class="text-red-500">*</span></label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Owner's Address <span class="text-red-500">*</span></label>
+                        {{ form.address }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
+                        {{ form.email }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mobile Number <span class="text-red-500">*</span></label>
+                        {{ form.mobile_number }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Café Information Section -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Café Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Café Name <span class="text-red-500">*</span></label>
+                        {{ form.venue_name }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Business Type <span class="text-red-500">*</span></label>
+                        {{ form.business_type }}
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Café Description <span class="text-red-500">*</span></label>
+                        {{ form.description }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Opening Time <span class="text-red-500">*</span></label>
+                        {{ form.opening_time }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Closing Time <span class="text-red-500">*</span></label>
+                        {{ form.closing_time }}
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600">Live Duration: <span id="liveDuration" class="font-medium text-blue-600">Calculating...</span></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Café Capacity <span class="text-red-500">*</span></label>
+                        {{ form.capacity }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Information Section -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Café Location Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Café Address <span class="text-red-500">*</span></label>
+                        {{ form.venue_location }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pincode <span class="text-red-500">*</span></label>
+                        {{ form.pincode }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">District <span class="text-red-500">*</span></label>
+                        {{ form.district }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">City <span class="text-red-500">*</span></label>
+                        {{ form.city }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">State <span class="text-red-500">*</span></label>
+                        {{ form.state }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information Section -->
+            <div class="space-y-6 mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Additional Information</h2>
+                <div class="grid grid-cols-1 gap-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Social Media Links</label>
+                        {{ form.social_media_links }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Services Available</label>
+                        {{ form.equipment_available }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-10">
+                <button type="submit" class="w-full bg-blue-600 text-white px-8 py-4 rounded-xl hover:bg-blue-700 transition-all duration-300 font-semibold text-lg">
+                    Register Café
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<script>
+    function fetchLocationDetails() {
+        const pincode = document.querySelector('input[name="pincode"]');
+        if (!pincode) return;
+        const pincodeValue = pincode.value;
+        if (pincodeValue.length === 6 && /^\d+$/.test(pincodeValue)) {
+            document.querySelector('input[name="district"]').value = 'Loading...';
+            document.querySelector('input[name="city"]').value = 'Loading...';
+            document.querySelector('input[name="state"]').value = 'Loading...';
+
+            fetch(`https://api.postalpincode.in/pincode/${pincodeValue}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data[0].Status === 'Success') {
+                        const postOffice = data[0].PostOffice[0];
+                        document.querySelector('input[name="district"]').value = postOffice.District;
+                        document.querySelector('input[name="city"]').value = postOffice.Block || postOffice.District;
+                        document.querySelector('input[name="state"]').value = postOffice.State;
+                    } else {
+                        document.querySelector('input[name="pincode"]').value = '';
+                        document.querySelector('input[name="district"]').value = '';
+                        document.querySelector('input[name="city"]').value = '';
+                        document.querySelector('input[name="state"]').value = '';
+                        alert('Invalid Pincode. Please enter a valid pincode.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching location details:', error);
+                    document.querySelector('input[name="pincode"]').value = '';
+                    document.querySelector('input[name="district"]').value = '';
+                    document.querySelector('input[name="city"]').value = '';
+                    document.querySelector('input[name="state"]').value = '';
+                    alert('Failed to fetch location details. Please check your internet connection and try again.');
+                });
+        } else if (pincodeValue.length > 0) {
+            document.querySelector('input[name="pincode"]').value = '';
+            document.querySelector('input[name="district"]').value = '';
+            document.querySelector('input[name="city"]').value = '';
+            document.querySelector('input[name="state"]').value = '';
+            alert('Please enter a valid 6-digit pincode.');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const pincodeInput = document.querySelector('input[name="pincode"]');
+        if (pincodeInput) {
+            pincodeInput.addEventListener('blur', fetchLocationDetails);
+            pincodeInput.addEventListener('input', function(e) {
+                if (e.target.value.length === 6) {
+                    fetchLocationDetails();
+                }
+            });
+        }
+
+        const openingTime = document.querySelector('input[name="opening_time"]');
+        const closingTime = document.querySelector('input[name="closing_time"]');
+        const liveDuration = document.getElementById('liveDuration');
+    
+        function calculateDuration() {
+            if (openingTime && closingTime && liveDuration && openingTime.value && closingTime.value) {
+                const [openHour, openMinute] = openingTime.value.split(':').map(Number);
+                const [closeHour, closeMinute] = closingTime.value.split(':').map(Number);
+                
+                let totalHours = closeHour - openHour;
+                let totalMinutes = closeMinute - openMinute;
+                
+                if (totalMinutes < 0) {
+                    totalHours--;
+                    totalMinutes += 60;
+                }
+                
+                if (totalHours < 0) {
+                    totalHours += 24;
+                }
+                
+                liveDuration.textContent = `${totalHours} hours ${totalMinutes} minutes`;
+            } else if (liveDuration) {
+                liveDuration.textContent = 'Please enter both times';
+            }
+        }
+    
+        if (openingTime) openingTime.addEventListener('change', calculateDuration);
+        if (closingTime) closingTime.addEventListener('change', calculateDuration);
+    });
+</script>
 {% endblock %}

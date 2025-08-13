@@ -722,15 +722,56 @@ class GymExpenseForm(forms.ModelForm):
         if payment_mode in ['card', 'upi'] and not transaction_id:
             raise forms.ValidationError("Transaction ID is required for Card/UPI payments")
         return cleaned_data
-     
+      
 class CafeForm(forms.ModelForm):
+    owner = forms.ModelChoiceField(queryset=Cafe._meta.get_field('owner').related_model.objects.all(), required=False)
+    max_banners = forms.IntegerField(required=False)
+    available_seats = forms.IntegerField(required=False)
+
     class Meta:
         model = Cafe
-        fields = ['name', 'owner_name', 'email', 'phone', 'address']
+        fields = [
+            'first_name',
+            'last_name',
+            'address',
+            'owner',
+            'description',
+            'venue_location',
+            'venue_name',
+            'business_type',
+            'max_banners',
+            'social_media_links',
+            'capacity',
+            'equipment_available',
+            'email',
+            'mobile_number',
+            'pincode',
+            'district',
+            'city',
+            'state',
+            'available_seats',
+            'opening_time',
+            'closing_time',
+        ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cafe Name'}),
-            'owner_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Owner Name'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Address', 'rows': 2}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Description', 'rows': 3}),
+            'venue_location': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Venue Location', 'rows': 2}),
+            'venue_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Venue Name'}),
+            'business_type': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Business Type'}),
+            'max_banners': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'social_media_links': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Comma separated social media links', 'rows': 2}),
+            'capacity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'equipment_available': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Equipment Available', 'rows': 2}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+            'mobile_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Mobile Number'}),
+            'pincode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Pincode'}),
+            'district': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'District'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'}),
+            'state': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State'}),
+            'available_seats': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'opening_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'closing_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
         }

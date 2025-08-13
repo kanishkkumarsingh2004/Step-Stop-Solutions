@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
+    <!-- Dashboard Header -->
+    <div class="text-center mb-2 sm:mb-3">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 animate-fade-in">
+            <span class="text-gray-800">Cafe Dashboard</span>
+        </h1>
+    </div>
+
+    {% if user.is_authenticated %}
+        <!-- User Info Card -->
+        <div class="mb-4 md:mb-8 bg-gradient-to-r from-blue-50 to-green-50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 text-left">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <!-- Icon or Placeholder -->
+                <div class="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-lg shadow-md flex items-center justify-center mb-4 md:mb-0 md:ml-4 overflow-hidden border-4 border-white/20 ring-2 ring-blue-200/50 relative group order-first md:order-last">
+                    <svg viewBox="0 0 24 24" fill="none" class="w-full h-full text-gray-400">
+                        <path d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <!-- Text content -->
+                <div class="text-center md:text-left">
+                    <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 animate-fade-in">
+                        <div class="text-blue-600 block mb-2">
+                            <span class="font-medium text-gray-500">Welcome,</span>
+                            {{ user.get_full_name|default:user.username }}
+                        </div>
+                        <div class="text-green-600 block">
+                            <span class="font-medium text-gray-500">Email:</span>
+                            {{ user.email }}
+                        </div>
+                    </h2>
+                    <p class="text-sm sm:text-base text-gray-600 leading-relaxed flex items-center justify-center md:justify-start">
+                        <i class="bi bi-cup-hot-fill text-blue-500 mr-2"></i>
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600">
+                            Manage your cafes efficiently
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cafes List -->
+        {% if cafes %}
+            <div class="mb-6">
+                <h3 class="text-2xl font-semibold mb-4 text-gray-700">Your Cafes</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {% for cafe in cafes %}
+                        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+                            <div class="flex items-center justify-between mb-2 sm:mb-3">
+                                <div class="flex items-center space-x-2">
+                                    <i class="bi bi-cup-hot-fill text-blue-500 text-lg sm:text-xl"></i>
+                                    <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">{{ cafe.name }}</h2>
+                                </div>
+                            </div>
+                            <div class="space-y-1 sm:space-y-2">
+                                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                                    <span class="text-xs sm:text-sm text-gray-600">Owner</span>
+                                    <span class="font-semibold text-blue-600 text-sm sm:text-base md:text-lg">{{ cafe.owner_name }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                                    <span class="text-xs sm:text-sm text-gray-600">Email</span>
+                                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ cafe.email }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                                    <span class="text-xs sm:text-sm text-gray-600">Phone</span>
+                                    <span class="font-semibold text-purple-600 text-sm sm:text-base md:text-lg">{{ cafe.phone }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                                    <span class="text-xs sm:text-sm text-gray-600">Address</span>
+                                    <span class="font-semibold text-indigo-600 text-sm sm:text-base md:text-lg">{{ cafe.address|slice:":35" }}{% if cafe.address|length > 35 %}...{% endif %}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                                    <span class="text-xs sm:text-sm text-gray-600">Created At</span>
+                                    <span class="font-semibold text-yellow-600 text-sm sm:text-base md:text-lg">{{ cafe.created_at|date:"d M Y, H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded mt-4 text-center">
+                You do not have any cafes to display.
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded mt-4 text-center">
+            Please <a href="{% url 'login' %}" class="underline text-blue-700 hover:text-blue-900">login</a> to view your dashboard.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
