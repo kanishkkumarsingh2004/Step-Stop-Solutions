@@ -53,7 +53,6 @@ import json
 import base64
 from io import BytesIO
 from datetime import timedelta, datetime
-import re
 
 # Third-party imports
 import qrcode

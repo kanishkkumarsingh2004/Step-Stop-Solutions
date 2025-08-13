@@ -104,6 +104,16 @@
                                             {% endif %}
                                         {% endfor %}
                                     {% endif %}
+
+                                    {% if user.cafes.all %}
+                                        {% for cafe in user.cafes.all %}
+                                            {% if cafe.status == 'approved' %}
+                                                <a href="{% url 'cafe_dashboard' cafe.id %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                                    Cafe Dashboard ({{ cafe.name }})
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -288,8 +298,6 @@
                                             console.error(`Error starting NFC scan: ${error}`);
                                             alert(error)
                                             showError(`${error}`)
-
-                                            // showError('Could not start NFC scanning. Check browser  and ensure a secure (HTTPS) connection.');
                                         }   
                                     };
                                 </script>

@@ -1136,3 +1136,25 @@ class GymExpense(models.Model):
     def clean(self):
         if self.payment_mode in ['card', 'upi'] and not self.transaction_id:
             raise ValidationError("Transaction ID is required for Card/UPI payments")
+         
+class Cafe(models.Model):
+    STATUS_CHOICES = [
+        ('approved', 'Approved'),
+        ('unapproved', 'Unapproved'),
+    ]
+
+    user = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.CASCADE,
+        related_name='cafes'
+    )
+    name = models.CharField(max_length=255)
+    owner_name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    address = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unapproved')
+
+    def __str__(self):
+        return self.name

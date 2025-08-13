@@ -21,7 +21,7 @@ from .models import (Library,
                      GymProfileImage,
                      GymBanner,
                      GymSubscriptionPlan,
-                     GymExpense,)
+                     GymExpense,Cafe)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -722,3 +722,15 @@ class GymExpenseForm(forms.ModelForm):
         if payment_mode in ['card', 'upi'] and not transaction_id:
             raise forms.ValidationError("Transaction ID is required for Card/UPI payments")
         return cleaned_data
+     
+class CafeForm(forms.ModelForm):
+    class Meta:
+        model = Cafe
+        fields = ['name', 'owner_name', 'email', 'phone', 'address']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cafe Name'}),
+            'owner_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Owner Name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Address', 'rows': 2}),
+        }
