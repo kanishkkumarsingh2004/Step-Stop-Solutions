@@ -336,18 +336,7 @@ def check_access(request):
 def mark_attendance(request):
     if request.method == "POST":
         try:
-            try:
-                # Try to decode JSON, but handle HTML error pages
-                body_unicode = request.body.decode('utf-8')
-                if body_unicode.strip().startswith('<'):
-                    return JsonResponse({"error": "Server returned an unexpected response. Please try again or contact support."}, status=500)
-                data = json.loads(body_unicode)
-            except json.JSONDecodeError:
-                # If the request body is not valid JSON, check if it's HTML
-                if request.body.strip().startswith(b'<'):
-                    return JsonResponse({"error": "Server returned an unexpected response. Please try again or contact support."}, status=500)
-                return JsonResponse({"error": "Invalid JSON in request body"}, status=400)
-
+            data = json.loads(request.body)
             nfc_serial = data.get("nfc_serial")
             library_id = data.get("library_id")
             
@@ -460,9 +449,6 @@ def mark_attendance(request):
         except Library.DoesNotExist:
             return JsonResponse({"error": "Library not found"}, status=404)
         except Exception as e:
-            # If the exception message contains a chunk of HTML, return a user-friendly error
-            if hasattr(e, 'args') and e.args and isinstance(e.args[0], str) and e.args[0].strip().startswith('<'):
-                return JsonResponse({"error": "Server returned an unexpected response. Please try again or contact support."}, status=500)
             return JsonResponse({"error": str(e)}, status=500)
     
     return JsonResponse({"error": "Invalid request method"}, status=405)
