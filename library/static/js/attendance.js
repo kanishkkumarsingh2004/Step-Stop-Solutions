@@ -45,6 +45,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 3000);
     };
 
+    // Helper to safely parse JSON, fallback to error if not JSON
+    const safeParseJSON = async (response) => {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            // If the response starts with '<', it's likely HTML (e.g., error page)
+            if (text.trim().startsWith('<')) {
+                throw new Error("Server returned an unexpected response. Please try again or contact support.");
+            }
+            throw new Error("Error processing server response.");
+        }
+    };
+
     // Start NFC scan
     if ("NDEFReader" in window) {
         try {
@@ -66,13 +80,24 @@ document.addEventListener("DOMContentLoaded", async () => {
                             library_id: libraryId
                         })
                     });
-                    
+
+                    let data;
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || "Error processing attendance");
+                        // Try to parse error JSON, but handle HTML error pages
+                        try {
+                            data = await safeParseJSON(response);
+                            throw new Error(data.error || "Error processing attendance");
+                        } catch (err) {
+                            throw err;
+                        }
+                    } else {
+                        // Try to parse success JSON, but handle HTML error pages
+                        try {
+                            data = await safeParseJSON(response);
+                        } catch (err) {
+                            throw err;
+                        }
                     }
-                    
-                    const data = await response.json();
                     
                     if (data.action === 'checkin') {
                         showStatus(`
