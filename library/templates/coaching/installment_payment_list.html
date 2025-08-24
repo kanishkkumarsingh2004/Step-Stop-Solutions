@@ -32,6 +32,47 @@
             </div>
         </div>
 
+        <!-- Filter Section -->
+        {% if view_type == 'institution' %}
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Filter Payments</h2>
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="user_filter" class="block text-sm font-semibold text-gray-700 mb-2">Filter by User</label>
+                    <select id="user_filter" name="user" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}" {% if request.GET.user == user.id|stringformat:"s" %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="subscription_filter" class="block text-sm font-semibold text-gray-700 mb-2">Filter by Subscription</label>
+                    <select id="subscription_filter" name="subscription" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base">
+                        <option value="">All Subscriptions</option>
+                        {% for subscription in subscriptions %}
+                            <option value="{{ subscription.id }}" {% if request.GET.subscription == subscription.id|stringformat:"s" %}selected{% endif %}>
+                                {{ subscription.subscription_plan.name }} - {{ subscription.user.get_full_name|default:subscription.user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-semibold text-base">
+                        Apply Filters
+                    </button>
+                    {% if request.GET.user or request.GET.subscription %}
+                    <a href="{% url 'installment_payment_list' institution.uid %}" class="ml-2 bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition font-semibold text-base">
+                        Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center">
                 <span class="text-sm uppercase tracking-wider font-semibold mb-1">Total Amount</span>
@@ -205,7 +246,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="editPaymentForm" method="post" data-base-url="{% url 'edit_installment_payment' institution.uid 0 0 %}">
+            <form id="editPaymentForm" method="post" data-base-url="{% url 'coaching:edit_installment_payment' institution.uid 0 0 %}">
                 {% csrf_token %}
                 <input type="hidden" id="edit_payment_id" name="payment_id">
                 <div class="modal-body px-8 py-6">
@@ -263,7 +304,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="deletePaymentForm" method="post" data-base-url="{% url 'delete_installment_payment' institution.uid 0 0 %}">
+            <form id="deletePaymentForm" method="post" data-base-url="{% url 'coaching:delete_installment_payment' institution.uid 0 0 %}">
                 {% csrf_token %}
                 <input type="hidden" id="delete_payment_id" name="payment_id">
                 <div class="modal-body px-8 py-6">

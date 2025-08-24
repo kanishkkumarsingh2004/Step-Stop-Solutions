@@ -72,12 +72,12 @@
                                     {% endif %}
                                     {% if user.owned_institutions.all %}
                                         {% for institution in user.owned_institutions.all %}
-                                            <a href="{% url 'coaching_dashboard' institution.uid %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Coaching Dashboard ({{ institution.name }})</a>
+                                            <a href="{% url 'coaching:coaching_dashboard' institution.uid %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Coaching Dashboard ({{ institution.name }})</a>
                                         {% endfor %}
                                     {% endif %}
                                     {% if user.staff_in_institutions.all %}
                                         {% for staff_role in user.staff_in_institutions.all %}
-                                            <a href="{% url 'institution_staff_dashboard' staff_role.institution.uid %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                            <a href="{% url 'coaching:institution_staff_dashboard' staff_role.institution.uid %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
                                                 Staff Dashboard ({{ staff_role.institution.name }})
                                             </a>
                                         {% endfor %}
@@ -148,7 +148,7 @@
                     {% endif %}
                     {% if user.owned_institutions.all %}
                         {% for institution in user.owned_institutions.all %}
-                            <a href="{% url 'coaching_dashboard' institution.uid %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <a href="{% url 'coaching:coaching_dashboard' institution.uid %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
                                 <i class="bi bi-mortarboard text-xl mr-3"></i>
                                 <span>Coaching Dashboard ({{ institution.name }})</span>
                             </a>
@@ -156,7 +156,7 @@
                     {% endif %}
                     {% if user.staff_in_institutions.all %}
                         {% for staff_role in user.staff_in_institutions.all %}
-                            <a href="{% url 'institution_staff_dashboard' staff_role.institution.uid %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <a href="{% url 'coaching:institution_staff_dashboard' staff_role.institution.uid %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
                                 <i class="bi bi-person-badge text-xl mr-3"></i>
                                 <span>Staff Dashboard ({{ staff_role.institution.name }})</span>
                             </a>

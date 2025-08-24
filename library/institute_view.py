@@ -2143,6 +2143,18 @@ def installment_payment_list(request, institution_uid, subscription_id=None):
     else:
         # View for all subscriptions in the institution
         subscriptions = InstitutionSubscription.objects.filter(subscription_plan__institution=institution)
+        
+        # Apply filters if provided
+        user_filter = request.GET.get('user')
+        subscription_filter = request.GET.get('subscription')
+        
+        # Filter subscriptions based on user selection
+        if user_filter:
+            subscriptions = subscriptions.filter(user_id=user_filter)
+        
+        if subscription_filter:
+            subscriptions = subscriptions.filter(id=subscription_filter)
+        
         installment_payments = InstallmentPayment.objects.filter(
             subscription__in=subscriptions
         ).select_related(
@@ -2156,13 +2168,25 @@ def installment_payment_list(request, institution_uid, subscription_id=None):
         total_amount = subscriptions.aggregate(total=Sum('subscription_plan__new_price'))['total'] or 0
         remaining_amount = total_amount - total_paid
         
+        # Fetch users for dropdown - get users who have subscriptions to this institution
+        users = CustomUser.objects.filter(
+            institution_subscriptions__subscription_plan__institution=institution
+        ).distinct()
+        
+        # Get all subscriptions for the dropdown (unfiltered)
+        all_subscriptions = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution
+        )
+        
         context = {
             'institution': institution,
             'installment_payments': installment_payments,
             'total_paid': total_paid,
             'remaining_amount': remaining_amount,
             'total_amount': total_amount,
-            'view_type': 'institution'
+            'view_type': 'institution',
+            'users': users,
+            'subscriptions': all_subscriptions  # Use unfiltered subscriptions for dropdown
         }
         
         return render(request, 'coaching/installment_payment_list.html', context)

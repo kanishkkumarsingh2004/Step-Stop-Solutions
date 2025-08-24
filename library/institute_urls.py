@@ -62,7 +62,7 @@ urlpatterns = [
    path('institution/<str:uid>/attendance/', institute_view.coaching_attendance_page, name='institute_attendance_page'),
    path('mark-institute-attendance/', institute_view.mark_institute_attendance, name='mark_attendance'),
 
-      # Installment Payments
+   # Installment Payments
    path('institution/<str:institution_uid>/installments/', institute_view.installment_payment_list, name='institution_installment_payment_list'),
    path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/', institute_view.installment_payment_list, name='installment_payment_list'),
    path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/add/', institute_view.add_installment_payment, name='add_installment_payment'),

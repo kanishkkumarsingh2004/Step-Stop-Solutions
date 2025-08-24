@@ -16,7 +16,7 @@
                 </div>
                 <div class="mb-4">
                     {% if request.user.is_superuser %}
-                        <a href="{% url 'coaching_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <a href="{% url 'coaching:coaching_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                             <i class="bi bi-arrow-left mr-2"></i>
                             Back to Institute Dashboard
                         </a>
