@@ -46,16 +46,13 @@
                                                     Student
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Contact Info
-                                                </th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Subscription Plan
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Payment Details
+                                                    Enrollment Date
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Enrollment Date
+                                                    Payment Details
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Status
@@ -79,29 +76,26 @@
                                                                 {{ enrolled_user.user.get_full_name }}
                                                             </div>
                                                             <div class="text-sm text-gray-500">
-                                                                {{ enrolled_user.user.get_education_display }}
+                                                                {{ enrolled_user.user.mobile_number }}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900">{{ enrolled_user.user.email }}</div>
-                                                    <div class="text-sm text-gray-500">{{ enrolled_user.user.mobile_number }}</div>
-                                                </td>
+
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <div class="text-sm font-medium text-gray-900">{{ enrolled_user.subscription_plan.name }}</div>
                                                     <div class="text-sm text-gray-500">
-                                                        {{ enrolled_user.subscription.start_date|date:"M d, Y" }} - {{ enrolled_user.subscription.end_date|date:"M d, Y" }}
+                                                        {{ enrolled_user.subscription.start_date|date:"d/m/y" }} - {{ enrolled_user.subscription.end_date|date:"d/m/y" }}
                                                     </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="text-sm text-gray-900">{{ enrolled_user.enrollment_date|date:"M d, Y" }}</div>
+                                                    <div class="text-sm text-gray-500">{{ enrolled_user.enrollment_date|time:"g:i A" }}</div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <div class="text-sm font-medium text-gray-900">₹{{ enrolled_user.amount_paid|floatformat:2 }}</div>
                                                     <div class="text-sm text-gray-500 capitalize">{{ enrolled_user.payment_method }}</div>
                                                     <div class="text-xs text-gray-400">{{ enrolled_user.subscription.transaction_id|truncatechars:15 }}</div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900">{{ enrolled_user.enrollment_date|date:"M d, Y" }}</div>
-                                                    <div class="text-sm text-gray-500">{{ enrolled_user.enrollment_date|time:"g:i A" }}</div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <div class="flex flex-col space-y-1 items-center">
