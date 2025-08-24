@@ -21,7 +21,9 @@ from .models import (Library,
                      GymProfileImage,
                      GymBanner,
                      GymSubscriptionPlan,
-                     GymExpense,Cafe)
+                     GymExpense,
+                     Cafe,
+                     InstallmentPayment)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -775,3 +777,23 @@ class CafeForm(forms.ModelForm):
             'opening_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'closing_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
         }
+
+class InstallmentPaymentForm(forms.ModelForm):
+    class Meta:
+        model = InstallmentPayment
+        fields = ['amount_paid', 'remaining_amount', 'status']
+        widgets = {
+            'amount_paid': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'remaining_amount': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        amount_paid = cleaned_data.get('amount_paid')
+        remaining_amount = cleaned_data.get('remaining_amount')
+
+        if amount_paid and remaining_amount and amount_paid > remaining_amount:
+            raise forms.ValidationError("Amount paid cannot exceed the remaining amount.")
+
+        return cleaned_data

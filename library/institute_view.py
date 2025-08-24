@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 import logging
 from django.utils.timezone import now
-from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm
+from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm, InstallmentPaymentForm
 from django.contrib import messages
 from .models import (Institution, 
                     CustomUser, 
@@ -21,7 +21,8 @@ from .models import (Institution,
                     AdminCard, 
                     InstitutionCardLog, 
                     InstitutionStaff, 
-                    CoachingAttendance)
+                    CoachingAttendance,
+                    InstallmentPayment)
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from django.core.paginator import Paginator
@@ -2106,3 +2107,188 @@ def mark_institute_attendance(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+
+# Installment Payment Views
+@login_required
+def installment_payment_list(request, institution_uid, subscription_id=None):
+    """List all installment payments for an institution or a specific subscription"""
+    institution = get_object_or_404(Institution, uid=institution_uid)
+    
+    # Check if user has permission (owner or staff)
+    if request.user != institution.owner and request.user not in institution.staff.all():
+        raise PermissionDenied("You don't have permission to view installment payments")
+    
+    if subscription_id:
+        # View for a specific subscription
+        subscription = get_object_or_404(InstitutionSubscription, id=subscription_id, subscription_plan__institution=institution)
+        installment_payments = InstallmentPayment.objects.filter(subscription=subscription).order_by('-payment_date')
+        
+        # Calculate totals for this subscription
+        total_paid = installment_payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+        remaining_amount = subscription.subscription_plan.price - total_paid
+        
+        context = {
+            'institution': institution,
+            'subscription': subscription,
+            'installment_payments': installment_payments,
+            'total_paid': total_paid,
+            'remaining_amount': remaining_amount,
+            'total_amount': subscription.subscription_plan.price,
+            'view_type': 'subscription'
+        }
+        
+        return render(request, 'coaching/installment_payment_list.html', context)
+    else:
+        # View for all subscriptions in the institution
+        subscriptions = InstitutionSubscription.objects.filter(subscription_plan__institution=institution)
+        installment_payments = InstallmentPayment.objects.filter(
+            subscription__in=subscriptions
+        ).select_related(
+            'subscription__subscription_plan'
+        ).order_by('-payment_date')
+        
+        # Calculate totals for all subscriptions
+        total_paid = installment_payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+        
+        # Calculate total amount for all subscriptions
+        total_amount = subscriptions.aggregate(total=Sum('subscription_plan__new_price'))['total'] or 0
+        remaining_amount = total_amount - total_paid
+        
+        context = {
+            'institution': institution,
+            'installment_payments': installment_payments,
+            'total_paid': total_paid,
+            'remaining_amount': remaining_amount,
+            'total_amount': total_amount,
+            'view_type': 'institution'
+        }
+        
+        return render(request, 'coaching/installment_payment_list.html', context)
+
+@login_required
+def add_installment_payment(request, institution_uid, subscription_id):
+    """Add a new installment payment"""
+    institution = get_object_or_404(Institution, uid=institution_uid)
+    subscription = get_object_or_404(InstitutionSubscription, id=subscription_id, subscription_plan__institution=institution)
+    
+    # Check if user has permission (owner or staff)
+    if request.user != institution.owner and request.user not in institution.staff.all():
+        raise PermissionDenied("You don't have permission to add installment payments")
+    
+    # Calculate remaining amount
+    total_paid = InstallmentPayment.objects.filter(subscription=subscription).aggregate(total=Sum('amount_paid'))['total'] or 0
+    remaining_amount = subscription.subscription_plan.price - total_paid
+    
+    if request.method == 'POST':
+        form = InstallmentPaymentForm(request.POST)
+        if form.is_valid():
+            installment = form.save(commit=False)
+            installment.subscription = subscription
+            installment.remaining_amount = remaining_amount - installment.amount_paid
+            
+            # Validate that amount paid doesn't exceed remaining amount
+            if installment.amount_paid > remaining_amount:
+                messages.error(request, "Amount paid cannot exceed the remaining amount")
+                return redirect('add_installment_payment', institution_uid=institution_uid, subscription_id=subscription_id)
+            
+            installment.save()
+            messages.success(request, "Installment payment added successfully!")
+            return redirect('installment_payment_list', institution_uid=institution_uid, subscription_id=subscription_id)
+    else:
+        form = InstallmentPaymentForm(initial={
+            'remaining_amount': remaining_amount,
+            'payment_date': timezone.now().date()
+        })
+    
+    context = {
+        'institution': institution,
+        'subscription': subscription,
+        'form': form,
+        'remaining_amount': remaining_amount,
+        'total_amount': subscription.subscription_plan.price
+    }
+    
+    return render(request, 'institution/add_installment_payment.html', context)
+
+@login_required
+def edit_installment_payment(request, institution_uid, subscription_id, installment_id):
+    """Edit an existing installment payment"""
+    institution = get_object_or_404(Institution, uid=institution_uid)
+    subscription = get_object_or_404(InstitutionSubscription, id=subscription_id, subscription_plan__institution=institution)
+    installment = get_object_or_404(InstallmentPayment, id=installment_id, subscription=subscription)
+    
+    # Check if user has permission (owner or staff)
+    if request.user != institution.owner and request.user not in institution.staff.all():
+        raise PermissionDenied("You don't have permission to edit installment payments")
+    
+    if request.method == 'POST':
+        form = InstallmentPaymentForm(request.POST, instance=installment)
+        if form.is_valid():
+            # Recalculate remaining amount for all subsequent payments
+            updated_installment = form.save(commit=False)
+            
+            # Get all payments after this one to update their remaining amounts
+            subsequent_payments = InstallmentPayment.objects.filter(
+                subscription=subscription,
+                payment_date__gt=installment.payment_date
+            ).order_by('payment_date')
+            
+            # Calculate the difference in amount paid
+            amount_difference = updated_installment.amount_paid - installment.amount_paid
+            
+            # Update subsequent payments
+            for subsequent_payment in subsequent_payments:
+                subsequent_payment.remaining_amount -= amount_difference
+                subsequent_payment.save()
+            
+            updated_installment.save()
+            messages.success(request, "Installment payment updated successfully!")
+            return redirect('installment_payment_list', institution_uid=institution_uid, subscription_id=subscription_id)
+    else:
+        form = InstallmentPaymentForm(instance=installment)
+    
+    context = {
+        'institution': institution,
+        'subscription': subscription,
+        'form': form,
+        'installment': installment
+    }
+    
+    return render(request, 'institution/edit_installment_payment.html', context)
+
+@login_required
+def delete_installment_payment(request, institution_uid, subscription_id, installment_id):
+    """Delete an installment payment"""
+    institution = get_object_or_404(Institution, uid=institution_uid)
+    subscription = get_object_or_404(InstitutionSubscription, id=subscription_id, subscription_plan__institution=institution)
+    installment = get_object_or_404(InstallmentPayment, id=installment_id, subscription=subscription)
+    
+    # Check if user has permission (owner or staff)
+    if request.user != institution.owner and request.user not in institution.staff.all():
+        raise PermissionDenied("You don't have permission to delete installment payments")
+    
+    if request.method == 'POST':
+        # Get all payments after this one to update their remaining amounts
+        subsequent_payments = InstallmentPayment.objects.filter(
+            subscription=subscription,
+            payment_date__gt=installment.payment_date
+        ).order_by('payment_date')
+        
+        # Add back the deleted amount to subsequent payments
+        for subsequent_payment in subsequent_payments:
+            subsequent_payment.remaining_amount += installment.amount_paid
+            subsequent_payment.save()
+        
+        installment.delete()
+        messages.success(request, "Installment payment deleted successfully!")
+        return redirect('installment_payment_list', institution_uid=institution_uid, subscription_id=subscription_id)
+    
+    context = {
+        'institution': institution,
+        'subscription': subscription,
+        'installment': installment
+    }
+    
+    return render(request, 'institution/delete_installment_payment.html', context)

@@ -1,0 +1,442 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Installment Payments - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8 px-4 max-w-6xl">
+    <div class="flex flex-col gap-6">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-800 tracking-tight">
+                Installment Payments
+                {% if view_type == 'subscription' %}
+                    <span class="text-blue-600">- {{ subscription.subscription_plan.name }}</span>
+                {% endif %}
+            </h1>
+            <div class="flex gap-2">
+                {% if view_type == 'subscription' %}
+                <button type="button"
+                    class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow hover:bg-blue-700 transition font-semibold text-base"
+                    data-bs-toggle="modal" data-bs-target="#addPaymentModal"
+                    id="openAddPaymentModalBtn">
+                    <i class="fas fa-plus"></i> Add Payment
+                </button>
+                {% else %}
+                <button type="button"
+                    class="inline-flex items-center gap-2 bg-gray-400 text-white px-5 py-2.5 rounded-lg shadow cursor-not-allowed font-semibold text-base"
+                    disabled
+                    title="Select a specific subscription to add payments">
+                    <i class="fas fa-plus"></i> Add Payment
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center">
+                <span class="text-sm uppercase tracking-wider font-semibold mb-1">Total Amount</span>
+                <span class="text-2xl font-bold">₹{{ total_amount }}</span>
+            </div>
+            <div class="bg-gradient-to-r from-green-500 to-green-700 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center">
+                <span class="text-sm uppercase tracking-wider font-semibold mb-1">Total Paid</span>
+                <span class="text-2xl font-bold">₹{{ total_paid }}</span>
+            </div>
+            <div class="bg-gradient-to-r from-red-500 to-red-700 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center">
+                <span class="text-sm uppercase tracking-wider font-semibold mb-1">Remaining Amount</span>
+                <span class="text-2xl font-bold">₹{{ remaining_amount }}</span>
+            </div>
+        </div>
+
+        <!-- Installment Payments Table -->
+        <div class="overflow-x-auto rounded-xl shadow border border-gray-200 bg-white">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        {% if view_type == 'institution' %}
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Subscription</th>
+                        {% endif %}
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Payment Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Amount Paid</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Remaining Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for payment in installment_payments %}
+                    <tr class="hover:bg-blue-50 transition">
+                        {% if view_type == 'institution' %}
+                        <td class="px-6 py-4">
+                            <span class="text-base font-medium text-gray-800">{{ payment.subscription.subscription_plan.name }}</span>
+                        </td>
+                        {% endif %}
+                        <td class="px-6 py-4">
+                            <span class="text-base text-gray-700">{{ payment.subscription.user.get_full_name|default:payment.subscription.user.username }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-base text-gray-700">{{ payment.payment_date }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-base text-gray-700 font-semibold">₹{{ payment.amount_paid }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-base text-gray-700">₹{{ payment.remaining_amount }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if payment.status == 'paid' or payment.status == 'completed' %}
+                                <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700 border border-green-300">
+                                    <i class="fas fa-check-circle mr-1"></i> Paid
+                                </span>
+                            {% elif payment.status == 'pending' %}
+                                <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
+                                    <i class="fas fa-clock mr-1"></i> Pending
+                                </span>
+                            {% elif payment.status == 'overdue' %}
+                                <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700 border border-red-300">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> Overdue
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-300">
+                                    {{ payment.status|capfirst }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                <button type="button"
+                                    class="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg shadow transition"
+                                    data-bs-toggle="modal" data-bs-target="#editPaymentModal"
+                                    data-payment-id="{{ payment.id }}"
+                                    data-amount-paid="{{ payment.amount_paid }}"
+                                    data-payment-date="{{ payment.payment_date|date:'Y-m-d' }}"
+                                    data-status="{{ payment.status }}"
+                                    data-user-id="{{ payment.subscription.user.id }}"
+                                    data-subscription-id="{{ payment.subscription.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button"
+                                    class="inline-flex items-center justify-center bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg shadow transition"
+                                    data-bs-toggle="modal" data-bs-target="#deletePaymentModal"
+                                    data-payment-id="{{ payment.id }}"
+                                    data-subscription-id="{{ payment.subscription.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-8">
+                            <p class="text-gray-400 text-lg font-medium">No installment payments found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" role="dialog" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl border border-gray-200">
+            <div class="modal-header bg-gray-50 px-8 py-5 border-b border-gray-200 rounded-t-2xl">
+                <h5 class="modal-title text-xl font-bold text-gray-800" id="addPaymentModalLabel">Add Installment Payment</h5>
+                <button type="button" class="text-gray-400 hover:text-gray-600 text-2xl" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addPaymentForm" method="post" action="{% if view_type == 'subscription' %}{% url 'add_installment_payment' institution.uid subscription.id %}{% else %}#{% endif %}" data-base-url="{% if view_type == 'subscription' %}{% url 'add_installment_payment' institution.uid subscription.id %}{% else %}#{% endif %}">
+                {% csrf_token %}
+                <div class="modal-body px-8 py-6">
+                    <div class="mb-5">
+                        <label for="add_user" class="block text-base font-semibold text-gray-700 mb-2">User</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="add_user" name="user_id" required>
+                            <option value="">Select User</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-5">
+                        <label for="add_subscription" class="block text-base font-semibold text-gray-700 mb-2">Subscription</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="add_subscription" name="subscription_id" required>
+                            <option value="">Select Subscription</option>
+                            {% for sub in subscriptions %}
+                                <option value="{{ sub.id }}">{{ sub.subscription_plan.name }} ({{ sub.user.get_full_name|default:sub.user.username }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-5">
+                        <label for="amount_paid" class="block text-base font-semibold text-gray-700 mb-2">Amount Paid</label>
+                        <input type="number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="amount_paid" name="amount_paid" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-5">
+                        <label for="payment_date" class="block text-base font-semibold text-gray-700 mb-2">Payment Date</label>
+                        <input type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="payment_date" name="payment_date" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="status" class="block text-base font-semibold text-gray-700 mb-2">Status</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="status" name="status" required>
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-gray-50 px-8 py-5 border-t border-gray-200 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">Add Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Payment Modal -->
+<div class="modal fade" id="editPaymentModal" tabindex="-1" role="dialog" aria-labelledby="editPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl border border-gray-200">
+            <div class="modal-header bg-gray-50 px-8 py-5 border-b border-gray-200 rounded-t-2xl">
+                <h5 class="modal-title text-xl font-bold text-gray-800" id="editPaymentModalLabel">Edit Installment Payment</h5>
+                <button type="button" class="text-gray-400 hover:text-gray-600 text-2xl" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editPaymentForm" method="post" data-base-url="{% url 'edit_installment_payment' institution.uid 0 0 %}">
+                {% csrf_token %}
+                <input type="hidden" id="edit_payment_id" name="payment_id">
+                <div class="modal-body px-8 py-6">
+                    <div class="mb-5">
+                        <label for="edit_user" class="block text-base font-semibold text-gray-700 mb-2">User</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="edit_user" name="user_id" required>
+                            <option value="">Select User</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-5">
+                        <label for="edit_subscription" class="block text-base font-semibold text-gray-700 mb-2">Subscription</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="edit_subscription" name="subscription_id" required>
+                            <option value="">Select Subscription</option>
+                            {% for sub in subscriptions %}
+                                <option value="{{ sub.id }}">{{ sub.subscription_plan.name }} ({{ sub.user.get_full_name|default:sub.user.username }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-5">
+                        <label for="edit_amount_paid" class="block text-base font-semibold text-gray-700 mb-2">Amount Paid</label>
+                        <input type="number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="edit_amount_paid" name="amount_paid" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-5">
+                        <label for="edit_payment_date" class="block text-base font-semibold text-gray-700 mb-2">Payment Date</label>
+                        <input type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="edit_payment_date" name="payment_date" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="edit_status" class="block text-base font-semibold text-gray-700 mb-2">Status</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base" id="edit_status" name="status" required>
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-gray-50 px-8 py-5 border-t border-gray-200 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">Update Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Payment Modal -->
+<div class="modal fade" id="deletePaymentModal" tabindex="-1" role="dialog" aria-labelledby="deletePaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl border border-gray-200">
+            <div class="modal-header bg-gray-50 px-8 py-5 border-b border-gray-200 rounded-t-2xl">
+                <h5 class="modal-title text-xl font-bold text-gray-800" id="deletePaymentModalLabel">Confirm Delete</h5>
+                <button type="button" class="text-gray-400 hover:text-gray-600 text-2xl" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="deletePaymentForm" method="post" data-base-url="{% url 'delete_installment_payment' institution.uid 0 0 %}">
+                {% csrf_token %}
+                <input type="hidden" id="delete_payment_id" name="payment_id">
+                <div class="modal-body px-8 py-6">
+                    <p class="text-gray-700 text-lg">Are you sure you want to delete this installment payment? <span class="font-semibold text-red-600">This action cannot be undone.</span></p>
+                </div>
+                <div class="modal-footer bg-gray-50 px-8 py-5 border-t border-gray-200 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold">Delete Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default for add payment form
+    const paymentDateInput = document.getElementById('payment_date');
+    if (paymentDateInput) {
+        paymentDateInput.valueAsDate = new Date();
+    }
+
+    // Handle edit modal data population
+    const editPaymentModal = document.getElementById('editPaymentModal');
+    if (editPaymentModal) {
+        editPaymentModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const paymentId = button.getAttribute('data-payment-id');
+            const amountPaid = button.getAttribute('data-amount-paid');
+            const paymentDate = button.getAttribute('data-payment-date');
+            const status = button.getAttribute('data-status');
+            const userId = button.getAttribute('data-user-id');
+            const subscriptionId = button.getAttribute('data-subscription-id');
+            
+            document.getElementById('edit_payment_id').value = paymentId;
+            document.getElementById('edit_amount_paid').value = amountPaid;
+            document.getElementById('edit_payment_date').value = paymentDate;
+            document.getElementById('edit_status').value = status;
+            document.getElementById('edit_user').value = userId;
+            document.getElementById('edit_subscription').value = subscriptionId;
+            
+            // Update form action
+            const editForm = document.getElementById('editPaymentForm');
+            if (editForm && editForm.dataset.baseUrl) {
+                let url = editForm.dataset.baseUrl;
+                url = url.replace('0', subscriptionId); // Replace first 0 with subscription ID
+                url = url.replace('0', paymentId); // Replace second 0 with payment ID
+                editForm.action = url;
+            }
+        });
+    }
+
+    // Handle delete modal data population
+    const deletePaymentModal = document.getElementById('deletePaymentModal');
+    if (deletePaymentModal) {
+        deletePaymentModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const paymentId = button.getAttribute('data-payment-id');
+            const subscriptionId = button.getAttribute('data-subscription-id');
+            
+            document.getElementById('delete_payment_id').value = paymentId;
+            
+            // Update form action
+            const deleteForm = document.getElementById('deletePaymentForm');
+            if (deleteForm && deleteForm.dataset.baseUrl) {
+                let url = deleteForm.dataset.baseUrl;
+                url = url.replace('0', subscriptionId); // Replace first 0 with subscription ID
+                url = url.replace('0', paymentId); // Replace second 0 with payment ID
+                deleteForm.action = url;
+            }
+        });
+    }
+
+    // Handle form submissions with AJAX
+    const addPaymentForm = document.getElementById('addPaymentForm');
+    const editPaymentForm = document.getElementById('editPaymentForm');
+    const deletePaymentForm = document.getElementById('deletePaymentForm');
+
+    function handleFormSubmit(form, successMessage) {
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Check if form action is valid (not "#")
+            if (form.action === '#' || form.action.endsWith('/#') || form.action.includes('/#/')) {
+                showToast('error', 'Please select a specific subscription to perform this action');
+                return;
+            }
+            
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+            `;
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showToast('success', successMessage);
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(form.closest('.modal'));
+                    modal.hide();
+                    
+                    // Reload page to see changes
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast('error', data.message || 'An error occurred');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'An error occurred while processing your request');
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            });
+        });
+    }
+
+    handleFormSubmit(addPaymentForm, 'Payment added successfully!');
+    handleFormSubmit(editPaymentForm, 'Payment updated successfully!');
+    handleFormSubmit(deletePaymentForm, 'Payment deleted successfully!');
+
+    function showToast(type, message) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-6 right-6 px-6 py-4 rounded-xl shadow-2xl z-50 animate-fade-in font-semibold text-base ${
+            type === 'success' ? 'bg-green-100 border border-green-400 text-green-800' : 
+            'bg-red-100 border border-red-400 text-red-800'
+        }`;
+        
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <svg class="h-6 w-6 mr-3 ${type === 'success' ? 'text-green-500' : 'text-red-500'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    ${type === 'success' ? 
+                        '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />' :
+                        '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />'
+                    }
+                </svg>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Remove toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('animate-fade-out');
+            setTimeout(() => toast.remove(), 200);
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

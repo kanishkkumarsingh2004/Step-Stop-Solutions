@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Installment Payment - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6>Edit Installment Payment</h6>
+                        <a href="{% url 'installment_payment_list' institution.uid subscription.id %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Payment Information -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Editing this payment will automatically update the remaining amounts for all subsequent payments.
+                    </div>
+
+                    <!-- Edit Payment Form -->
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="card">
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        
+                                        {% if form.non_field_errors %}
+                                        <div class="alert alert-danger">
+                                            {% for error in form.non_field_errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.amount_paid.id_for_label }}" class="form-label">
+                                                        Amount Paid *
+                                                    </label>
+                                                    {{ form.amount_paid }}
+                                                    {% if form.amount_paid.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.amount_paid.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                    <small class="form-text text-muted">
+                                                        Original amount: ₹{{ installment.amount_paid }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="{{ form.remaining_amount.id_for_label }}" class="form-label">
+                                                    Remaining Amount *
+                                                </label>
+                                                {{ form.remaining_amount }}
+                                                {% if form.remaining_amount.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.remaining_amount.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                                {% endif %}
+                                                <small class="form-text text-muted">
+                                                    Calculated automatically after payment
+                                                </small>
+                                            </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.status.id_for_label }}" class="form-label">
+                                                        Status
+                                                    </label>
+                                                    {{ form.status }}
+                                                    {% if form.status.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.status.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label class="form-label">
+                                                        Current Remaining Amount
+                                                    </label>
+                                                    <input type="text" class="form-control" value="₹{{ installment.remaining_amount }}" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="text-center mt-4">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save me-1"></i> Update Payment
+                                            </button>
+                                            <a href="{% url 'installment_payment_list' institution.uid subscription.id %}" class="btn btn-secondary">
+                                                Cancel
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

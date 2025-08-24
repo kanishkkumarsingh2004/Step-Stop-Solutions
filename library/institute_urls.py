@@ -3,6 +3,8 @@ from . import institute_view
 from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
 
+app_name = "coaching"
+
 urlpatterns = [
    path('apply-vendor/apply-for-vendor/coaching/', institute_view.register_coaching_form, name='register_coaching_form'),
    path('enrollment-coaching/success/', institute_view.enrollment_success, name='enrollment_success_coaching'),
@@ -59,5 +61,13 @@ urlpatterns = [
    path('admin-dashboard/manage-cards/', institute_view.manage_institution_cards, name='manage_institution_cards'),
    path('institution/<str:uid>/attendance/', institute_view.coaching_attendance_page, name='institute_attendance_page'),
    path('mark-institute-attendance/', institute_view.mark_institute_attendance, name='mark_attendance'),
+
+      # Installment Payments
+   path('institution/<str:institution_uid>/installments/', institute_view.installment_payment_list, name='institution_installment_payment_list'),
+   path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/', institute_view.installment_payment_list, name='installment_payment_list'),
+   path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/add/', institute_view.add_installment_payment, name='add_installment_payment'),
+   path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/<int:installment_id>/edit/', institute_view.edit_installment_payment, name='edit_installment_payment'),
+   path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/<int:installment_id>/delete/', institute_view.delete_installment_payment, name='delete_installment_payment'),
+   
 
    ]

@@ -907,6 +907,27 @@ class InstitutionStaff(models.Model):
     def has_perm(self, perm):
         return perm in self.get_permissions()
 
+class InstallmentPayment(models.Model):
+    STATUS_CHOICES = [
+        ('paid', 'Paid'),
+        ('pending', 'Pending'),
+        ('overdue', 'Overdue'),
+    ]
+    
+    subscription = models.ForeignKey('InstitutionSubscription', on_delete=models.CASCADE, related_name='installments')
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateField(auto_now_add=True)
+    remaining_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+
+    def __str__(self):
+        return f"Installment for {self.subscription} - Amount: ₹{self.amount_paid} - Status: {self.status}"
+
+    class Meta:
+        verbose_name = "Installment Payment"
+        verbose_name_plural = "Installment Payments"
+        ordering = ['-payment_date']
+
 class Gym(models.Model):
     gim_uid = ShortUUIDField(length=20, max_length=20, unique=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz')
     name = models.CharField(max_length=200)

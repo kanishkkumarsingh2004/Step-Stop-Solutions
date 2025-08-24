@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Installment Payment - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6>Delete Installment Payment</h6>
+                        <a href="{% url 'installment_payment_list' institution.uid subscription.id %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Warning Message -->
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Deleting this payment will automatically add back the amount to all subsequent payments. This action cannot be undone.
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="text-uppercase text-secondary text-xs font-weight-bold">Payment Details</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Payment Date</label>
+                                                <p class="form-control-plaintext">{{ installment.payment_date }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Amount Paid</label>
+                                                <p class="form-control-plaintext">₹{{ installment.amount_paid }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Remaining Amount</label>
+                                                <p class="form-control-plaintext">₹{{ installment.remaining_amount }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Status</label>
+                                                <p class="form-control-plaintext">
+                                                    <span class="badge badge-sm bg-gradient-{% if installment.status == 'completed' %}success{% else %}warning{% endif %}">
+                                                        {{ installment.status }}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if installment.notes %}
+                                    <div class="form-group">
+                                        <label class="form-label">Notes</label>
+                                        <p class="form-control-plaintext">{{ installment.notes }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Delete Form -->
+                                    <form method="post" class="mt-4">
+                                        {% csrf_token %}
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-danger me-2">
+                                                <i class="fas fa-trash me-1"></i> Confirm Delete
+                                            </button>
+                                            <a href="{% url 'installment_payment_list' institution.uid subscription.id %}" class="btn btn-secondary">
+                                                Cancel
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

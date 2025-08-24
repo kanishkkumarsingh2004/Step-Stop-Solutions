@@ -21,7 +21,7 @@ import time
 logger = logging.getLogger(__name__)
 
 # Local imports
-from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm
+from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm, InstallmentPaymentForm
 from .models import (
     CustomUser,
     SubscriptionPlan,
@@ -47,6 +47,7 @@ from .models import (
     InstitutionCardLog,
     Gym,
     GymSubscription,
+    InstallmentPayment,
 )
 # Python standard library imports
 import json
