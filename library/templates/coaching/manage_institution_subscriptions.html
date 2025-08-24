@@ -8,12 +8,12 @@
         <h1 class="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">Manage Subscription Plans</h1>
         <div class="mb-4">
             {% if request.user.is_superuser %}
-                <a href="{% url 'coaching_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <a href="{% url 'coaching:coaching_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                     <i class="bi bi-arrow-left mr-2"></i>
                     Back to Institute Dashboard
                 </a>
             {% else %}
-                <a href="{% url 'institution_staff_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <a href="{% url 'coaching:institution_staff_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                     <i class="bi bi-arrow-left mr-2"></i>
                     Back to Staff Dashboard
                 </a>
@@ -155,7 +155,7 @@
                             </p>
                         </div>
                         <div class="mt-4">
-                            <form method="post" action="{% url 'delete_institution_subscription' subscription_id=subscription.id %}" class="inline">
+                            <form method="post" action="{% url 'coaching:delete_institution_subscription' subscription_id=subscription.id %}" class="inline">
                                 {% csrf_token %}
                                 <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" 
                                         onclick="return confirm('Are you sure you want to delete this subscription plan?')">

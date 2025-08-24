@@ -7,12 +7,12 @@
 <div class="container mx-auto px-4 py-8">
     <div class="mb-4">
         {% if request.user.is_superuser %}
-            <a href="{% url 'coaching_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+            <a href="{% url 'coaching:coaching_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                 <i class="bi bi-arrow-left mr-2"></i>
                 Back to Institute Dashboard
             </a>
         {% else %}
-            <a href="{% url 'institution_staff_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+            <a href="{% url 'coaching:institution_staff_dashboard' institution.uid %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                 <i class="bi bi-arrow-left mr-2"></i>
                 Back to Staff Dashboard
             </a>
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         searchTimeout = setTimeout(() => {
-            fetch(`{% url 'search_user' %}?query=${query}`)
+            fetch(`{% url 'coaching:search_user' %}?query=${query}`)
                 .then(response => response.json())
                 .then(data => {
                     userSearchResults.innerHTML = '';
@@ -160,7 +160,7 @@ function getCSRFToken() {
 }
 
 function addStaff(userId) {
-    const url = `{% url 'add_institution_staff' uid=institution.uid %}`;
+    const url = `{% url 'coaching:add_institution_staff' uid=institution.uid %}`;
     fetch(url, {
         method: 'POST',
         headers: {

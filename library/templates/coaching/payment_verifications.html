@@ -80,7 +80,7 @@
                     </div>
                     <div class="flex justify-between text-xs xs:text-sm">
                         <span class="font-medium text-gray-500">Status:</span>
-                        <form method="POST" action="{% url 'verify_payment' institution.uid subscription.id %}" class="inline" onsubmit="return handleStatusChange(event, this)">
+                        <form method="POST" action="{% url 'coaching:verify_payment' institution.uid subscription.id %}" class="inline" onsubmit="return handleStatusChange(event, this)">
                             {% csrf_token %}
                             <select name="status" class="text-2xs xs:text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500" onchange="handleStatusChange(event, this.form)">
                                 <option value="pending" {% if subscription.payment_status == 'pending' %}selected{% endif %}>Pending</option>
@@ -126,7 +126,7 @@
                             ₹{{ subscription.amount_paid }}
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                            <form method="POST" action="{% url 'verify_payment' institution.uid subscription.id %}" class="inline" onsubmit="return handleStatusChange(event, this)">
+                            <form method="POST" action="{% url 'coaching:verify_payment' institution.uid subscription.id %}" class="inline" onsubmit="return handleStatusChange(event, this)">
                                 {% csrf_token %}
                                 <select name="status" class="text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500" onchange="handleStatusChange(event, this.form)">
                                     <option value="pending" {% if subscription.payment_status == 'pending' %}selected{% endif %}>Pending</option>

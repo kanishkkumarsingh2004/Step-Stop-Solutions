@@ -175,11 +175,11 @@
     </div>
 </div>
 <script>
-    window.saveTimetableUrl = "{% url 'save_timetable' institution.uid %}";
-    window.saveSubjectFacultyUrl = "{% url 'save_subject_faculty' institution.uid %}";
-    window.getFacultyNameBySsidUrl = "{% url 'get_faculty_name_by_ssid' %}";
+    window.saveTimetableUrl = "{% url 'coaching:save_timetable' institution.uid %}";
+    window.saveSubjectFacultyUrl = "{% url 'coaching:save_subject_faculty' institution.uid %}";
+    window.getFacultyNameBySsidUrl = "{% url 'coaching:get_faculty_name_by_ssid' %}";
     window.csrfToken = "{{ csrf_token }}";
-    window.removeSubjectUrl = "{% url 'remove_subject' institution.uid %}";
+    window.removeSubjectUrl = "{% url 'coaching:remove_subject' institution.uid %}";
 </script>
 {{ classroom_names|json_script:"classroom-names-data" }}
 {{ subject_names|json_script:"subject-names-data" }}

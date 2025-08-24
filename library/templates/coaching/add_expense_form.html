@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
             notes: formData.get('notes')
         };
         
-        fetch('{% url "add_institution_expense" institution.uid %}', {
+        fetch('{% url "coaching:add_institution_expense" institution.uid %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
