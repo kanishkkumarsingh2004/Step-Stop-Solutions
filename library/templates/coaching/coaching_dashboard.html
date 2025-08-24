@@ -64,43 +64,43 @@
     <!-- Key Metrics Navigation -->
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 md:mb-10">
             <!-- Enrolled Users Card -->
-        <a href="{% url 'manage_institution_users' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-purple-100 hover:border-purple-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <a href="{% url 'coaching:manage_institution_users' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-purple-100 hover:border-purple-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-purple-800 text-center">Enrolled Users</div>
             <div class="mt-2 text-xs text-purple-500">Student Enrollments</div>
         </a>
 
         <!-- Payment Verifications Card -->
-        <a href="{% url 'payment_verifications' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-yellow-100 hover:border-yellow-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <a href="{% url 'coaching:payment_verifications' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-yellow-100 hover:border-yellow-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-yellow-800 text-center">Payment Verifications</div>
             <div class="mt-2 text-xs text-yellow-500">Review Pending Payments</div>
         </a>
 
         <!-- installment Payment Verifications Card -->
-        <a href="{% url 'institution_installment_payment_list' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-yellow-100 hover:border-yellow-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <a href="{% url 'coaching:institution_installment_payment_list' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-yellow-100 hover:border-yellow-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-yellow-800 text-center">Installment Payments</div>
             <div class="mt-2 text-xs text-yellow-500">View All Installment Payments</div>
         </a>
 
         <!-- Subscription Plans Card -->
-        <a href="{% url 'manage_institution_subscriptions' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-indigo-100 hover:border-indigo-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <a href="{% url 'coaching:manage_institution_subscriptions' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-indigo-100 hover:border-indigo-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-indigo-800 text-center">Subscription Plans</div>
             <div class="mt-2 text-xs text-indigo-500">Manage Pricing Plans</div>
         </a>
 
         <!-- Card Allocation Card -->
-        <a href="{% url 'allocate_card_to_institution_page' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-teal-100 hover:border-teal-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <a href="{% url 'coaching:allocate_card_to_institution_page' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-teal-100 hover:border-teal-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-teal-800 text-center">Allocate Card</div>
             <div class="mt-2 text-xs text-teal-500">Manage Access Cards</div>
         </a>
         
         <!-- Manage Staff Card -->
-        <a href="{% url 'manage_institution_staff' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-cyan-100 hover:border-cyan-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <a href="{% url 'coaching:manage_institution_staff' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-cyan-100 hover:border-cyan-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-cyan-800 text-center">Manage Staff</div>
             <div class="mt-2 text-xs text-cyan-500">Handle Staff Permissions</div>
         </a>
 
         <!-- Manage user Attendence -->
-        <a href="{% url 'institute_attendance_page' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-red-100 hover:border-red-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <a href="{% url 'coaching:institute_attendance_page' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-red-100 hover:border-red-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-red-800 text-center">Attendance</div>
             <div class="mt-2 text-xs text-red-500">Record Attendance</div>
         </a>
@@ -115,7 +115,7 @@
                     <i class="bi bi-building text-orange-500 text-lg sm:text-xl"></i>
                     <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Institute Details</h2>
                 </div>
-                <a href="{% url 'edit_institution_profile' institution.uid %}" class="text-sm sm:text-base text-blue-600 hover:text-blue-700 flex items-center space-x-1">
+                <a href="{% url 'coaching:edit_institution_profile' institution.uid %}" class="text-sm sm:text-base text-blue-600 hover:text-blue-700 flex items-center space-x-1">
                     <i class="bi bi-pencil-square"></i>
                     <span>Edit</span>
                 </a>
@@ -180,13 +180,13 @@
             </div>
             <div class="space-y-2">
                 <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <a href="{% url 'payment_expenses' institution.uid %}" class="w-full flex items-center justify-between text-green-600 hover:text-green-700">
+                    <a href="{% url 'coaching:payment_expenses' institution.uid %}" class="w-full flex items-center justify-between text-green-600 hover:text-green-700">
                         <span class="text-xs sm:text-sm text-gray-600">Payments & Expenses</span>
                         <i class="bi bi-graph-up text-base sm:text-lg"></i>
                     </a>
                 </div>
                 <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                    <a href="{% url 'expense_analytics' institution.uid %}" class="w-full flex items-center justify-between text-blue-600 hover:text-blue-700">
+                    <a href="{% url 'coaching:expense_analytics' institution.uid %}" class="w-full flex items-center justify-between text-blue-600 hover:text-blue-700">
                         <span class="text-xs sm:text-sm text-gray-600">Expense Analytics</span>
                         <i class="bi bi-pie-chart text-base sm:text-lg"></i>
                     </a>
@@ -201,7 +201,7 @@
                     <i class="bi bi-ticket-perforated-fill text-purple-500 text-lg sm:text-xl"></i>
                     <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Coupons</h2>
                 </div>
-                <a href="{% url 'manage_institution_coupons' institution.uid %}" class="text-sm sm:text-base text-purple-600 hover:text-purple-700 flex items-center space-x-1">
+                <a href="{% url 'coaching:manage_institution_coupons' institution.uid %}" class="text-sm sm:text-base text-purple-600 hover:text-purple-700 flex items-center space-x-1">
                     <i class="bi bi-plus-circle"></i>
                     <span>Manage</span>
                 </a>
@@ -242,7 +242,7 @@
                 <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Manage Banners</h2>
             </div>
             <div class="space-y-2">
-                <a href="{% url 'manage_institution_banner' institution.uid %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                <a href="{% url 'coaching:manage_institution_banner' institution.uid %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                     <span>Manage Banners</span>
                     <i class="bi bi-images text-gray-500 text-sm sm:text-base"></i>
                 </a>
@@ -255,7 +255,7 @@
             </div>
             <div class="space-y-3">
                 <div class="space-y-2">
-                    <a href="{% url 'manage_institution_subscriptions' institution.uid %}" 
+                    <a href="{% url 'coaching:manage_institution_subscriptions' institution.uid %}" 
                        class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Manage Subscriptions</span>
                         <i class="bi bi-gear text-gray-500 text-sm sm:text-base"></i>
@@ -279,7 +279,7 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit UPI Payment Details</h3>
-            <form id="upiEditForm" method="post" action="{% url 'edit_upi_details' institution.uid %}" class="space-y-4">
+            <form id="upiEditForm" method="post" action="{% url 'coaching:edit_upi_details' institution.uid %}" class="space-y-4">
                 {% csrf_token %}
                 <div>
                     <label for="upi_id" class="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
@@ -509,7 +509,7 @@ function removeProfileImage() {
         const formData = new FormData();
         formData.append('image_id', '{{ primary_image.id }}');
         
-        fetch(`{% url 'remove_institution_image' institution.uid %}`, {
+        fetch(`{% url 'coaching:remove_institution_image' institution.uid %}`, {
             method: 'POST',
             body: formData,
             headers: {
@@ -536,7 +536,7 @@ function removeImage(imageId) {
         const formData = new FormData();
         formData.append('image_id', imageId);
         
-        fetch(`{% url 'remove_institution_image' institution.uid %}`, {
+        fetch(`{% url 'coaching:remove_institution_image' institution.uid %}`, {
             method: 'POST',
             body: formData,
             headers: {
@@ -575,7 +575,7 @@ document.getElementById('imageUploadForm').addEventListener('submit', function(e
         Adding...
     `;
     
-    fetch(`{% url 'update_institution_image' institution.uid %}`, {
+    fetch(`{% url 'coaching:update_institution_image' institution.uid %}`, {
         method: 'POST',
         body: formData,
         headers: {
