@@ -2006,7 +2006,7 @@ def manage_institution_cards(request):
 @login_required
 def coaching_attendance_page(request, uid):
     institute = get_object_or_404(Institution, uid=uid)
-    return render(request, 'coaching/coaching_attendance_page.html', {'library': institute})
+    return render(request, 'coaching/coaching_attendance_page.html', {'institute': institute})
 
 @csrf_exempt
 def mark_institute_attendance(request):

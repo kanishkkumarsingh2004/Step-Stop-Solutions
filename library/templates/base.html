@@ -261,48 +261,6 @@
                             Sign Up to Apply
                         </a>
                         {% endif %}
-                        {% if user.is_authenticated %}
-                            {% if user.owned_libraries.all or user.staff_in_institutions.all or approved_gym %}
-                                <button id="nfcread" class="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200 text-center">
-                                    Start NFC Scan
-                                </button>
-                                <script>
-                                    document.getElementById('nfcread').addEventListener('click', async (event) => {
-                                        if (typeof initNFC === 'function') {
-                                            alert('NFC started scanning. Please tap your card.');
-                                            await initNFC();
-                                        } else {
-                                            alert('NFC scanning is not available on this page.');
-                                        }
-                                    });
-                                    const initNFC = async () => {
-                                        if (!('NDEFReader' in window)) {
-                                            showError('Web NFC is not supported on this device or browser. Please use Chrome on Android.');
-                                            return;
-                                        }
-                                        try {
-                                            const ndef = new NDEFReader();
-                                            await ndef.scan();
-                                            ndef.addEventListener('reading', ({ serialNumber }) => {
-                                                hideError();
-                                                nfcIdInput.value = serialNumber;
-                                                cardDisplay.textContent = `Scanned Card ID: ${serialNumber}`;
-                                                cardDisplay.classList.remove('hidden');
-                                                addCardBtn.disabled = false;
-                                                addCardBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                                            });
-                                            ndef.addEventListener('readingerror', () => {
-                                                showError('Could not read NFC card. Please try again.');
-                                            });
-                                        } catch (error) {
-                                            console.error(`Error starting NFC scan: ${error}`);
-                                            alert(error)
-                                            showError(`${error}`)
-                                        }   
-                                    };
-                                </script>
-                            {% endif %}
-                        {% endif %}
                     </div>
                 </div>
             </div>

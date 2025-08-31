@@ -12,7 +12,7 @@
             <form id="nfc-form" method="post" class="hidden">
                 {% csrf_token %}
                 <input type="hidden" name="nfc_id" id="nfc_id">
-                <input type="hidden" value="{{ library.id }}" id="library_id">
+                <input type="hidden" value="{{ institute.uid }}" id="institute_id">
             </form>
             <div id="attendance-status" class="hidden text-center font-semibold space-y-2">
                 <!-- Messages will be dynamically inserted here -->
