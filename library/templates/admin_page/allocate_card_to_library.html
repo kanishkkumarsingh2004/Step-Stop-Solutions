@@ -8,20 +8,30 @@
     <div class="bg-white rounded-lg shadow-md p-6">
         <form id="allocate-form" method="post" action="{% url 'allocate_card_to_library' %}">
             {% csrf_token %}
+            <input type="hidden" name="nfc_id" id="nfc_id">
             
             <!-- Library Selection -->
             <div class="mb-6">
                 <label for="library" class="block text-sm font-medium text-gray-700 mb-2">Select Library</label>
                 <select name="library_id" id="library" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
                     {% for library in libraries %}
-                        <option value="{{ library.id }}">{{ library.owner.first_name }} {{ library.owner.last_name }}({{ library.venue_name }})</option>
+                        <option value="{{ library.id }}">{{ library.owner.first_name }} {{ library.owner.last_name }} ({{ library.venue_name }})</option>
                     {% endfor %}
                 </select>
+            </div>
+
+            <!-- Selected Cards Display -->
+            <div id="selected-cards-container" class="mb-6 bg-gray-50 p-4 rounded-lg hidden">
+                <p class="text-sm font-medium text-gray-700 mb-2">Selected Cards: <span id="selected-count">0</span></p>
+                <div id="selected-cards-list" class="flex flex-nowrap gap-2 overflow-x-auto pb-2"></div>
             </div>
 
             <!-- Card Selection -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Select Cards</label>
+                <div id="error-message" class="hidden text-center text-red-600 p-4 rounded-lg bg-red-50 mb-4">
+                    <!-- Error messages will appear here -->
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -55,5 +65,4 @@
     </div>
 </div>
 <script src="{% static 'js/scripts.js' %}"></script>
-
 {% endblock %}

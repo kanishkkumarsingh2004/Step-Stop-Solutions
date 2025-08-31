@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get DOM elements
     const form = document.getElementById('allocate-form');
     const selectAllCheckbox = document.getElementById('select-all');
-    const cardCheckboxes = document.querySelectorAll('input[name="nfc_serials"]');
+    const cardCheckboxes = document.querySelectorAll('.card-checkbox');
     const selectedCardsContainer = document.getElementById('selected-cards-container');
     const selectedCardsList = document.getElementById('selected-cards-list');
     const selectedCount = document.getElementById('selected-count');
     const errorMessageDiv = document.getElementById('error-message');
-    const librarySelect = document.getElementById('library');
+    const institutionSelect = document.getElementById('institution');
     const nfcIdInput = document.getElementById('nfc_id');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
@@ -21,8 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
         errorMessageDiv.textContent = '';
     };
     const updateSelectedCardsDisplay = () => {
-        const selectedCards = Array.from(document.querySelectorAll('input[name="nfc_serials"]:checked'))
-            .map(checkbox => checkbox.value);
+        const selectedCards = Array.from(cardCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
         const count = selectedCards.length;
         selectedCount.textContent = count;
         selectedCardsList.innerHTML = selectedCards.map(card => `
@@ -76,10 +77,11 @@ document.addEventListener('DOMContentLoaded', function() {
             correspondingCheckbox.checked = true;
             console.log(`Selected checkbox for card ID: ${cardId}`); // Debug
             updateSelectedCardsDisplay();
-            correspondingCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            correspondingCheckbox.parentElement.classList.add('bg-yellow-100');
+            const row = correspondingCheckbox.closest('tr');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.classList.add('bg-yellow-100');
             setTimeout(() => {
-                correspondingCheckbox.parentElement.classList.remove('bg-yellow-100');
+                row.classList.remove('bg-yellow-100');
             }, 1000); // Remove highlight after 1 second
         } else {
             showError(`Card ID ${cardId} not found in the list.`);
@@ -95,12 +97,18 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const libraryId = librarySelect.value;
-            const selectedCards = Array.from(document.querySelectorAll('input[name="nfc_serials"]:checked'))
-                .map(checkbox => checkbox.value);
+            const institutionId = institutionSelect.value;
+            const selectedCards = Array.from(cardCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
 
-            if (!libraryId || selectedCards.length === 0) {
-                showError('Please select a library and at least one card.');
+            if (!institutionId) {
+                showError('Please select an institution.');
+                return;
+            }
+
+            if (selectedCards.length === 0) {
+                showError('Please select at least one card.');
                 return;
             }
 
@@ -117,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify({
-                        library_id: libraryId,
+                        institution_id: institutionId,
                         nfc_serials: selectedCards
                     })
                 });
@@ -142,7 +150,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
                 cardCheckboxes.forEach(checkbox => {
-                    checkbox.checked = selectAllCheckbox.checked;
+                    checkbox.checked = this.checked;
+                    const row = checkbox.closest('tr');
+                    row.style.backgroundColor = this.checked ? '#E8F0FE' : '';
                 });
                 updateSelectedCardsDisplay();
             });
@@ -151,6 +161,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle individual card selection
         cardCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
+                const row = this.closest('tr');
+                row.style.backgroundColor = this.checked ? '#E8F0FE' : '';
                 if (!this.checked && selectAllCheckbox.checked) {
                     selectAllCheckbox.checked = false;
                 }
@@ -158,29 +170,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // NFC Reader Logic (fallback for true NFC tags)
-        if (typeof NDEFReader !== 'undefined') {
-            const ndef = new NDEFReader();
-            ndef.scan().then(() => {
-                ndef.onreading = ({ serialNumber }) => {
-                    hideError();
-                    const cardId = serialNumber.trim();
-                    console.log(`NFC Tag scanned: ${cardId}`); // Debug
-                    processCardId(cardId); // Reuse the same processing logic
-                };
-                ndef.onreadingerror = () => {
-                    showError('Could not read NFC card. Please try again.');
-                    console.log('NFC reading error'); // Debug
-                };
-            }).catch(error => {
-                console.error('Error starting NFC scan:', error);
-                if (error.name === 'NotAllowedError') {
-                    showError('NFC permission denied. Please allow NFC access and try again.');
-                } else {
-                    showError('Could not start NFC scanning. Ensure a secure (HTTPS) connection.');
+        // Handle row click to toggle checkbox
+        document.querySelectorAll('.card-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                if (e.target.type === 'checkbox') return;
+                const checkbox = this.querySelector('.card-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
                 }
             });
-        }
+        });
     }
 
     // Initial update of selected cards display

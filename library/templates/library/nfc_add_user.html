@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% load static %}
 
 {% block content %}
@@ -16,8 +15,9 @@
         <!-- Form and Error Handling -->
         <form id="nfc-form" method="post" class="hidden">
             {% csrf_token %}
+            <input type="hidden" name="nfc_id" id="nfc_id">
         </form>
-        <div id="nfc-error-message" class="hidden mx-4 sm:mx-6 mt-4 p-3 sm:p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm">
+        <div id="error-message" class="hidden mx-4 sm:mx-6 mt-4 p-3 sm:p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm">
             <p></p>
         </div>
 

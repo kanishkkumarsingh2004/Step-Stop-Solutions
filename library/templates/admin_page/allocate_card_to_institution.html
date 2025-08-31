@@ -8,6 +8,7 @@
     <div class="bg-white rounded-lg shadow-md p-6">
         <form id="allocate-form" method="post" action="{% url 'allocate_card_to_institution' %}">
             {% csrf_token %}
+            <input type="hidden" name="nfc_id" id="nfc_id">
             
             <!-- Institution Selection -->
             <div class="mb-6">
@@ -21,14 +22,17 @@
             </div>
 
             <!-- Selected Cards Display -->
-            <div id="selectedCardsContainer" class="mb-6 bg-gray-50 p-4 rounded-lg hidden">
-                <p class="text-sm font-medium text-gray-700 mb-2">Selected Cards:</p>
-                <div id="selectedCardsList" class="flex flex-nowrap gap-2 overflow-x-auto pb-2"></div>
+            <div id="selected-cards-container" class="mb-6 bg-gray-50 p-4 rounded-lg hidden">
+                <p class="text-sm font-medium text-gray-700 mb-2">Selected Cards: <span id="selected-count">0</span></p>
+                <div id="selected-cards-list" class="flex flex-nowrap gap-2 overflow-x-auto pb-2"></div>
             </div>
 
             <!-- Card Selection -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Select Cards</label>
+                <div id="error-message" class="hidden text-center text-red-600 p-4 rounded-lg bg-red-50 mb-4">
+                    <!-- Error messages will appear here -->
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -61,199 +65,5 @@
         </form>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('allocate-form');
-    const selectAllCheckbox = document.getElementById('select-all');
-    const cardCheckboxes = document.querySelectorAll('.card-checkbox');
-    const selectedCardsContainer = document.getElementById('selectedCardsContainer');
-    const selectedCardsList = document.getElementById('selectedCardsList');
-    let isNFCReading = false;
-
-    // Function to update selected cards display
-    function updateSelectedCardsDisplay() {
-        const selectedCards = Array.from(cardCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-        
-        const count = selectedCards.length;
-        
-        if (count > 0) {
-            selectedCardsContainer.classList.remove('hidden');
-            selectedCardsList.innerHTML = `
-                <p class="text-sm font-medium text-gray-700 mb-2">
-                    Selected Cards (${count}):
-                </p>
-                <div class="flex flex-nowrap gap-2 overflow-x-auto pb-2">
-                    ${selectedCards.map(card => `
-                        <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded whitespace-nowrap">${card}</span>
-                    `).join('')}
-                </div>
-            `;
-        } else {
-            selectedCardsContainer.classList.add('hidden');
-        }
-    }
-
-    // Handle select all checkbox
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            cardCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-                const row = checkbox.closest('tr');
-                if (this.checked) {
-                    row.style.backgroundColor = '#E8F0FE';
-                } else {
-                    row.style.backgroundColor = '';
-                }
-            });
-            updateSelectedCardsDisplay();
-        });
-    }
-
-    // Handle individual card selection
-    cardCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const row = this.closest('tr');
-            
-            // Visual feedback
-            if (this.checked) {
-                row.style.backgroundColor = '#E8F0FE';
-            } else {
-                row.style.backgroundColor = '';
-            }
-            
-            // Uncheck select-all if any checkbox is unchecked
-            if (!this.checked && selectAllCheckbox && selectAllCheckbox.checked) {
-                selectAllCheckbox.checked = false;
-            }
-            
-            updateSelectedCardsDisplay();
-        });
-    });
-
-    // Handle row click to toggle checkbox
-    document.querySelectorAll('.card-row').forEach(row => {
-        row.addEventListener('click', function(e) {
-            // Don't trigger if clicking on the checkbox itself
-            if (e.target.type === 'checkbox') return;
-            
-            const checkbox = this.querySelector('.card-checkbox');
-            if (checkbox) {
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-            }
-        });
-    });
-
-    // Function to handle NFC card tap
-    async function handleNFCTap(nfcSerial) {
-        if (isNFCReading) return;
-        isNFCReading = true;
-
-        try {
-            // Find the checkbox for the tapped card
-            const checkbox = document.querySelector(`input[value="${nfcSerial}"]`);
-            if (checkbox) {
-                // Toggle the checkbox
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-                
-                // Visual feedback
-                const row = checkbox.closest('tr');
-                row.style.backgroundColor = checkbox.checked ? '#E8F0FE' : '';
-                
-                // Add a temporary highlight effect
-                row.style.transition = 'background-color 0.3s';
-                setTimeout(() => {
-                    if (!checkbox.checked) {
-                        row.style.backgroundColor = '';
-                    }
-                }, 1000);
-            }
-        } catch (error) {
-            console.error('Error handling NFC tap:', error);
-        } finally {
-            isNFCReading = false;
-        }
-    }
-
-    // Listen for NFC card taps
-    if ('NDEFReader' in window) {
-        try {
-            const ndef = new NDEFReader();
-            ndef.scan().then(() => {
-                console.log("NFC scan started successfully.");
-                
-                ndef.addEventListener('reading', ({ serialNumber }) => {
-                    console.log(`NFC card tapped with serial number: ${serialNumber}`);
-                    handleNFCTap(serialNumber);
-                });
-
-                ndef.addEventListener('readingerror', (error) => {
-                    console.error('Error reading NFC card:', error);
-                });
-
-            }).catch(error => {
-                console.error('Error starting NFC scan:', error);
-                // Optionally show a message to the user that NFC scanning failed to start.
-            });
-        } catch (error) {
-            console.error('Web NFC API could not be initialized:', error);
-        }
-    } else {
-        console.log('Web NFC is not supported in this browser');
-    }
-
-    // Handle form submission
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const institutionId = document.getElementById('institution').value;
-        const selectedCards = Array.from(cardCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-
-        if (!institutionId) {
-            alert('Please select an institution');
-            return;
-        }
-
-        if (selectedCards.length === 0) {
-            alert('Please select at least one card');
-            return;
-        }
-
-        try {
-            const response = await fetch('{% url "allocate_card_to_institution" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({
-                    institution_id: institutionId,
-                    nfc_serials: selectedCards
-                })
-            });
-
-            const data = await response.json();
-            
-            if (response.ok) {
-                alert('Cards allocated successfully!');
-                window.location.reload();
-            } else {
-                alert(data.error || 'Failed to allocate cards');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while allocating cards');
-        }
-    });
-
-    // Initialize display
-    updateSelectedCardsDisplay();
-});
-</script>
-{% endblock %} 
+<script src="{% static 'js/allocate_institution.js' %}"></script>
+{% endblock %}
