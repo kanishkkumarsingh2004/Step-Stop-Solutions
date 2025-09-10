@@ -38,8 +38,10 @@ import decimal
 import base64
 from io import BytesIO
 from datetime import timedelta, datetime
+from datetime import time as dt_time
 import qrcode
 from collections import defaultdict
+from django.urls import reverse
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -1039,27 +1041,27 @@ def process_subscription_payment(request, uid, subscription_id):
         # Validate transaction ID based on payment method
         if payment_method == 'upi' and not transaction_id:
             messages.error(request, 'Transaction ID is required for UPI payments')
-            return redirect('institute_subscription_payment', uid=institution.uid, subscription_id=subscription_id)
+            return redirect('coaching:institute_subscription_payment', uid=institution.uid, subscription_id=subscription_id)
         
         # For cash payments, generate a reference if no transaction ID provided
         if payment_method == 'cash' and not transaction_id:
             transaction_id = f"CASH_{request.user.id}_{int(timezone.now().timestamp())}"
         
-        # Create the subscription
+        # Create the subscription with end_time set to midnight (00:00)
+
         subscription = InstitutionSubscription.objects.create(
             user=request.user,
             subscription_plan=subscription_plan,
             start_date=subscription_plan.start_date,
             end_date=subscription_plan.start_date + timedelta(days=30 * subscription_plan.course_duration),
             start_time=subscription_plan.start_time,
-            end_time=subscription_plan.end_time,
+            end_time=dt_time(0, 0),  # Set end_time to midnight 00:00
             amount_paid=final_price,
             transaction_id=transaction_id,
             payment_method=payment_method,
             coupon_applied=applied_coupon,
             status='Valid'  # Set initial status as pending
         )
-        
         # Use the coupon if it was applied
         if applied_coupon:
             applied_coupon.use_coupon(request.user)
@@ -1089,7 +1091,7 @@ def process_subscription_payment(request, uid, subscription_id):
     except Exception as e:
         logger.error(f"Error in process_subscription_payment: {str(e)}")
         messages.error(request, 'An error occurred while processing your payment')
-        return redirect('institute_subscription_payment', uid=uid, subscription_id=subscription_id)
+        return redirect('coaching:institute_subscription_payment', uid=uid, subscription_id=subscription_id)
 
 @login_required
 def institute_subscription_details(request, uid, subscription_id):
@@ -2316,3 +2318,164 @@ def delete_installment_payment(request, institution_uid, subscription_id, instal
     }
     
     return render(request, 'institution/delete_installment_payment.html', context)
+
+@login_required
+@require_POST
+def process_partial_payment(request, uid, subscription_id):
+    """Process a partial payment for an institute subscription.
+    Creates a new InstitutionSubscription with amount_paid as the partial amount,
+    records an InstallmentPayment, and returns redirect URL to details page.
+    """
+    try:
+        institution = get_object_or_404(Institution, uid=uid)
+        subscription_plan = get_object_or_404(InstitutionSubscriptionPlan, id=subscription_id)
+
+        # Parse JSON
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid request data format.'}, status=400)
+
+        partial_amount = Decimal(str(data.get('partial_amount', 0)))
+        payment_method = data.get('payment_method', 'cash')
+        transaction_id = (data.get('transaction_id') or '').strip()
+
+        # Determine total amount (final_price may come after coupon)
+        final_price = data.get('final_price')
+        if final_price is None:
+            # Fallback to plan price if not provided
+            final_price = subscription_plan.new_price
+        else:
+            final_price = Decimal(str(final_price))
+
+        # Optional coupon code
+        coupon_code = data.get('final_coupon')
+        applied_coupon = None
+        if coupon_code:
+            try:
+                coupon = InstitutionCoupon.objects.get(
+                    code=coupon_code,
+                    institution=institution,
+                    status='ACTIVE'
+                )
+                if coupon.is_valid() and not coupon.has_been_used_by_user(request.user):
+                    applied_coupon = coupon
+            except InstitutionCoupon.DoesNotExist:
+                applied_coupon = None
+
+        # Validations
+        if partial_amount <= 0:
+            return JsonResponse({'success': False, 'message': 'Amount must be greater than 0.'}, status=400)
+        if partial_amount >= final_price:
+            return JsonResponse({'success': False, 'message': 'Partial amount must be less than total amount.'}, status=400)
+        if payment_method == 'upi' and not transaction_id:
+            return JsonResponse({'success': False, 'message': 'Transaction ID is required for UPI.'}, status=400)
+        if payment_method == 'cash' and not transaction_id:
+            transaction_id = f"CASH_PARTIAL_{request.user.id}_{int(timezone.now().timestamp())}"
+
+        with transaction.atomic():
+            # Create subscription entry with partial amount
+            subscription = InstitutionSubscription.objects.create(
+                user=request.user,
+                subscription_plan=subscription_plan,
+                start_date=subscription_plan.start_date,
+                end_date=subscription_plan.start_date + timedelta(days=30 * subscription_plan.course_duration),
+                start_time=subscription_plan.start_time,
+                end_time=dt_time(0, 0),
+                amount_paid=partial_amount,
+                transaction_id=transaction_id,
+                payment_method=payment_method,
+                coupon_applied=applied_coupon,
+                status='Valid',
+                payment_status='valid'
+            )
+
+            # Mark coupon as used once
+            if applied_coupon:
+                applied_coupon.use_coupon(request.user)
+
+            remaining_amount = (final_price - partial_amount).quantize(Decimal('0.01'))
+
+            # Record installment
+            InstallmentPayment.objects.create(
+                subscription=subscription,
+                amount_paid=partial_amount,
+                remaining_amount=remaining_amount,
+                status='paid'
+            )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Partial payment processed successfully!',
+            'remaining_amount': str(remaining_amount),
+            'paid_amount': str(partial_amount),
+            'subscription_id': subscription.id,
+            'redirect_url': reverse('coaching:institute_subscription_details', args=[institution.uid, subscription.id])
+        })
+    except Exception as e:
+        logger.error(f"Error in process_partial_payment: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An error occurred while processing your payment.'}, status=500)
+
+@login_required
+@require_POST
+def make_additional_payment(request, uid, subscription_id):
+    """Handle additional (subsequent) partial payments for an existing subscription."""
+    try:
+        institution = get_object_or_404(Institution, uid=uid)
+        subscription = get_object_or_404(
+            InstitutionSubscription,
+            id=subscription_id,
+            user=request.user,
+            subscription_plan__institution=institution
+        )
+
+        # Parse JSON
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid request data format.'}, status=400)
+
+        additional_amount = Decimal(str(data.get('additional_amount', 0)))
+        payment_method = data.get('payment_method', 'cash')
+        transaction_id = (data.get('transaction_id') or '').strip()
+
+        total_amount = subscription.subscription_plan.old_price
+        remaining_before = total_amount - subscription.amount_paid
+        if additional_amount <= 0 or additional_amount > remaining_before:
+            return JsonResponse({
+                'success': False,
+                'message': f'Amount must be between ₹1 and ₹{remaining_before}.'
+            }, status=400)
+
+        if payment_method == 'upi' and not transaction_id:
+            return JsonResponse({'success': False, 'message': 'Transaction ID is required for UPI.'}, status=400)
+        if payment_method == 'cash' and not transaction_id:
+            transaction_id = f"CASH_PARTIAL_{request.user.id}_{int(timezone.now().timestamp())}"
+
+        with transaction.atomic():
+            # Update subscription
+            subscription.amount_paid = (subscription.amount_paid + additional_amount).quantize(Decimal('0.01'))
+            subscription.transaction_id = f"{subscription.transaction_id}, {transaction_id}" if subscription.transaction_id else transaction_id
+            subscription.payment_method = payment_method
+            subscription.save()
+
+            new_remaining = (total_amount - subscription.amount_paid).quantize(Decimal('0.01'))
+
+            # Create installment row
+            InstallmentPayment.objects.create(
+                subscription=subscription,
+                amount_paid=additional_amount,
+                remaining_amount=new_remaining,
+                status='paid'
+            )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Payment recorded successfully.',
+            'remaining_amount': str(new_remaining),
+            'paid_amount': str(additional_amount),
+            'completed': subscription.amount_paid >= total_amount
+        })
+    except Exception as e:
+        logger.error(f"Error in make_additional_payment: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'An error occurred while processing your payment.'}, status=500)

@@ -43,13 +43,13 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for subscription in institute_subscriptions %}
-                <div class="p-3 border rounded-lg bg-gray-50">
+                <div class="p-3 border rounded-lg bg-{{ subscription.end_date_color }}-50">
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div class="flex flex-col space-y-1">
                             <h3 class="text-sm font-bold text-gray-900">{{ subscription.subscription_plan.name }}</h3>
                             <div class="flex flex-col space-y-1">
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium {% if subscription.status == 'Valid' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                                    Subscription: {{ subscription.status|title }}
+                                    Subscription: {{ subscription.status|title }} 
                                 </span>
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
                                     Payment: {{ subscription.payment_status.status|title }}
@@ -102,10 +102,15 @@
             {% if active_subscriptions %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for subscription in active_subscriptions %}
-                <div class="p-3 border rounded-lg {% if subscription.payment_status.status == 'expired' %}bg-gray-100{% else %}bg-white{% endif %}">
+                <div class="p-3 border rounded-lg bg-{{ subscription.subscription_status.color }}-50">
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div class="flex flex-col space-y-1">
-                            <h3 class="text-sm font-bold text-gray-900">{{ subscription.subscription.name }}</h3>
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-bold text-gray-900">{{ subscription.subscription.name }}</h3>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800 ml-2">
+                                 Current Seat: {{ subscription.library_seats.available_seats }}
+                                </span>
+                            </div>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
                                 Payment: {{ subscription.payment_status.status|title }}
                             </span>
@@ -170,7 +175,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for sub in gym_subscriptions %}
-                <div class="p-3 border rounded-lg bg-gray-50">
+                <div class="p-3 border rounded-lg bg-{{ sub.end_date_color }}-50">
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div class="flex flex-col space-y-1">
                             <h3 class="text-sm font-bold text-gray-900">{{ sub.plan.name }}</h3>

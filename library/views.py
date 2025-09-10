@@ -19,6 +19,7 @@ import time
 
 # Set up logging
 logger = logging.getLogger(__name__)
+from datetime import date
 
 # Local imports
 from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm, InstallmentPaymentForm
@@ -109,7 +110,24 @@ def dashboard(request):
         
         # Get subscription status
         subscription_status = subscription.status
-        status_color = 'green' if subscription_status == 'valid' else 'red'
+
+        days_left = None
+        if subscription.end_date:
+            today = timezone.localdate() if hasattr(timezone, 'localdate') else date.today()
+            days_left = (subscription.end_date - today).days
+
+        # Determine color based on days left
+        if days_left is not None:
+            if days_left > 5:
+                status_color = 'green'
+            elif days_left <= 2:
+                status_color = 'red'
+            elif days_left <= 5:
+                status_color = 'yellow'
+            else:
+                status_color = 'green'
+        else:
+            status_color = 'red' if subscription_status == 'expired' else 'green'
 
         subscription_data = {
             'subscription': subscription.subscription,
@@ -120,7 +138,8 @@ def dashboard(request):
             'cost': cost,
             'subscription_status': {
                 'status': subscription_status,
-                'color': status_color
+                'color': status_color,
+                'days_left': days_left
             },
             'payment_status': {
                 'status': payment_status,
@@ -133,12 +152,29 @@ def dashboard(request):
         }
         active_subscriptions.append(subscription_data)
 
-    # Get institute subscriptions with payment status
+    # Get institute subscriptions with payment status and calculate end date color
     institute_subscriptions = []
     for subscription in InstitutionSubscription.objects.filter(user=request.user).select_related('subscription_plan__institution')[:3]:
         # Use the payment_status directly from the InstitutionSubscription model
         payment_status = subscription.payment_status
         payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
+        # Calculate days left until end_date
+        days_left = None
+        if subscription.end_date:
+            today = timezone.localdate() if hasattr(timezone, 'localdate') else date.today()
+            days_left = (subscription.end_date - today).days
+        # Determine color based on days left
+        if days_left is not None:
+            if days_left > 5:
+                end_date_color = 'green'
+            elif days_left <= 2:
+                end_date_color = 'red'
+            elif days_left <= 5:
+                end_date_color = 'yellow'
+            else:
+                end_date_color = 'green'
+        else:
+            end_date_color = 'red' if subscription.status == 'expired' else 'green'
         # Check if timetable exists for the institution
         has_timetable = TimetableEntry.objects.filter(institution=subscription.subscription_plan.institution).exists()
         subscription_data = {
@@ -154,6 +190,7 @@ def dashboard(request):
                 'status': payment_status,
                 'color': payment_color
             },
+            'end_date_color': end_date_color,
             'coupon_applied': subscription.coupon_applied,
             'has_timetable': has_timetable
         }
@@ -166,12 +203,30 @@ def dashboard(request):
         gym = plan.gym
         payment_status = sub.payment_status
         payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
+        # Calculate days left until end_date
+        days_left = None
+        if sub.end_date:
+            today = timezone.localdate() if hasattr(timezone, 'localdate') else date.today()
+            days_left = (sub.end_date - today).days
+        # Determine color based on days left
+        if days_left is not None:
+            if days_left > 5:
+                end_date_color = 'green'
+            elif days_left <= 2:
+                end_date_color = 'red'
+            elif days_left <= 5:
+                end_date_color = 'yellow'
+            else:
+                end_date_color = 'green'
+        else:
+            end_date_color = 'red' if sub.status == 'expired' else 'green'
         gym_subscriptions.append({
             'plan': plan,
             'gym': gym,
             'start_date': sub.start_date,
             'end_date': sub.end_date,
             'amount_paid': sub.amount_paid,
+            'end_date_color': end_date_color,
             'payment_status': {
                 'status': payment_status,
                 'color': payment_color

@@ -214,7 +214,88 @@
                 <button type="submit" class="w-full px-4 py-3 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base">
                     Complete Payment - ₹{{ current_price|floatformat:2 }}
                 </button>
+                <button type="button" id="partial-payment-btn" class="mt-3 w-full px-4 py-3 sm:px-6 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base">
+                    Partial Payment
+                </button>
             </form>
+
+            <!-- Partial Payment Modal -->
+            <div id="pp-modal" class="fixed inset-0 bg-gray-700 bg-opacity-50 hidden z-50">
+                <div class="min-h-full w-full flex items-center justify-center p-4">
+                    <div class="w-full max-w-xl bg-white rounded-xl shadow-2xl">
+                        <div class="flex items-start justify-between px-5 py-4 border-b border-gray-200 rounded-t-xl bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-900">Partial Payment</h3>
+                                <p class="text-xs text-gray-500">Pay a part now and finish later. Total due: ₹{{ current_price|floatformat:2 }}</p>
+                            </div>
+                            <button type="button" id="mpp-close" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="px-5 pt-4 pb-2">
+                            <form id="mpp-form" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="mpp-amount" class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 sm:text-sm">₹</span>
+                                        </div>
+                                        <input id="mpp-amount" type="number" min="1" max="{{ current_price|floatformat:2 }}" step="0.01"
+                                               data-max="{{ current_price|floatformat:2 }}"
+                                               class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                               placeholder="Enter amount" required>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">Min ₹1 • Max ₹{{ current_price|floatformat:2 }}</p>
+                                    <p id="mpp-amount-error" class="mt-1 text-xs text-red-600 hidden">Amount must be less than ₹{{ current_price|floatformat:2 }}</p>
+
+                                    <div class="mt-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                                        <div class="space-y-2">
+                                            <label class="flex items-center p-2 rounded-md border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                                <input type="radio" name="mpp-method" value="cash" class="mr-2 text-blue-600 focus:ring-blue-500" checked>
+                                                <span class="text-sm text-gray-700">Cash</span>
+                                            </label>
+                                            <label class="flex items-center p-2 rounded-md border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                                <input type="radio" name="mpp-method" value="upi" class="mr-2 text-blue-600 focus:ring-blue-500">
+                                                <span class="text-sm text-gray-700">UPI</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="mpp-upi-section" class="hidden">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">UPI QR</label>
+                                    <div class="bg-gray-50 rounded-lg border border-dashed border-gray-300 p-3 flex items-center justify-center min-h-[176px]">
+                                        <img id="mpp-qr" alt="UPI QR" class="w-40 h-40 hidden" />
+                                        <div id="mpp-qr-placeholder" class="text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                            </svg>
+                                            <p class="text-xs">Enter amount to generate QR</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4">
+                                        <label for="mpp-trx" class="block text-sm font-medium text-gray-700 mb-2">UPI Transaction ID</label>
+                                        <input id="mpp-trx" type="text" class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Enter UPI transaction ID">
+                                        <p class="mt-1 text-xs text-gray-500">Required after you complete the UPI payment</p>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-500">
+                                        Pay to: <span class="font-medium">{{ institution.recipient_name }}</span> • UPI: <span class="font-mono">{{ institution.upi_id }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="md:col-span-2 flex gap-3 mt-2">
+                                    <button type="button" id="mpp-cancel" class="px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">Cancel</button>
+                                    <button type="button" id="mpp-submit" class="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">Pay Partial</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -291,5 +372,125 @@ document.getElementById('payment-form').addEventListener('submit', function(e) {
     // Submit the form
     form.submit();
 });
+
+// Partial Payment Modal Logic
+(function(){
+    const openBtn = document.getElementById('partial-payment-btn');
+    const modal = document.getElementById('pp-modal');
+    const closeBtn = document.getElementById('mpp-close');
+    const cancelBtn = document.getElementById('mpp-cancel');
+    const form = document.getElementById('mpp-form');
+    const amountEl = document.getElementById('mpp-amount');
+    const amountErr = document.getElementById('mpp-amount-error');
+    const methodEls = document.querySelectorAll('input[name="mpp-method"]');
+    const upiSection = document.getElementById('mpp-upi-section');
+    const qrImg = document.getElementById('mpp-qr');
+    const qrPh = document.getElementById('mpp-qr-placeholder');
+    const trxEl = document.getElementById('mpp-trx');
+    const submitBtn = document.getElementById('mpp-submit');
+
+    function setAmountError(show){
+        if(show){
+            amountErr.classList.remove('hidden');
+            amountEl.classList.remove('border-gray-300');
+            amountEl.classList.add('border-red-500');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-60','cursor-not-allowed');
+        } else {
+            amountErr.classList.add('hidden');
+            amountEl.classList.remove('border-red-500');
+            amountEl.classList.add('border-gray-300');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-60','cursor-not-allowed');
+        }
+    }
+
+    function openModal(){ modal.classList.remove('hidden'); }
+    function closeModal(){
+        modal.classList.add('hidden');
+        form.reset();
+        upiSection.classList.add('hidden');
+        setAmountError(false);
+        qrImg.classList.add('hidden');
+        qrPh.classList.remove('hidden');
+    }
+
+    function updateUPIVisibility(){
+        const method = document.querySelector('input[name="mpp-method"]:checked').value;
+        if(method === 'upi'){
+            upiSection.classList.remove('hidden');
+            const amt = parseFloat(amountEl.value);
+            const maxAmt = parseFloat(amountEl.getAttribute('data-max'));
+            const invalid = isNaN(amt) || amt <= 0 || amt >= maxAmt;
+            setAmountError(invalid);
+            if(!invalid){ setQR(amt); } else { qrImg.classList.add('hidden'); qrPh.classList.remove('hidden'); }
+        } else {
+            upiSection.classList.add('hidden');
+        }
+    }
+
+    function setQR(amount){
+        const upi = '{{ institution.upi_id|escapejs }}';
+        const name = '{{ institution.recipient_name|escapejs }}';
+        const ts = Date.now();
+        const upiUrl = `upi://pay?pa=${upi}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=Partial%20Payment&tr=${ts}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+        qrImg.src = qrUrl;
+        qrImg.classList.remove('hidden');
+        qrPh.classList.add('hidden');
+    }
+
+    amountEl && amountEl.addEventListener('input', () => {
+        const method = document.querySelector('input[name="mpp-method"]:checked').value;
+        const amt = parseFloat(amountEl.value);
+        const maxAmt = parseFloat(amountEl.getAttribute('data-max'));
+        const invalid = isNaN(amt) || amt <= 0 || amt >= maxAmt;
+        setAmountError(invalid);
+        if(method === 'upi' && !invalid){ setQR(amt); } else { qrImg.classList.add('hidden'); qrPh.classList.remove('hidden'); }
+    });
+
+    methodEls.forEach(el => el.addEventListener('change', updateUPIVisibility));
+
+    openBtn && openBtn.addEventListener('click', openModal);
+    closeBtn && closeBtn.addEventListener('click', closeModal);
+    cancelBtn && cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if(e.target === modal){ closeModal(); } });
+
+    submitBtn && submitBtn.addEventListener('click', () => {
+        const amt = parseFloat(amountEl.value);
+        const maxAmt = parseFloat(amountEl.getAttribute('data-max'));
+        const invalid = isNaN(amt) || amt <= 0 || amt >= maxAmt;
+        if(invalid){ setAmountError(true); amountEl.focus(); return; }
+        const method = document.querySelector('input[name="mpp-method"]:checked').value;
+        const trx = method === 'upi' ? (trxEl.value || '').trim() : '';
+        if(method === 'upi' && !trx){ alert('Please enter the UPI transaction ID'); return; }
+
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true; submitBtn.textContent = 'Processing...';
+
+        fetch('{% url "coaching:process_partial_payment" institution.uid subscription_plan.id %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+            body: JSON.stringify({
+                partial_amount: amt,
+                payment_method: method,
+                transaction_id: trx,
+                final_price: {{ current_price|floatformat:2 }}{% if applied_coupon %},
+                final_coupon: '{{ applied_coupon }}'{% endif %}
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success){
+                alert('Partial payment successful! Remaining: ₹' + data.remaining_amount);
+                window.location.href = data.redirect_url;
+            } else {
+                alert(data.message || 'Failed to process partial payment');
+            }
+        })
+        .catch(() => { alert('An error occurred. Please try again.'); })
+        .finally(() => { submitBtn.disabled = false; submitBtn.textContent = originalText; });
+    });
+})();
 </script>
 {% endblock %} 

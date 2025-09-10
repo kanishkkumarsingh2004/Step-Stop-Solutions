@@ -68,6 +68,9 @@ urlpatterns = [
    path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/add/', institute_view.add_installment_payment, name='add_installment_payment'),
    path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/<int:installment_id>/edit/', institute_view.edit_installment_payment, name='edit_installment_payment'),
    path('institution/<str:institution_uid>/subscription/<int:subscription_id>/installments/<int:installment_id>/delete/', institute_view.delete_installment_payment, name='delete_installment_payment'),
-   
 
-   ]
+   # Partial payment endpoints
+   path('institution/<str:uid>/subscription/<int:subscription_id>/process-partial-payment/', institute_view.process_partial_payment, name='process_partial_payment'),
+   path('institution/<str:uid>/subscription/<int:subscription_id>/make-additional-payment/', institute_view.make_additional_payment, name='make_additional_payment'),
+   
+]

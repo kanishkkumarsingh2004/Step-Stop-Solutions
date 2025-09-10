@@ -85,12 +85,12 @@
         </div>
 
         <div class="text-center space-y-4">
-            <a href="{% url 'institute_subscription_details' institution.uid subscription.id %}" 
+            <a href="{% url 'coaching:institute_subscription_details' institution.uid subscription.id %}"
                class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300 text-lg font-semibold shadow-lg hover:shadow-xl">
                 View Subscription Details
             </a>
             <div>
-                <a href="{% url 'public_institute_subscriptions' institution.uid %}" 
+                <a href="{% url 'coaching:public_institute_subscriptions' institution.uid %}"
                    class="text-blue-600 hover:text-blue-800 text-sm">
                     Back to Subscription Plans
                 </a>
