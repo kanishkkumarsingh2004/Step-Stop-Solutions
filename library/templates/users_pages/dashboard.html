@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container mx-auto px-2 py-4 space-y-4">
@@ -54,6 +55,11 @@
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
                                     Payment: {{ subscription.payment_status.status|title }}
                                 </span>
+                                {% if subscription.amount_paid and subscription.subscription_plan.old_price and subscription.amount_paid < subscription.subscription_plan.old_price %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold bg-yellow-100 text-yellow-800 mt-1">
+                                    Remaining: ₹{{ subscription.subscription_plan.new_price|sub:subscription.amount_paid|floatformat:2 }}
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="flex items-end justify-end">

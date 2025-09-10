@@ -1,109 +1,650 @@
-    {% extends 'base.html' %}
+{% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Subscription Details - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Subscription Details</h4>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header Section -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 mb-8 text-white shadow-xl">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">{{ subscription_plan.name }}</h1>
+                <p class="text-blue-100 text-lg">{{ institution.name }}</p>
+            </div>
+            <div class="text-right">
+                <div class="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full">
+                    <i class="fas fa-calendar-alt mr-2"></i>
+                    <span class="font-medium">{{ subscription.start_date|date:"M d, Y" }} - {{ subscription.end_date|date:"M d, Y" }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <h5 class="text-primary">{{ subscription_plan.name }}</h5>
-                        <p class="text-muted">{{ institution.name }}</p>
-                    </div>
+            </div>
+        </div>
+    </div>
 
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6>Course Details</h6>
-                            <p>{{ subscription_plan.course_description }}</p>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Course Information Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Course Details -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    <div class="flex items-center mb-4">
+                        <div class="p-3 bg-blue-100 rounded-xl">
+                            <i class="fas fa-book text-blue-600 text-xl"></i>
                         </div>
-                        <div class="col-md-6">
-                            <h6>Faculty Details</h6>
-                            <p>{{ subscription_plan.faculty_description }}</p>
-                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 ml-4">Course Details</h3>
                     </div>
+                    <p class="text-gray-600 leading-relaxed">{{ subscription_plan.course_description|default:"No description available" }}</p>
+                </div>
 
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6>Subjects Covered</h6>
-                            <p>{{ subscription_plan.subject_cover }}</p>
+                <!-- Faculty Details -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    <div class="flex items-center mb-4">
+                        <div class="p-3 bg-green-100 rounded-xl">
+                            <i class="fas fa-user-graduate text-green-600 text-xl"></i>
                         </div>
-                        <div class="col-md-6">
-                            <h6>Exams Covered</h6>
-                            <p>{{ subscription_plan.exam_cover }}</p>
-                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 ml-4">Faculty Details</h3>
                     </div>
+                    <p class="text-gray-600 leading-relaxed">{{ subscription_plan.faculty_description|default:"No faculty information available" }}</p>
+                </div>
 
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6>Schedule</h6>
-                            <p>
-                                Start Date: {{ subscription.start_date|date:"d M Y" }}<br>
-                                End Date: {{ subscription.end_date|date:"d M Y" }}<br>
-                                Time: {{ subscription.start_time|time:"g:i A" }} - {{ subscription.end_time|time:"g:i A" }}
-                            </p>
+                <!-- Subjects Covered -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    <div class="flex items-center mb-4">
+                        <div class="p-3 bg-purple-100 rounded-xl">
+                            <i class="fas fa-list-check text-purple-600 text-xl"></i>
                         </div>
-                        <div class="col-md-6">
-                            <h6>Status</h6>
-                            <p>
-                                <span class="badge {% if subscription.status == 'valid' %}bg-success{% else %}bg-danger{% endif %}">
-                                    {{ subscription.status|title }}
-                                </span>
-                            </p>
-                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 ml-4">Subjects Covered</h3>
                     </div>
+                    <p class="text-gray-600 leading-relaxed">{{ subscription_plan.subject_cover|default:"No subjects specified" }}</p>
+                </div>
 
-                    <div class="card mb-4">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Payment Details</h6>
+                <!-- Exams Covered -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    <div class="flex items-center mb-4">
+                        <div class="p-3 bg-orange-100 rounded-xl">
+                            <i class="fas fa-clipboard-check text-orange-600 text-xl"></i>
                         </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Payment Method:</span>
-                                <span class="text-capitalize">{{ subscription.payment_method }}</span>
+                        <h3 class="text-xl font-semibold text-gray-800 ml-4">Exams Covered</h3>
+                    </div>
+                    <p class="text-gray-600 leading-relaxed">{{ subscription_plan.exam_cover|default:"No exams specified" }}</p>
+                </div>
+            </div>
+
+            <!-- Schedule & Status -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Schedule -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-clock text-blue-600 mr-3"></i>
+                            Schedule
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                                <i class="fas fa-calendar-start text-blue-600 mr-3"></i>
+                                <div>
+                                    <p class="text-sm text-gray-500">Start Date</p>
+                                    <p class="font-medium text-gray-800">{{ subscription.start_date|date:"d M Y" }}</p>
+                                </div>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Original Price:</span>
-                                <span>₹{{ original_price|floatformat:2 }}</span>
+                            <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                                <i class="fas fa-calendar-end text-blue-600 mr-3"></i>
+                                <div>
+                                    <p class="text-sm text-gray-500">End Date</p>
+                                    <p class="font-medium text-gray-800">{{ subscription.end_date|date:"d M Y" }}</p>
+                                </div>
                             </div>
-                            {% if has_coupon %}
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Coupon Applied:</span>
-                                <span>{{ coupon.code }}</span>
+                            <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                                <i class="fas fa-clock text-blue-600 mr-3"></i>
+                                <div>
+                                    <p class="text-sm text-gray-500">Time</p>
+                                    <p class="font-medium text-gray-800">{{ subscription.start_time|time:"g:i A" }} - {{ subscription.end_time|time:"g:i A" }}</p>
+                                </div>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Discount:</span>
-                                <span>-₹{{ discount_amount|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-info-circle text-green-600 mr-3"></i>
+                            Status
+                        </h3>
+                        <div class="text-center">
+                            <div class="inline-flex items-center px-6 py-3 rounded-full {% if subscription.status == 'valid' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                <i class="fas {% if subscription.status == 'valid' %}fa-check-circle{% else %}fa-times-circle{% endif %} mr-2"></i>
+                                <span class="font-semibold">{{ subscription.status|title }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center mb-6">
+                    <div class="p-3 bg-emerald-100 rounded-xl">
+                        <i class="fas fa-credit-card text-emerald-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 ml-4">Payment Details</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Payment Info -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600">Payment Method</span>
+                            <span class="font-medium text-gray-800 capitalize">{{ subscription.payment_method }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                            <span class="text-gray-600">Plan Price</span>
+                            <span class="font-medium text-blue-800">₹{{ subscription_plan.new_price|default:subscription_plan.old_price|floatformat:2 }}</span>
+                        </div>
+                        {% if subscription.coupon_applied %}
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span class="text-gray-600">Coupon Used</span>
+                            <span class="font-medium text-green-800">{{ subscription.coupon_applied.code }}</span>
+                        </div>
+                        {% else %}
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600">Coupon Status</span>
+                            <span class="font-medium text-gray-600">No coupon used</span>
+                        </div>
+                        {% endif %}
+                        {% if has_coupon %}
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span class="text-gray-600">Coupon Applied</span>
+                            <span class="font-medium text-green-800">{{ coupon.code }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span class="text-gray-600">Discount</span>
+                            <span class="font-medium text-green-800">-₹{{ discount_amount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                            <span class="text-gray-600">Transaction ID</span>
+                            <span class="font-medium text-blue-800 text-sm">{{ subscription.transaction_id|truncatechars:20 }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-l-4 border-blue-500">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-600">Total Amount</span>
+                                <span class="font-bold text-lg text-gray-800">₹{{ subscription_plan.new_price|floatformat:2 }}</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-600">Amount Paid</span>
+                                <span class="font-bold text-lg text-green-600">₹{{ total_paid|floatformat:2 }}</span>
+                            </div>
+                            {% if remaining_amount > 0 %}
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Remaining Amount</span>
+                                <span class="font-bold text-lg text-orange-600">₹{{ remaining_amount|floatformat:2 }}</span>
                             </div>
                             {% endif %}
-                            <hr>
-                            <div class="d-flex justify-content-between">
-                                <strong>Final Amount Paid:</strong>
-                                <strong>₹{{ final_price|floatformat:2 }}</strong>
+                        </div>
+
+                        <!-- Payment Progress -->
+                        {% if total_amount and total_amount > 0 %}
+                        <div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                <span>Payment Progress</span>
+                                <span>{{ total_paid|default:0|div:total_amount|mul:100|floatformat:1 }}%</span>
                             </div>
-                            <div class="mt-2">
-                                <small class="text-muted">
-                                    {% if subscription.payment_method == 'cash' %}
-                                        Reference ID: {{ subscription.transaction_id }}
-                                    {% else %}
-                                        Transaction ID: {{ subscription.transaction_id }}
-                                    {% endif %}
-                                </small>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div class="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-500"
+                                     style="width: '{{ total_paid|default:0|div:total_amount|mul:100|floatformat:1 }}%'"></div>
                             </div>
                         </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment History -->
+            {% if installment_payments %}
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center mb-6">
+                    <div class="p-3 bg-indigo-100 rounded-xl">
+                        <i class="fas fa-history text-indigo-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 ml-4">Payment History</h3>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Amount Paid</th>
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Remaining Amount</th>
+                                <th class="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in installment_payments %}
+                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-calendar text-gray-400 mr-2"></i>
+                                        {{ payment.payment_date|date:"d M Y" }}
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="font-medium text-green-600">₹{{ payment.amount_paid|floatformat:2 }}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="font-medium text-orange-600">₹{{ payment.remaining_amount|floatformat:2 }}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                        {% if payment.status == 'paid' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                        <i class="fas {% if payment.status == 'paid' %}fa-check-circle{% else %}fa-clock{% endif %} mr-1"></i>
+                                        {{ payment.status|title }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            {% if remaining_amount > 0 %}
+            <!-- Outstanding Payment Card -->
+            <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200 mb-6">
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
+                        <i class="fas fa-exclamation-triangle text-orange-600 text-2xl"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-2">Outstanding Payment</h4>
+                    <p class="text-gray-600 mb-4">Complete your subscription payment</p>
+
+                    <div class="bg-white rounded-lg p-4 mb-4 border border-orange-200">
+                        <div class="text-2xl font-bold text-orange-600 mb-1">₹{{ remaining_amount|floatformat:2 }}</div>
+                        <div class="text-sm text-gray-500">Remaining Balance</div>
                     </div>
 
-                    <div class="text-center">
-                        <a href="{% url 'coaching:institute_dashboard' institution.id %}" class="btn btn-primary">Back to Dashboard</a>
-                    </div>
+                    <button type="button" class="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                        <i class="fas fa-credit-card mr-2"></i>
+                        Pay Now
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-bolt text-blue-600 mr-3"></i>
+                    Quick Actions
+                </h4>
+
+                <div class="space-y-3">
+                    <a href="{% url 'coaching:coaching_dashboard' institution.uid %}" class="flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group">
+                        <i class="fas fa-arrow-left text-blue-600 mr-3 group-hover:-translate-x-1 transition-transform"></i>
+                        <span class="font-medium text-blue-800">Back to Dashboard</span>
+                    </a>
+
+                    <a href="#" class="flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group">
+                        <i class="fas fa-download text-green-600 mr-3 group-hover:scale-110 transition-transform"></i>
+                        <span class="font-medium text-green-800">Download Receipt</span>
+                    </a>
+
+                    <a href="#" class="flex items-center p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group">
+                        <i class="fas fa-envelope text-purple-600 mr-3 group-hover:scale-110 transition-transform"></i>
+                        <span class="font-medium text-purple-800">Contact Support</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+
+<!-- Payment Modal -->
+{% if remaining_amount > 0 %}
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" id="paymentModal">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="p-2 bg-white/20 rounded-lg mr-3">
+                        <i class="fas fa-credit-card text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold">Make Payment</h3>
+                </div>
+                <button type="button" class="text-white hover:text-gray-200 transition-colors" onclick="closePaymentModal()">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+            <!-- Outstanding Balance Alert -->
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-orange-600 mr-3"></i>
+                    <div>
+                        <p class="text-sm text-orange-800 font-medium">Outstanding Balance</p>
+                        <p class="text-lg font-bold text-orange-600">₹{{ remaining_amount|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <form id="additionalPaymentForm">
+                {% csrf_token %}
+                <input type="hidden" name="subscription_id" value="{{ subscription.id }}">
+                <input type="hidden" name="institution_uid" value="{{ institution.uid }}">
+
+                <!-- Payment Amount -->
+                <div class="mb-5">
+                    <label for="additional_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Amount (₹)
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">₹</span>
+                        </div>
+                        <input type="number" class="block w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="additional_amount" name="additional_amount"
+                               min="1" max="{{ remaining_amount }}" step="0.01" required
+                               placeholder="Enter amount to pay">
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500">Maximum amount: ₹{{ remaining_amount|floatformat:2 }}</p>
+                </div>
+
+                <!-- QR Code for Payment -->
+                <div class="mb-5" id="qr_code_section" style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Scan QR Code to Pay
+                    </label>
+                    <div class="text-center">
+                        <div class="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
+                            <img id="payment_qr_code" src="" alt="Payment QR Code" class="max-w-full h-auto" style="display: none;">
+                            <div id="qr_placeholder" class="text-center text-gray-500">
+                                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M12 12l4-4m-4 4l4 4"></path>
+                                </svg>
+                                <p class="text-xs">QR Code will appear here</p>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600">Scan this QR code with your UPI app to pay ₹<span id="qr_amount">0</span></p>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="mb-5">
+                    <label for="payment_method" class="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Method
+                    </label>
+                    <select class="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="payment_method" name="payment_method" required>
+                        <option value="">Select payment method</option>
+                        <option value="cash">💵 Cash</option>
+                        <option value="upi">📱 UPI</option>
+                    </select>
+                </div>
+
+                <!-- Transaction ID Field -->
+                <div class="mb-5 hidden" id="transaction_id_field">
+                    <label for="transaction_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Transaction ID
+                    </label>
+                    <input type="text" class="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="transaction_id" name="transaction_id"
+                           placeholder="Enter transaction ID">
+                    <p class="mt-1 text-sm text-gray-500">Required for UPI and Card payments</p>
+                </div>
+
+                <!-- Payment Date -->
+                <div class="mb-6">
+                    <label for="payment_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Date
+                    </label>
+                    <input type="date" class="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" id="payment_date" name="payment_date"
+                           value="{% now 'Y-m-d' %}" required>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end space-x-3">
+            <button type="button" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition-colors" onclick="closePaymentModal()">
+                Cancel
+            </button>
+            <button type="button" class="px-6 py-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-105" id="submitPaymentBtn">
+                <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true" style="display: none;"></span>
+                <i class="fas fa-check mr-2"></i>
+                Make Payment
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const transactionIdField = document.getElementById('transaction_id_field');
+    const submitPaymentBtn = document.getElementById('submitPaymentBtn');
+    const paymentModal = document.getElementById('paymentModal');
+
+    // Modal functions
+    window.openPaymentModal = function() {
+        paymentModal.classList.remove('hidden');
+        paymentModal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closePaymentModal = function() {
+        paymentModal.classList.add('hidden');
+        paymentModal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    };
+
+    // Close modal when clicking outside
+    paymentModal.addEventListener('click', function(e) {
+        if (e.target === paymentModal) {
+            closePaymentModal();
+        }
+    });
+
+    // Show/hide transaction ID field and QR code based on payment method
+    paymentMethodSelect.addEventListener('change', function() {
+        if (this.value === 'upi') {
+            transactionIdField.classList.remove('hidden');
+            document.getElementById('transaction_id').required = true;
+            document.getElementById('qr_code_section').style.display = 'block';
+            generateQRCode();
+        } else if (this.value === 'card') {
+            transactionIdField.classList.remove('hidden');
+            document.getElementById('transaction_id').required = true;
+            document.getElementById('qr_code_section').style.display = 'none';
+        } else {
+            transactionIdField.classList.add('hidden');
+            document.getElementById('transaction_id').required = false;
+            document.getElementById('qr_code_section').style.display = 'none';
+        }
+    });
+
+    // Update QR code when payment amount changes
+    document.getElementById('additional_amount').addEventListener('input', function() {
+        if (paymentMethodSelect.value === 'upi') {
+            generateQRCode();
+        }
+    });
+
+    // Function to generate QR code
+    function generateQRCode() {
+        const amount = document.getElementById('additional_amount').value;
+        const qrImage = document.getElementById('payment_qr_code');
+        const qrPlaceholder = document.getElementById('qr_placeholder');
+
+        if (!amount || amount <= 0) {
+            // Show placeholder if no valid amount
+            qrImage.style.display = 'none';
+            qrPlaceholder.style.display = 'block';
+            return;
+        }
+
+        const upiId = '{{ institution.upi_id }}';
+        const recipientName = '{{ institution.recipient_name }}';
+
+        if (!upiId) {
+            console.error('UPI ID not available');
+            // Show placeholder if UPI ID not available
+            qrImage.style.display = 'none';
+            qrPlaceholder.style.display = 'block';
+            qrPlaceholder.innerHTML = `
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <p class="text-xs">UPI not configured</p>
+            `;
+            return;
+        }
+
+        // Generate UPI URL
+        const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(recipientName)}&am=${amount}&cu=INR&tn=Subscription Payment`;
+
+        // Update QR amount display
+        document.getElementById('qr_amount').textContent = amount;
+
+        // Generate QR code using QR Server API
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
+
+        // Show loading state
+        qrImage.style.display = 'none';
+        qrPlaceholder.style.display = 'block';
+        qrPlaceholder.innerHTML = `
+            <svg class="w-16 h-16 mx-auto mb-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <p class="text-xs">Generating QR Code...</p>
+        `;
+
+        // Set up error handler before setting src
+        qrImage.onerror = function() {
+            qrImage.style.display = 'none';
+            qrPlaceholder.style.display = 'block';
+            qrPlaceholder.innerHTML = `
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <p class="text-xs">Failed to load QR Code</p>
+            `;
+        };
+
+        qrImage.onload = function() {
+            qrImage.style.display = 'block';
+            qrPlaceholder.style.display = 'none';
+        };
+
+        qrImage.src = qrCodeUrl;
+    }
+
+    // Handle payment submission
+    submitPaymentBtn.addEventListener('click', function() {
+        const form = document.getElementById('additionalPaymentForm');
+        const formData = new FormData(form);
+
+        // Validate form
+        const amount = parseFloat(formData.get('additional_amount'));
+        const maxAmount = parseFloat('{{ remaining_amount|default:0 }}');
+
+        if (!amount || amount <= 0) {
+            showAlert('Please enter a valid payment amount.', 'error');
+            return;
+        }
+
+        if (amount > maxAmount) {
+            showAlert('Payment amount cannot exceed the remaining balance.', 'error');
+            return;
+        }
+
+        if ((formData.get('payment_method') === 'upi' || formData.get('payment_method') === 'card') &&
+            !formData.get('transaction_id').trim()) {
+            showAlert('Transaction ID is required for UPI and Card payments.', 'error');
+            return;
+        }
+
+        // Show loading state
+        submitPaymentBtn.disabled = true;
+        submitPaymentBtn.innerHTML = '<span class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span> Processing...';
+
+        // Submit payment
+        fetch('{% url "coaching:make_additional_payment" institution.uid subscription.id %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Payment processed successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showAlert('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while processing your payment.', 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            submitPaymentBtn.disabled = false;
+            submitPaymentBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Make Payment';
+        });
+    });
+
+    // Alert function
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+
+        if (type === 'success') {
+            alertDiv.classList.add('bg-green-500', 'text-white');
+            alertDiv.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+        } else {
+            alertDiv.classList.add('bg-red-500', 'text-white');
+            alertDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i> ${message}`;
+        }
+
+        document.body.appendChild(alertDiv);
+
+        // Animate in
+        setTimeout(() => {
+            alertDiv.classList.remove('translate-x-full');
+        }, 100);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            alertDiv.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(alertDiv);
+            }, 300);
+        }, 3000);
+    }
+
+    // Add click event to payment buttons
+    const paymentButtons = document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#paymentModal"]');
+    paymentButtons.forEach(button => {
+        button.addEventListener('click', openPaymentModal);
+    });
+});
+</script>
+
+{% endblock %}

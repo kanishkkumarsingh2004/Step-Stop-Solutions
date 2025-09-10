@@ -72,5 +72,10 @@ urlpatterns = [
    # Partial payment endpoints
    path('institution/<str:uid>/subscription/<int:subscription_id>/process-partial-payment/', institute_view.process_partial_payment, name='process_partial_payment'),
    path('institution/<str:uid>/subscription/<int:subscription_id>/make-additional-payment/', institute_view.make_additional_payment, name='make_additional_payment'),
+
+   # Payment Reminders
+   path('institution/<str:uid>/payment-reminders/', institute_view.payment_reminders, name='payment_reminders'),
+   path('send-payment-reminder/', institute_view.send_payment_reminder, name='send_payment_reminder'),
+
    
 ]

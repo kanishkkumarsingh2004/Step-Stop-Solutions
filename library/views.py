@@ -1114,7 +1114,7 @@ def user_subscriptions(request):
             user=request.user,
             subscription=subscription.subscription
         ).order_by('-created_at').first()
-        
+
         # Use the existing status field from UserSubscription model
         if subscription.status == 'expired':
             status_color = 'red'
@@ -1126,8 +1126,8 @@ def user_subscriptions(request):
             'status': latest_transaction.status if latest_transaction else None,
             'subscription_status': subscription.status,
             'subscription_status_color': status_color,
-            'color': 'green' if latest_transaction and latest_transaction.status == 'valid' else 
-                    'yellow' if latest_transaction and latest_transaction.status == 'pending' else 
+            'color': 'green' if latest_transaction and latest_transaction.status == 'valid' else
+                    'yellow' if latest_transaction and latest_transaction.status == 'pending' else
                     'red'
         }
         subscription.cost = latest_transaction.amount if latest_transaction else subscription.subscription.normal_price
@@ -1136,6 +1136,54 @@ def user_subscriptions(request):
         'subscriptions': subscriptions
     }
     return render(request, 'users_pages/user_subscriptions.html', context)
+
+@login_required
+def subscription_details(request, subscription_id):
+    # Get the specific subscription for the current user
+    try:
+        subscription = UserSubscription.objects.select_related('subscription__library').get(
+            id=subscription_id,
+            user=request.user
+        )
+    except UserSubscription.DoesNotExist:
+        messages.error(request, "Subscription not found.")
+        return redirect('user_subscriptions')
+
+    # Get all transactions for this subscription
+    transactions = Transaction.objects.filter(
+        user=request.user,
+        subscription=subscription.subscription
+    ).order_by('-created_at')
+
+    # Get library information
+    library = subscription.subscription.library
+
+    # Calculate subscription status and colors
+    if subscription.status == 'expired':
+        subscription_status_color = 'red'
+    else:
+        subscription_status_color = 'green'
+
+    # Determine payment status from latest transaction
+    latest_transaction = transactions.first()
+    if latest_transaction:
+        payment_status = latest_transaction.status
+        payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
+    else:
+        payment_status = 'pending'
+        payment_color = 'yellow'
+
+    context = {
+        'subscription': subscription,
+        'transactions': transactions,
+        'library': library,
+        'subscription_status_color': subscription_status_color,
+        'payment_status': payment_status,
+        'payment_color': payment_color,
+        'latest_transaction': latest_transaction
+    }
+
+    return render(request, 'users_pages/subscription_details.html', context)
 
 @login_required
 def verify_payments(request, library_id):

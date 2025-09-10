@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <div class="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+        <!-- Header with Back Button -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">Subscription Details</h1>
+            <a href="{% url 'user_subscriptions' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Back to Subscriptions
+            </a>
+        </div>
+
+        <!-- Subscription Overview -->
+        <div class="bg-gray-50 rounded-lg p-4 sm:p-6 mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Subscription Overview</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Subscription Info -->
+                <div class="space-y-3">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">{{ subscription.subscription.name }}</h3>
+                        <p class="text-gray-600 text-sm">Library: {{ library.venue_name }}</p>
+                        <p class="text-gray-600 text-sm">{{ library.address }}, {{ library.city }}, {{ library.state }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Start Date</p>
+                            <p class="text-sm text-gray-900">{{ subscription.start_date|date:"F d, Y" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Start Time</p>
+                            <p class="text-sm text-gray-900">
+                                {% if subscription.start_time %}
+                                    {{ subscription.start_time|time:"H:i" }}
+                                {% else %}
+                                    <span class="text-gray-400">Not specified</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">End Date</p>
+                            <p class="text-sm text-gray-900">{{ subscription.end_date|date:"F d, Y" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">End Time</p>
+                            <p class="text-sm text-gray-900">
+                                {% if subscription.end_time %}
+                                    {{ subscription.end_time|time:"H:i" }}
+                                {% else %}
+                                    <span class="text-gray-400">Not specified</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status and Pricing -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Subscription Status</p>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-{{ subscription_status_color }}-100 text-{{ subscription_status_color }}-800">
+                                {{ subscription.status|title }}
+                            </span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Payment Status</p>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-{{ payment_color }}-100 text-{{ payment_color }}-800">
+                                {{ payment_status|title }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Subscription Cost</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            ₹{{ latest_transaction.amount|default:subscription.subscription.normal_price }}
+                        </p>
+                        {% if subscription.subscription.discount_price and subscription.subscription.discount_price < subscription.subscription.normal_price %}
+                            <p class="text-sm text-gray-600">
+                                <span class="line-through">₹{{ subscription.subscription.normal_price }}</span>
+                                <span class="text-green-600 font-medium">₹{{ subscription.subscription.discount_price }} (Discounted)</span>
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment History -->
+        <div class="bg-white border border-gray-200 rounded-lg">
+            <div class="px-4 py-3 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Payment History</h3>
+            </div>
+
+            {% if transactions %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for transaction in transactions %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{ transaction.transaction_id }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ₹{{ transaction.amount }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if transaction.status == 'valid' %}bg-green-100 text-green-800
+                                        {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ transaction.status|title }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ transaction.created_at|date:"M d, Y" }} at {{ transaction.created_at|time:"H:i" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="px-6 py-8 text-center">
+                    <p class="text-gray-500 text-sm">No payment records found for this subscription.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Library Information -->
+        <div class="mt-6 bg-gray-50 rounded-lg p-4 sm:p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Library Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-medium text-gray-900">{{ library.venue_name }}</h4>
+                    <p class="text-sm text-gray-600 mt-1">{{ library.address }}</p>
+                    <p class="text-sm text-gray-600">{{ library.city }}, {{ library.state }} {{ library.pincode }}</p>
+                    {% if library.contact_number %}
+                        <p class="text-sm text-gray-600 mt-2">Contact: {{ library.contact_number }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if library.opening_time and library.closing_time %}
+                        <p class="text-sm text-gray-600">
+                            <span class="font-medium">Operating Hours:</span>
+                            {{ library.opening_time|time:"H:i" }} - {{ library.closing_time|time:"H:i" }}
+                        </p>
+                    {% endif %}
+                    {% if library.capacity %}
+                        <p class="text-sm text-gray-600">
+                            <span class="font-medium">Capacity:</span> {{ library.capacity }} seats
+                        </p>
+                    {% endif %}
+                    {% if library.equipment_available %}
+                        <p class="text-sm text-gray-600">
+                            <span class="font-medium">Equipment:</span> {{ library.equipment_available }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

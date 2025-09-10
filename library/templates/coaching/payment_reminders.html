@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
+    <!-- Header -->
+    <div class="text-center mb-6">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 animate-fade-in">
+            Payment Reminders
+        </h1>
+        <p class="text-sm sm:text-base text-gray-600 mt-2">
+            Track and manage outstanding payments for {{ institution.name }}
+        </p>
+    </div>
+
+    <!-- Back to Dashboard -->
+    <div class="mb-6">
+        <a href="{% url 'coaching:coaching_dashboard' institution.uid %}"
+           class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+            <i class="bi bi-arrow-left mr-2"></i>
+            Back to Dashboard
+        </a>
+    </div>
+
+    {% if subscriptions_with_remaining %}
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-red-100 rounded-full">
+                        <i class="bi bi-exclamation-triangle text-red-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pending Payments</p>
+                        <p class="text-2xl font-bold text-red-600">{{ subscriptions_with_remaining|length }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-orange-100 rounded-full">
+                        <i class="bi bi-cash text-orange-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Outstanding</p>
+                        <p class="text-2xl font-bold text-orange-600">
+                            ₹{{ total_outstanding|floatformat:2 }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="bi bi-people text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Students Affected</p>
+                        <p class="text-2xl font-bold text-blue-600">
+                            {{ subscriptions_with_remaining|length }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Reminders List -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Outstanding Payments</h2>
+                <p class="text-sm text-gray-600">Students with pending subscription payments</p>
+            </div>
+
+            <div class="divide-y divide-gray-200">
+                {% for item in subscriptions_with_remaining %}
+                <div class="p-6 hover:bg-gray-50 transition-colors duration-200">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <!-- Student and Subscription Info -->
+                        <div class="flex-1 mb-4 md:mb-0">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="bi bi-person text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">
+                                        {{ item.user.get_full_name }}
+                                    </h3>
+                                    <p class="text-sm text-gray-600">{{ item.user.email }}</p>
+                                </div>
+                            </div>
+
+                            <div class="ml-13">
+                                <p class="text-sm font-medium text-gray-700 mb-1">
+                                    {{ item.subscription.subscription_plan.name }}
+                                </p>
+                                <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                    <span class="flex items-center">
+                                        <i class="bi bi-calendar mr-1"></i>
+                                        Started: {{ item.subscription.start_date|date:"M d, Y" }}
+                                    </span>
+                                    <span class="flex items-center">
+                                        <i class="bi bi-clock mr-1"></i>
+                                        {{ item.subscription.subscription_plan.course_duration }} months
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Info -->
+                        <div class="flex flex-col md:flex-row md:items-center space-y-3 md:space-y-0 md:space-x-6">
+                            <!-- Pricing Breakdown -->
+                            <div class="text-center md:text-right">
+                                <div class="text-sm text-gray-600 mb-1">Price Breakdown</div>
+                                <div class="text-sm space-y-1">
+                                    <div class="flex justify-between md:justify-end items-center">
+                                        <span class="text-gray-500 md:hidden">Original:</span>
+                                        <span class="font-medium">₹{{ item.original_price|floatformat:2 }}</span>
+                                    </div>
+                                    {% if item.plan_discount %}
+                                    <div class="flex justify-between md:justify-end items-center text-green-600">
+                                        <span class="text-gray-500 md:hidden">Plan Discount:</span>
+                                        <span>-₹{{ item.plan_discount|floatformat:2 }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if item.subscription.coupon_applied %}
+                                    <div class="flex justify-between md:justify-end items-center text-blue-600">
+                                        <span class="text-gray-500 md:hidden">Coupon ({{ item.subscription.coupon_applied.code }}):</span>
+                                        <span>-₹{{ item.coupon_discount|floatformat:2 }}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="border-t border-gray-300 pt-1 mt-1">
+                                        <div class="flex justify-between md:justify-end items-center font-semibold text-gray-900">
+                                            <span class="text-gray-500 md:hidden">Total:</span>
+                                            <div class="flex items-center space-x-1">
+                                                <span>₹{{ item.total_amount|floatformat:2 }}</span>
+                                                {% if item.subscription.coupon_applied %}
+                                                <div class="relative group">
+                                                    <i class="bi bi-info-circle text-blue-500 text-xs cursor-help"></i>
+                                                    <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-lg z-10 whitespace-nowrap">
+                                                        <div class="font-semibold mb-1">Price Calculation:</div>
+                                                        <div>Original: ₹{{ item.original_price|floatformat:2 }}</div>
+                                                        {% if item.plan_discount %}
+                                                        <div>Plan Discount: -₹{{ item.plan_discount|floatformat:2 }}</div>
+                                                        {% endif %}
+                                                        <div>After Plan: ₹{{ item.price_after_plan|floatformat:2 }}</div>
+                                                        <div>Coupon: {{ item.subscription.coupon_applied.code }}</div>
+                                                        <div>Coupon Discount: -₹{{ item.coupon_discount|floatformat:2 }}
+                                                            {% if item.subscription.coupon_applied.discount_type == 'PERCENTAGE' %}
+                                                                ({{ item.subscription.coupon_applied.discount_value }}% of ₹{{ item.price_after_plan|floatformat:2 }})
+                                                            {% else %}
+                                                                (Fixed ₹{{ item.subscription.coupon_applied.discount_value }})
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="border-t border-gray-600 mt-1 pt-1 font-semibold">Final: ₹{{ item.total_amount|floatformat:2 }}</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center md:text-right">
+                                <div class="text-sm text-gray-600 mb-1">Payment Status</div>
+                                <div class="text-sm space-y-1">
+                                    <div class="flex justify-between md:justify-end items-center text-green-600">
+                                        <span class="text-gray-500 md:hidden">Paid:</span>
+                                        <span class="font-medium">₹{{ item.total_paid|floatformat:2 }}</span>
+                                    </div>
+                                    <div class="flex justify-between md:justify-end items-center text-red-600">
+                                        <span class="text-gray-500 md:hidden">Remaining:</span>
+                                        <span class="font-medium">₹{{ item.remaining_amount|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex flex-col space-y-2">
+                                <a href="{% url 'coaching:institute_subscription_details' institution.uid item.subscription.id %}"
+                                   class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                                    <i class="bi bi-eye mr-2"></i>
+                                    View Details
+                                </a>
+
+                                <button onclick="sendReminder('{{ item.user.email }}', '{{ item.user.get_full_name }}', '{{ item.remaining_amount|floatformat:2 }}')"
+                                        class="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                                    <i class="bi bi-envelope mr-2"></i>
+                                    Send Reminder
+                                </button>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <!-- No Outstanding Payments -->
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="bi bi-check-circle text-green-600 text-4xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">All Payments Up to Date!</h2>
+            <p class="text-gray-600 mb-6">
+                Great news! All students have completed their subscription payments for {{ institution.name }}.
+            </p>
+            <a href="{% url 'coaching:coaching_dashboard' institution.uid %}"
+               class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200">
+                <i class="bi bi-house-door mr-2"></i>
+                Return to Dashboard
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Reminder Modal -->
+<div id="reminderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Send Payment Reminder</h3>
+            <div id="reminderContent">
+                <p class="text-sm text-gray-600 mb-4">
+                    Send a payment reminder to <span id="studentName" class="font-medium"></span> for the outstanding amount of
+                    <span id="amount" class="font-medium text-red-600"></span>.
+                </p>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeReminderModal()"
+                            class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="confirmSendReminder()"
+                            class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        Send Reminder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function sendReminder(email, name, amount) {
+    document.getElementById('studentName').textContent = name;
+    document.getElementById('amount').textContent = '₹' + amount;
+    document.getElementById('reminderModal').classList.remove('hidden');
+}
+
+function closeReminderModal() {
+    document.getElementById('reminderModal').classList.add('hidden');
+}
+
+function confirmSendReminder() {
+    // Here you would typically send an AJAX request to send the reminder
+    // For now, we'll just show a success message
+    alert('Payment reminder sent successfully!');
+    closeReminderModal();
+}
+
+// Close modal when clicking outside
+document.getElementById('reminderModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeReminderModal();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}
+<script>
+let currentReminderEmail = '';
+let currentReminderName = '';
+let currentReminderAmount = '';
+
+function sendReminder(email, name, amount) {
+    currentReminderEmail = email;
+    currentReminderName = name;
+    currentReminderAmount = amount;
+    document.getElementById('studentName').textContent = name;
+    document.getElementById('amount').textContent = '₹' + amount;
+    document.getElementById('reminderModal').classList.remove('hidden');
+}
+
+function closeReminderModal() {
+    document.getElementById('reminderModal').classList.add('hidden');
+}
+
+function confirmSendReminder() {
+    fetch("{% url 'coaching:send_payment_reminder' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            email: currentReminderEmail,
+            name: currentReminderName,
+            amount: currentReminderAmount,
+            institution_uid: '{{ institution.uid }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment reminder sent successfully!');
+        } else {
+            alert('Failed to send reminder: ' + data.error);
+        }
+        closeReminderModal();
+    })
+    .catch(error => {
+        alert('An error occurred: ' + error);
+        closeReminderModal();
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('reminderModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeReminderModal();
+    }
+});
+</script>

@@ -29,6 +29,22 @@ def get_item(dictionary, key):
 def is_list(value):
     return isinstance(value, list)
 
+@register.filter
+def div(value, arg):
+    """Divide the value by the arg."""
+    try:
+        return Decimal(str(value)) / Decimal(str(arg))
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0
+
+@register.filter
+def mul(value, arg):
+    """Multiply the value by the arg."""
+    try:
+        return Decimal(str(value)) * Decimal(str(arg))
+    except (ValueError, TypeError):
+        return 0
+
 @register.simple_tag
 def get_entry(dictionary, day, arg2, col=None):
     """

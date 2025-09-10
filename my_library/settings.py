@@ -137,7 +137,6 @@ JAZZMIN_SETTINGS = {
     "site_title": "Step Stop Solutions",
     "site_header": "Step Stop Solutions",
     "site_brand": "Step Stop Solutions",
-    # "site_logo": "images/cognito_logo_dark.svg",
     "welcome_sign": "Welcome to Step Stop Solutions Admin Panel",
     "copyright": "Step Stop Solutions",
 }

@@ -61,6 +61,59 @@
         </div>
     </div>
 
+    <!-- Analytics Overview -->
+    <div class="mb-6 md:mb-8 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="bi bi-graph-up text-blue-600 mr-2"></i>
+            Analytics Overview
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <!-- Total Revenue -->
+            <div class="bg-white p-4 rounded-lg border border-green-100 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-600">Total Revenue</p>
+                        <p class="text-lg sm:text-xl font-bold text-green-600">₹{{ total_revenue|floatformat:0 }}</p>
+                    </div>
+                    <i class="bi bi-currency-rupee text-green-500 text-xl"></i>
+                </div>
+            </div>
+
+            <!-- Monthly Revenue -->
+            <div class="bg-white p-4 rounded-lg border border-blue-100 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-600">This Month</p>
+                        <p class="text-lg sm:text-xl font-bold text-blue-600">₹{{ monthly_revenue|floatformat:0 }}</p>
+                    </div>
+                    <i class="bi bi-calendar-check text-blue-500 text-xl"></i>
+                </div>
+            </div>
+
+            <!-- Total Users -->
+            <div class="bg-white p-4 rounded-lg border border-purple-100 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-600">Total Users</p>
+                        <p class="text-lg sm:text-xl font-bold text-purple-600">{{ total_enrolled_users }}</p>
+                    </div>
+                    <i class="bi bi-people-fill text-purple-500 text-xl"></i>
+                </div>
+            </div>
+
+            <!-- Active Subscriptions -->
+            <div class="bg-white p-4 rounded-lg border border-indigo-100 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs sm:text-sm text-gray-600">Active Subs</p>
+                        <p class="text-lg sm:text-xl font-bold text-indigo-600">{{ active_subscriptions }}</p>
+                    </div>
+                    <i class="bi bi-check-circle-fill text-indigo-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Key Metrics Navigation -->
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 md:mb-10">
             <!-- Enrolled Users Card -->
@@ -92,7 +145,7 @@
             <div class="text-sm sm:text-base font-medium text-teal-800 text-center">Allocate Card</div>
             <div class="mt-2 text-xs text-teal-500">Manage Access Cards</div>
         </a>
-        
+
         <!-- Manage Staff Card -->
         <a href="{% url 'coaching:manage_institution_staff' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-cyan-100 hover:border-cyan-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div class="text-sm sm:text-base font-medium text-cyan-800 text-center">Manage Staff</div>
@@ -104,6 +157,85 @@
             <div class="text-sm sm:text-base font-medium text-red-800 text-center">Attendance</div>
             <div class="mt-2 text-xs text-red-500">Record Attendance</div>
         </a>
+
+        <!-- Payment Reminders -->
+        {% if subscriptions_with_remaining %}
+        <a href="{% url 'coaching:payment_reminders' institution.uid %}" class="block bg-orange-100 p-4 rounded-lg text-center text-orange-800 font-semibold hover:bg-orange-200 transition-colors">
+            View Payment Reminders ({{ subscriptions_with_remaining|length }})
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="mb-6 md:mb-8">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="bi bi-activity text-green-600 mr-2"></i>
+            Recent Activity
+        </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <!-- Recent Payments -->
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-700 flex items-center">
+                        <i class="bi bi-cash-coin text-green-500 mr-2"></i>
+                        Recent Payments
+                    </h3>
+                    <a href="{% url 'coaching:payment_verifications' institution.uid %}" class="text-sm text-green-600 hover:text-green-700">View All</a>
+                </div>
+                <div class="space-y-3">
+                    {% for payment in recent_payments %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">{{ payment.user.get_full_name }}</p>
+                            <p class="text-xs text-gray-600">{{ payment.subscription_plan.name }}</p>
+                            <p class="text-xs text-gray-500">{{ payment.created_at|date:"M d, Y" }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-semibold text-green-600">₹{{ payment.amount_paid|floatformat:0 }}</p>
+                            <span class="inline-block px-2 py-1 text-xs rounded-full {% if payment.payment_status == 'valid' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ payment.payment_status|title }}
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-sm text-gray-500 text-center py-4">No recent payments</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Recent Reviews -->
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-700 flex items-center">
+                        <i class="bi bi-star-fill text-yellow-500 mr-2"></i>
+                        Recent Reviews
+                    </h3>
+                    <a href="{% url 'coaching:institution_reviews' institution.uid %}" class="text-sm text-yellow-600 hover:text-yellow-700">View All</a>
+                </div>
+                <div class="space-y-3">
+                    {% for review in recent_reviews %}
+                    <div class="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    {% for i in "12345" %}
+                                    <i class="bi bi-star{% if forloop.counter <= review.rating %}-fill{% endif %} text-sm"></i>
+                                    {% endfor %}
+                                </div>
+                                <span class="text-xs text-gray-600 ml-2">{{ review.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-900 mb-1">{{ review.user.get_full_name }}</p>
+                        {% if review.comment %}
+                        <p class="text-xs text-gray-600 line-clamp-2">{{ review.comment }}</p>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-sm text-gray-500 text-center py-4">No recent reviews</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Cards Grid -->

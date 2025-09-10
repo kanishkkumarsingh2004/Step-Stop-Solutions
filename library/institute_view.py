@@ -51,30 +51,149 @@ def coaching_dashboard(request, uid):
     """Display the coaching dashboard for the institution owner."""
     try:
         institution = get_object_or_404(Institution, uid=uid)
-        
+
         # Check if the user is the owner of the institution
         if request.user != institution.owner:
             messages.error(request, "You don't have permission to access this dashboard.")
             return redirect('home')
-        
+
         # Calculate coupon counts
         active_coupons_count = institution.coupons.filter(status='ACTIVE').count()
         total_coupons_count = institution.coupons.count()
         expired_coupons_count = institution.coupons.filter(status='EXPIRED').count()
-        
+
         # Get the first institution image
         first_image = institution.images.first()
-        
-        
+
+        # Enhanced Analytics Data
+        # Total enrolled users
+        total_enrolled_users = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution
+        ).values('user').distinct().count()
+
+        # Total revenue
+        total_revenue = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution,
+            payment_status='valid'
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        # Monthly revenue (current month)
+        from django.utils import timezone
+        current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_revenue = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution,
+            payment_status='valid',
+            created_at__gte=current_month
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        # Recent enrollments (last 30 days)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        recent_enrollments = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution,
+            created_at__gte=thirty_days_ago
+        ).count()
+
+        # Active subscriptions
+        active_subscriptions = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution,
+            status='valid'
+        ).count()
+
+        # Pending payments
+        pending_payments = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution,
+            payment_status='pending'
+        ).count()
+
+        # Recent reviews
+        recent_reviews = InstitutionReview.objects.filter(
+            institution=institution
+        ).order_by('-created_at')[:5]
+
+        # Recent payments
+        recent_payments = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution,
+            payment_status='valid'
+        ).select_related('user', 'subscription_plan').order_by('-created_at')[:5]
+
+        # Get subscriptions with remaining payments
+        subscriptions_with_remaining = []
+        subscriptions = InstitutionSubscription.objects.filter(
+            subscription_plan__institution=institution
+        ).select_related('subscription_plan', 'user')
+
+        for subscription in subscriptions:
+            # Calculate total paid from installment payments
+            total_paid = InstallmentPayment.objects.filter(
+                subscription=subscription
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+
+            # Calculate pricing breakdown
+            original_price = subscription.subscription_plan.old_price
+            discounted_price = subscription.subscription_plan.new_price or subscription.subscription_plan.old_price
+            plan_discount = original_price - discounted_price
+
+            # Apply coupon discount if coupon was applied
+            coupon_discount = 0
+            if subscription.coupon_applied:
+                # Debug: Check coupon validity
+                is_coupon_valid = subscription.coupon_applied.is_valid()
+                coupon_discounted_price = subscription.coupon_applied.apply_discount(discounted_price)
+                coupon_discount = discounted_price - coupon_discounted_price
+                total_amount = coupon_discounted_price
+            else:
+                total_amount = discounted_price
+
+            remaining_amount = total_amount - total_paid
+
+            if remaining_amount > 0:
+                subscriptions_with_remaining.append({
+                    'subscription': subscription,
+                    'total_paid': total_paid,
+                    'remaining_amount': remaining_amount,
+                    'total_amount': total_amount,
+                    'original_price': original_price,
+                    'plan_discount': plan_discount,
+                    'coupon_discount': coupon_discount,
+                    'price_after_plan': discounted_price,
+                    'user': subscription.user
+                })
+
+        # Revenue trend data (last 6 months)
+        revenue_trend = []
+        for i in range(5, -1, -1):
+            month_start = (current_month - timedelta(days=i*30)).replace(day=1)
+            month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            month_revenue = InstitutionSubscription.objects.filter(
+                subscription_plan__institution=institution,
+                payment_status='valid',
+                created_at__gte=month_start,
+                created_at__lte=month_end
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            revenue_trend.append({
+                'month': month_start.strftime('%b %Y'),
+                'revenue': float(month_revenue)
+            })
+
         context = {
             'institution': institution,
             'active_coupons_count': active_coupons_count,
             'total_coupons_count': total_coupons_count,
             'expired_coupons_count': expired_coupons_count,
             'primary_image': first_image,  # Keep the variable name for template compatibility
-
+            'subscriptions_with_remaining': subscriptions_with_remaining,
+            # Enhanced analytics
+            'total_enrolled_users': total_enrolled_users,
+            'total_revenue': total_revenue,
+            'monthly_revenue': monthly_revenue,
+            'recent_enrollments': recent_enrollments,
+            'active_subscriptions': active_subscriptions,
+            'pending_payments': pending_payments,
+            'recent_reviews': recent_reviews,
+            'recent_payments': recent_payments,
+            'revenue_trend': revenue_trend,
         }
-        
+
         return render(request, 'coaching/coaching_dashboard.html', context)
     except Institution.DoesNotExist:
         messages.error(request, "Institution not found.")
@@ -1103,6 +1222,31 @@ def institute_subscription_details(request, uid, subscription_id):
             subscription_plan__institution=institution
         )
 
+        # Get all installment payments for this subscription
+        installment_payments = InstallmentPayment.objects.filter(
+            subscription=subscription
+        ).order_by('-payment_date')
+
+        # Calculate totals
+        total_paid = installment_payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+        # Use new_price if available, otherwise fallback to old_price
+        total_amount = subscription.subscription_plan.new_price or subscription.subscription_plan.old_price or 0
+        remaining_amount = total_amount - total_paid
+
+        # Get payment status color
+        if subscription.payment_status == 'valid':
+            payment_status_color = 'green'
+        elif subscription.payment_status == 'pending':
+            payment_status_color = 'yellow'
+        else:
+            payment_status_color = 'red'
+
+        # Get subscription status color
+        if subscription.status == 'valid':
+            subscription_status_color = 'green'
+        else:
+            subscription_status_color = 'red'
+
         context = {
             'institution': institution,
             'subscription': subscription,
@@ -1110,8 +1254,14 @@ def institute_subscription_details(request, uid, subscription_id):
             'has_coupon': subscription.coupon_applied is not None,
             'coupon': subscription.coupon_applied,
             'original_price': subscription.subscription_plan.old_price,
-            'discount_amount': subscription.subscription_plan.old_price - subscription.amount_paid if subscription.coupon_applied else 0,
-            'final_price': subscription.amount_paid
+            'discount_amount': subscription.subscription_plan.old_price - subscription.subscription_plan.new_price if subscription.coupon_applied else 0,
+            'final_price': subscription.subscription_plan.new_price,
+            'installment_payments': installment_payments,
+            'total_paid': total_paid,
+            'remaining_amount': remaining_amount,
+            'total_amount': total_amount,
+            'payment_status_color': payment_status_color,
+            'subscription_status_color': subscription_status_color
         }
 
         return render(request, 'coaching/institute_subscription_details.html', context)
@@ -2479,3 +2629,124 @@ def make_additional_payment(request, uid, subscription_id):
     except Exception as e:
         logger.error(f"Error in make_additional_payment: {str(e)}")
         return JsonResponse({'success': False, 'message': 'An error occurred while processing your payment.'}, status=500)
+
+@login_required
+@require_POST
+def send_payment_reminder(request):
+    """Send payment reminder email to a student."""
+    try:
+        data = json.loads(request.body)
+        email = data.get('email')
+        name = data.get('name')
+        amount = data.get('amount')
+        institution_uid = data.get('institution_uid')
+
+        if not all([email, name, amount, institution_uid]):
+            return JsonResponse({'success': False, 'error': 'Missing required fields'})
+
+        # Get institution by UID and verify user has permission
+        try:
+            institution = Institution.objects.get(uid=institution_uid)
+        except Institution.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Institution not found'})
+
+        # Check if user has permission to send reminders for this institution
+        if request.user != institution.owner and request.user not in institution.staff.all():
+            return JsonResponse({'success': False, 'error': 'Permission denied'})
+
+        # Send email reminder
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        subject = f'Payment Reminder - {institution.name}'
+        message = f"""
+Dear {name},
+
+This is a friendly reminder that you have an outstanding payment of ₹{amount} for your subscription at {institution.name}.
+
+Please complete your payment at your earliest convenience to continue enjoying our services.
+
+If you have already made the payment, please disregard this reminder.
+
+Thank you for your attention to this matter.
+
+Best regards,
+{institution.name} Team
+{institution.contact_phone}
+        """
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        logger.info(f"Payment reminder sent successfully to {email} for institution {institution.name}")
+        return JsonResponse({'success': True, 'message': 'Reminder sent successfully'})
+
+    except Exception as e:
+        logger.error(f"Error sending payment reminder: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'Failed to send reminder'})
+
+@login_required
+def payment_reminders(request, uid):
+    """Display payment reminders for subscriptions with remaining balances."""
+    institution = get_object_or_404(Institution, uid=uid)
+
+    # Check if user has permission to view reminders
+    if request.user != institution.owner and request.user not in institution.staff.all():
+        raise PermissionDenied("You don't have permission to view payment reminders")
+
+    # Get subscriptions with remaining payments
+    subscriptions_with_remaining = []
+    total_outstanding = 0
+    subscriptions = InstitutionSubscription.objects.filter(
+        subscription_plan__institution=institution
+    ).select_related('subscription_plan', 'user')
+
+    for subscription in subscriptions:
+        total_paid = InstallmentPayment.objects.filter(
+            subscription=subscription
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        # Calculate pricing breakdown
+        original_price = subscription.subscription_plan.old_price
+        discounted_price = subscription.subscription_plan.new_price or subscription.subscription_plan.old_price
+        plan_discount = original_price - discounted_price
+
+        # Apply coupon discount if coupon was applied
+        coupon_discount = 0
+        price_after_plan = discounted_price
+        if subscription.coupon_applied:
+            coupon_discounted_price = subscription.coupon_applied.apply_discount(discounted_price)
+            coupon_discount = discounted_price - coupon_discounted_price
+            total_amount = coupon_discounted_price
+            price_after_plan = discounted_price
+        else:
+            total_amount = discounted_price
+
+        remaining_amount = total_amount - total_paid
+
+        if remaining_amount > 0:
+            subscriptions_with_remaining.append({
+                'subscription': subscription,
+                'total_paid': total_paid,
+                'remaining_amount': remaining_amount,
+                'total_amount': total_amount,
+                'original_price': original_price,
+                'plan_discount': plan_discount,
+                'coupon_discount': coupon_discount,
+                'price_after_plan': price_after_plan,
+                'user': subscription.user
+            })
+            total_outstanding += remaining_amount
+
+    context = {
+        'institution': institution,
+        'subscriptions_with_remaining': subscriptions_with_remaining,
+        'total_outstanding': total_outstanding
+    }
+
+    return render(request, 'coaching/payment_reminders.html', context)

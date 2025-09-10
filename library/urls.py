@@ -36,6 +36,7 @@ urlpatterns = [
    # Subscriptions
    path('library/<int:library_id>/subscription/', views.subscription_page, name='subscription_page'),
    path('my-subscriptions/', views.user_subscriptions, name='user_subscriptions'),
+   path('subscription/<int:subscription_id>/details/', views.subscription_details, name='subscription_details'),
    path('library/<int:library_id>/create-subscription/', views.create_subscription, name='create_subscription'),
    
    # Payments
