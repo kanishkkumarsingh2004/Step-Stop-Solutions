@@ -105,7 +105,7 @@ class CustomUser(AbstractUser):
     address = models.TextField()
     mobile_number = models.CharField(max_length=15)
     emergency_number = models.CharField(max_length=15)
-    dob = models.DateField()
+    dob = models.DateField(null=True, blank=True)
     age = models.PositiveIntegerField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     email = models.EmailField(unique=True)
