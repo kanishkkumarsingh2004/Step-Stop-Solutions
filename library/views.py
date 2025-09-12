@@ -3016,7 +3016,6 @@ def Manage_Admin_loss(request):
     # GET: Display losses
     expenses = AdminExpense.objects.filter(type='Loss').order_by('-date')
     total_losses = expenses.aggregate(total=Sum('amount'))['total'] or 0
-    
     context = {
         'page_title': 'Manage Admin Losses',
         'expenses': expenses,
