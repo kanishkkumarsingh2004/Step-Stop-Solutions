@@ -2994,34 +2994,34 @@ def Manage_Admin_loss(request):
             # Basic validation
             if not all([name, amount, date]):
                 messages.error(request, 'All fields are required')
-                return redirect('Manage_Admin_Expenss')
+                return redirect('Manage_Admin_Loss')  # Fixed: Self-redirect to loss page
             
-            # Create new expense with type set to Loss
+            # Create new expense with type set to Loss (add type conversion if amount/date need it)
             AdminExpense.objects.create(
                 name=name,
-                amount=amount,
+                amount=float(amount),  # Assumes DecimalField or FloatField; adjust as needed
                 date=date,
-                description=description,
-                type='Loss',  # Set type to Loss
+                description=description or '',  # Handle empty description
+                type='Loss',
                 created_by=request.user
             )
-            messages.success(request, 'Expense added successfully')
-            return redirect('Manage_Admin_Expenss')
+            messages.success(request, 'Loss expense added successfully')
+            return redirect('Manage_Admin_Loss')  # Fixed: Self-redirect
             
         except Exception as e:
-            logger.error(f"Error adding expense: {str(e)}")
-            messages.error(request, 'An error occurred while adding the expense')
-            return redirect('Manage_Admin_Expenss')
+            logger.error(f"Error adding loss expense: {str(e)}")
+            messages.error(request, 'An error occurred while adding the loss expense')
+            return redirect('Manage_Admin_Loss')  # Fixed: Self-redirect
 
-    # Get all expenses for display, filtering for Loss type
+    # GET: Display losses
     expenses = AdminExpense.objects.filter(type='Loss').order_by('-date')
-    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
+    total_losses = expenses.aggregate(total=Sum('amount'))['total'] or 0
     
     context = {
-        'page_title': 'Manage Admin Expenses',
+        'page_title': 'Manage Admin Losses',
         'expenses': expenses,
-        'total_expenses': total_expenses,
-        'today': now().date()  # Add today's date to context
+        'total_losses': total_losses,  # Renamed for clarity
+        'today': timezone.now().date()
     }
     return render(request, 'admin_page/manage_admin_loss.html', context)
 
@@ -3059,15 +3059,15 @@ def DeleteAdminExpense_loss(request, expense_id):
     if request.method == 'POST':
         try:
             expense.delete()
-            messages.success(request, 'Expense deleted successfully')
-            return redirect('Manage_Admin_Expenss')
+            messages.success(request, 'Loss expense deleted successfully')
+            return redirect('Manage_Admin_Loss')  # Fixed: Redirect to loss page
         except Exception as e:
-            logger.error(f"Error deleting expense: {str(e)}")
-            messages.error(request, 'An error occurred while deleting the expense')
-            return redirect('Manage_Admin_Expenss')
+            logger.error(f"Error deleting loss expense: {str(e)}")
+            messages.error(request, 'An error occurred while deleting the loss expense')
+            return redirect('Manage_Admin_Loss')  # Fixed: Redirect to loss page
     else:
         messages.error(request, 'Invalid request method')
-        return redirect('Manage_Admin_Expenss')
+        return redirect('Manage_Admin_Loss')  # Fixed: Redirect to loss page
     
 
 @login_required
