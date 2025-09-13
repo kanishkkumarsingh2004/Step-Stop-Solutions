@@ -76,7 +76,6 @@ DATABASES = {
         'PORT': os.environ['DB_PORT'],
     }
 }
-
 # 'USER': "postgres.zdfqdnvmtuitqafxxtwc",
 
 # Password validation
