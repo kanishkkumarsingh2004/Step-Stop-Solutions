@@ -71,12 +71,13 @@ DATABASES = {
         'ENGINE': os.environ['ENGINE'],
         'HOST': os.environ['HOST'],
         'NAME': os.environ['NAME'],
-        'USER': "postgres.zdfqdnvmtuitqafxxtwc",
+        'USER': 'postgres.nswagajowuojntnhkyqv',
         'PASSWORD': os.environ['PASSWORD'],
         'PORT': os.environ['DB_PORT'],
     }
 }
 
+# 'USER': "postgres.zdfqdnvmtuitqafxxtwc",
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

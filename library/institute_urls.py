@@ -77,5 +77,6 @@ urlpatterns = [
    path('institution/<str:uid>/payment-reminders/', institute_view.payment_reminders, name='payment_reminders'),
    path('send-payment-reminder/', institute_view.send_payment_reminder, name='send_payment_reminder'),
 
+   path('receipt/<str:user_id>/<str:transaction_id>', institute_view.get_transactions, name='generate_receipt'),
    
 ]

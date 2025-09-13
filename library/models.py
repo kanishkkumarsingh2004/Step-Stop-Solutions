@@ -928,6 +928,30 @@ class InstallmentPayment(models.Model):
         verbose_name_plural = "Installment Payments"
         ordering = ['-payment_date']
 
+class PartialPayment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('upi', 'UPI'),
+    ]
+
+    subscription = models.ForeignKey('InstitutionSubscription', on_delete=models.CASCADE, related_name='partial_payments')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Partial payment amount")
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='cash')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_date = models.DateField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True, help_text="Additional notes for the payment")
+    verified = models.BooleanField(default=False, help_text="Whether this partial payment has been verified")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Partial Payment for {self.subscription} - ₹{self.amount} ({self.payment_method})"
+
+    class Meta:
+        verbose_name = "Partial Payment"
+        verbose_name_plural = "Partial Payments"
+        ordering = ['-payment_date']
+
 class Gym(models.Model):
     gim_uid = ShortUUIDField(length=20, max_length=20, unique=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz')
     name = models.CharField(max_length=200)

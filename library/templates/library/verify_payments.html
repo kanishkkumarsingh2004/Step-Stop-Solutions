@@ -70,6 +70,18 @@
                         </form>
                     </div>
                     <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Start Date:</span>
+                        {% if transaction.user_subscription %}
+                            <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="inline">
+                                {% csrf_token %}
+                                <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}" class="text-2xs xs:text-xs border rounded px-1 py-0.5">
+                                <button type="submit" class="text-2xs xs:text-xs bg-blue-500 text-white px-1 py-0.5 rounded ml-1">Update</button>
+                            </form>
+                        {% else %}
+                            <span>Not set</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
                         <span class="font-medium text-gray-500">Date:</span>
                         <span>{{ transaction.created_at|date:"M d, Y" }}</span>
                     </div>
@@ -87,6 +99,7 @@
                         <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription</th>
                         <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                         <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     </tr>
                 </thead>
@@ -106,6 +119,17 @@
                                     <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %}>Invalid</option>
                                 </select>
                             </form>
+                        </td>
+                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">
+                            {% if transaction.user_subscription %}
+                                <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}" class="text-2xs xs:text-xs border rounded px-1 py-0.5">
+                                    <button type="submit" class="text-2xs xs:text-xs bg-blue-500 text-white px-1 py-0.5 rounded ml-1">Update</button>
+                                </form>
+                            {% else %}
+                                Not set
+                            {% endif %}
                         </td>
                         <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.created_at|date:"M d, Y" }}</td>
                     </tr>

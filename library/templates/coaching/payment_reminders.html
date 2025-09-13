@@ -190,8 +190,6 @@
                                     <i class="bi bi-envelope mr-2"></i>
                                     Send Reminder
                                 </button>
-
-
                             </div>
                         </div>
                     </div>
@@ -243,34 +241,6 @@
     </div>
 </div>
 
-{% block extra_js %}
-<script>
-function sendReminder(email, name, amount) {
-    document.getElementById('studentName').textContent = name;
-    document.getElementById('amount').textContent = '₹' + amount;
-    document.getElementById('reminderModal').classList.remove('hidden');
-}
-
-function closeReminderModal() {
-    document.getElementById('reminderModal').classList.add('hidden');
-}
-
-function confirmSendReminder() {
-    // Here you would typically send an AJAX request to send the reminder
-    // For now, we'll just show a success message
-    alert('Payment reminder sent successfully!');
-    closeReminderModal();
-}
-
-// Close modal when clicking outside
-document.getElementById('reminderModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeReminderModal();
-    }
-});
-</script>
-{% endblock %}
-{% endblock %}
 <script>
 let currentReminderEmail = '';
 let currentReminderName = '';
@@ -325,3 +295,4 @@ document.getElementById('reminderModal').addEventListener('click', function(e) {
     }
 });
 </script>
+{% endblock %}

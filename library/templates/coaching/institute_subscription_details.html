@@ -274,10 +274,17 @@
                         <div class="text-sm text-gray-500">Remaining Balance</div>
                     </div>
 
-                    <button type="button" class="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                        <i class="fas fa-credit-card mr-2"></i>
-                        Pay Now
-                    </button>
+                    <div class="space-y-3">
+                        <button type="button" class="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                            <i class="fas fa-credit-card mr-2"></i>
+                            Pay Now
+                        </button>
+
+                        <button type="button" onclick="sendReminder('{{ subscription.user.email }}', '{{ subscription.user.get_full_name }}', '{{ remaining_amount|floatformat:2 }}')" class="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Send Reminder
+                        </button>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -429,6 +436,31 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Reminder Modal -->
+<div id="reminderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Send Payment Reminder</h3>
+            <div id="reminderContent">
+                <p class="text-sm text-gray-600 mb-4">
+                    Send a payment reminder to <span id="studentName" class="font-medium"></span> for the outstanding amount of
+                    <span id="amount" class="font-medium text-red-600"></span>.
+                </p>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeReminderModal()"
+                            class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="confirmSendReminder()"
+                            class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        Send Reminder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -644,6 +676,60 @@ document.addEventListener('DOMContentLoaded', function() {
     paymentButtons.forEach(button => {
         button.addEventListener('click', openPaymentModal);
     });
+});
+
+// Reminder modal functions
+let currentReminderEmail = '';
+let currentReminderName = '';
+let currentReminderAmount = '';
+
+function sendReminder(email, name, amount) {
+    currentReminderEmail = email;
+    currentReminderName = name;
+    currentReminderAmount = amount;
+    document.getElementById('studentName').textContent = name;
+    document.getElementById('amount').textContent = '₹' + amount;
+    document.getElementById('reminderModal').classList.remove('hidden');
+}
+
+function closeReminderModal() {
+    document.getElementById('reminderModal').classList.add('hidden');
+}
+
+function confirmSendReminder() {
+    fetch("{% url 'coaching:send_payment_reminder' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            email: currentReminderEmail,
+            name: currentReminderName,
+            amount: currentReminderAmount,
+            institution_uid: '{{ institution.uid }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Payment reminder sent successfully!', 'success');
+        } else {
+            showAlert('Failed to send reminder: ' + data.error, 'error');
+        }
+        closeReminderModal();
+    })
+    .catch(error => {
+        showAlert('An error occurred: ' + error, 'error');
+        closeReminderModal();
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('reminderModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeReminderModal();
+    }
 });
 </script>
 

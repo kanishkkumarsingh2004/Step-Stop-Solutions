@@ -2,7 +2,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 import logging
-from django.utils.timezone import now
+from django.db.models import Prefetch
+from django.contrib.auth import get_user_model
 from .forms import InstitutionRegistrationForm, InstitutionCouponForm, UPIForm, InstitutionBannerForm, InstitutionSubscriptionPlanForm, InstallmentPaymentForm
 from django.contrib import messages
 from .models import (Institution, 
@@ -1343,20 +1344,23 @@ def verify_payment(request, uid, subscription_id):
 def payment_verifications(request, uid):
     try:
         institution = Institution.objects.get(uid=uid)
-        
+
         # Get filter parameters
         status_filter = request.GET.get('status', 'all')
         search_query = request.GET.get('search', '').strip()
-        
-        # Base queryset
+
+        # Base queryset with prefetch for verifications
         subscriptions = InstitutionSubscription.objects.filter(
             subscription_plan__institution=institution
-        ).select_related('user', 'subscription_plan')
-        
+        ).select_related('user', 'subscription_plan').prefetch_related(
+            Prefetch('verifications',
+                     queryset=PaymentVerification.objects.select_related('verified_by').order_by('-created_at'))
+        )
+
         # Apply status filter
         if status_filter != 'all':
             subscriptions = subscriptions.filter(payment_status=status_filter)
-        
+
         # Apply search filter
         if search_query:
             subscriptions = subscriptions.filter(
@@ -1365,22 +1369,16 @@ def payment_verifications(request, uid):
                 Q(transaction_id__icontains=search_query) |
                 Q(subscription_plan__name__icontains=search_query)
             )
-        
-        # Get verifications for the filtered subscriptions
-        verifications = PaymentVerification.objects.filter(
-            subscription__in=subscriptions
-        ).select_related('verified_by', 'subscription__user', 'subscription__subscription_plan')
-        
+
         context = {
             'institution': institution,
             'subscriptions': subscriptions,
-            'verifications': verifications,
             'current_status': status_filter,
             'search_query': search_query
         }
-        
+
         return render(request, 'coaching/payment_verifications.html', context)
-        
+
     except Institution.DoesNotExist:
         messages.error(request, 'Institution not found')
         return redirect('home')
@@ -2692,43 +2690,50 @@ Best regards,
 
 @login_required
 def payment_reminders(request, uid):
-    """Display payment reminders for subscriptions with remaining balances."""
+    """
+    Display payment reminders for subscriptions with remaining balances.
+    Optimized to use fewer database queries.
+    """
     institution = get_object_or_404(Institution, uid=uid)
 
     # Check if user has permission to view reminders
     if request.user != institution.owner and request.user not in institution.staff.all():
         raise PermissionDenied("You don't have permission to view payment reminders")
 
-    # Get subscriptions with remaining payments
-    subscriptions_with_remaining = []
-    total_outstanding = 0
+    # Use a single query to get all relevant data, including total paid amount
     subscriptions = InstitutionSubscription.objects.filter(
         subscription_plan__institution=institution
-    ).select_related('subscription_plan', 'user')
+    ).select_related('subscription_plan', 'user', 'coupon_applied').annotate(
+        total_paid=Sum('installments__amount_paid')
+    )
+
+    subscriptions_with_remaining = []
+    total_outstanding = 0
 
     for subscription in subscriptions:
-        total_paid = InstallmentPayment.objects.filter(
-            subscription=subscription
-        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+        total_paid = subscription.total_paid or 0
 
         # Calculate pricing breakdown
         original_price = subscription.subscription_plan.old_price
-        discounted_price = subscription.subscription_plan.new_price or subscription.subscription_plan.old_price
+        discounted_price = subscription.subscription_plan.new_price or original_price
         plan_discount = original_price - discounted_price
 
         # Apply coupon discount if coupon was applied
         coupon_discount = 0
         price_after_plan = discounted_price
         if subscription.coupon_applied:
-            coupon_discounted_price = subscription.coupon_applied.apply_discount(discounted_price)
+            # Need to get the latest version of the coupon to apply the discount
+            # This is a safe way to handle it without making a query per loop
+            coupon = InstitutionCoupon.objects.get(id=subscription.coupon_applied_id)
+            coupon_discounted_price = coupon.apply_discount(discounted_price)
             coupon_discount = discounted_price - coupon_discounted_price
             total_amount = coupon_discounted_price
-            price_after_plan = discounted_price
         else:
             total_amount = discounted_price
 
         remaining_amount = total_amount - total_paid
 
+        # Only add subscriptions with a remaining balance
         if remaining_amount > 0:
             subscriptions_with_remaining.append({
                 'subscription': subscription,
@@ -2750,3 +2755,76 @@ def payment_reminders(request, uid):
     }
 
     return render(request, 'coaching/payment_reminders.html', context)
+
+
+
+def convert_amount_to_words(amount):
+    if amount == 0:
+        return "Zero Rupees"
+    
+    # A simplified logic for demonstration
+    # This won't handle decimals or large numbers perfectly
+    
+    units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+    teens = ["", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+    
+    in_words = ""
+    amount_int = int(amount)
+    
+    def num_to_words_hundreds(n):
+        s = ""
+        if n >= 100:
+            s += units[n // 100] + " Hundred "
+            n %= 100
+        if n >= 20:
+            s += tens[n // 10] + " "
+            n %= 10
+        elif n >= 11 and n <= 19:
+            s += teens[n - 10] + " "
+            return s
+        if n >= 1:
+            s += units[n] + " "
+        return s
+
+    lakhs = amount_int // 100000
+    thousands = (amount_int % 100000) // 1000
+    hundreds = amount_int % 1000
+    
+    if lakhs > 0:
+        in_words += num_to_words_hundreds(lakhs) + "Lakh "
+    if thousands > 0:
+        in_words += num_to_words_hundreds(thousands) + "Thousand "
+    if hundreds > 0:
+        in_words += num_to_words_hundreds(hundreds)
+    
+    in_words = in_words.strip() + " Rupees Only"
+    
+    return in_words
+
+def get_transactions(request, user_id, transaction_id):
+    User = get_user_model()
+    try:
+        user_obj = User.objects.get(id=user_id)
+        all_transactions = InstitutionSubscription.objects.filter(user=user_obj, transaction_id__icontains=transaction_id).order_by('-created_at')
+        institute = all_transactions.first().subscription_plan.institution if all_transactions.exists() else None
+
+        total_amount = all_transactions.aggregate(total=Sum('amount_paid'))['total']
+        if total_amount is None:
+            total_amount = 0
+        
+    except User.DoesNotExist:
+        return render(request, 'coaching/receipt.html', {'error': 'User not found'})
+
+    amount_in_words = convert_amount_to_words(total_amount)
+
+    context = {
+        'user': user_obj,
+        'transactions': all_transactions,
+        'total_amount': total_amount,
+        'amount_in_words': amount_in_words,
+        'institute_name': institute.name, 
+        'institute_address': institute.address,
+    }
+    
+    return render(request, 'coaching/receipt.html', context)

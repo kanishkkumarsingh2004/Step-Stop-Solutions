@@ -3,16 +3,13 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
-    <!-- Header -->
     <div class="text-center mb-2 sm:mb-3">
         <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 animate-fade-in">
             Payment Verifications
         </h1>
     </div>
 
-    <!-- Filter and Search Section -->
     <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row items-stretch sm:items-center justify-between mb-4">
-        <!-- Filter Buttons -->
         <div class="flex flex-row space-x-1 justify-center">
             <a href="?status=all{% if search_query %}&search={{ search_query }}{% endif %}" 
                class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if current_status == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
@@ -32,7 +29,6 @@
             </a>
         </div>
 
-        <!-- Search Field -->
         <form method="get" class="w-full sm:w-56">
             {% if current_status != 'all' %}
             <input type="hidden" name="status" value="{{ current_status }}">
@@ -47,7 +43,6 @@
         </form>
     </div>
 
-    <!-- Payments Section -->
     <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">
             {% if current_status == 'all' %}
@@ -60,6 +55,7 @@
         {% if subscriptions %}
         <div class="block md:hidden space-y-2">
             {% for subscription in subscriptions %}
+            {% with verification=subscription.verifications.first %}
             <div class="p-2 sm:p-3 border rounded-md">
                 <div class="space-y-1">
                     <div class="flex justify-between text-xs xs:text-sm">
@@ -90,11 +86,31 @@
                         </form>
                     </div>
                     <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Verified By:</span>
+                        <span>{% if verification.verified_by %}{{ verification.verified_by.get_full_name }}{% else %}N/A{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Verification Date:</span>
+                        <span>{% if verification %}{{ verification.created_at|date:"M d, Y H:i" }}{% else %}N/A{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Notes:</span>
+                        <span>{% if verification.verification_notes %}{{ verification.verification_notes }}{% else %}N/A{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
                         <span class="font-medium text-gray-500">Date:</span>
                         <span>{{ subscription.created_at|date:"M d, Y" }}</span>
                     </div>
+                    <div class="flex justify-between text-xs xs:text-sm">
+                        <span class="font-medium text-gray-500">Receipt:</span>
+                        <a href="{% url 'coaching:generate_receipt' subscription.user.id subscription.transaction_id %}"
+                           class="px-2 py-1 bg-indigo-500 text-white text-xs rounded-md hover:bg-indigo-600 transition-colors duration-200">
+                            View Receipt
+                        </a>
+                    </div>
                 </div>
             </div>
+            {% endwith %}
             {% endfor %}
         </div>
 
@@ -107,11 +123,16 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified By</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verification Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for subscription in subscriptions %}
+                    {% with verification=subscription.verifications.first %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                             {{ subscription.user.get_full_name }}
@@ -136,9 +157,37 @@
                             </form>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {% if verification.verified_by %}
+                                {{ verification.verified_by.get_full_name }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {% if verification %}
+                                {{ verification.created_at|date:"M d, Y H:i" }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {% if verification.verification_notes %}
+                                {{ verification.verification_notes }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                             {{ subscription.created_at|date:"M d, Y" }}
                         </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <a href="{% url 'coaching:generate_receipt' subscription.user.id subscription.transaction_id %}"
+                               class="px-2 py-1 bg-indigo-500 text-white text-xs rounded-md hover:bg-indigo-600 transition-colors duration-200">
+                                View
+                            </a>
+                        </td>
                     </tr>
+                    {% endwith %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -158,4 +207,4 @@
 </div>
 
 <script src="{% static 'js/payment_verifications.js' %}"></script>
-{% endblock %} 
+{% endblock %}

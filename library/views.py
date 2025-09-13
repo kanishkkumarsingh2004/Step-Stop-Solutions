@@ -329,33 +329,72 @@ def user_signup(request):
 def user_logout(request):
     logout(request)
     return redirect('home')
+from django.db.models import Prefetch, Q
+
 @login_required
 def manage_users(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
-    # Get users who have subscriptions to this library
-    users_with_subscriptions = CustomUser.objects.filter(
+
+    # Filters from request
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+
+    # Base queryset: users who have subscriptions to this library
+    users_qs = CustomUser.objects.filter(
         usersubscription__subscription__library=library
     ).distinct()
 
-    # Add subscription status and checkin status to each user
-    for user in users_with_subscriptions:
-        user.has_active_subscription = UserSubscription.objects.filter(
-            user=user,
+    # Apply search filter
+    if search_query:
+        users_qs = users_qs.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(mobile_number__icontains=search_query)
+        )
+
+    # Prefetch active subscriptions for the library
+    active_subscriptions_prefetch = Prefetch(
+        'usersubscription_set',
+        queryset=UserSubscription.objects.filter(
             subscription__library=library,
-            end_date__gte=timezone.now().date()
-        ).exists()
-        
-        # Add checkin status
-        user.is_checked_in = LibraryAttendance.objects.filter(
-            user=user,
+            end_date__gte=timezone.now().date(),
+            status='valid'
+        ),
+        to_attr='active_subscriptions'
+    )
+
+    # Prefetch library attendance for check-in status
+    attendance_prefetch = Prefetch(
+        'libraryattendance_set',
+        queryset=LibraryAttendance.objects.filter(
             check_in_time__isnull=False,
-            check_out_time__isnull=True
-        ).exists()
-    
+            check_out_time__isnull=True,
+            library=library
+        ),
+        to_attr='active_attendance'
+    )
+
+    users = users_qs.prefetch_related(active_subscriptions_prefetch, attendance_prefetch)
+
+    # Annotate has_active_subscription and is_checked_in based on prefetched data
+    filtered_users = []
+    for user in users:
+        user.has_active_subscription = len(user.active_subscriptions) > 0
+        user.is_checked_in = len(user.active_attendance) > 0
+
+        # Apply status filter if provided
+        if status_filter == 'active' and not user.has_active_subscription:
+            continue
+        if status_filter == 'inactive' and user.has_active_subscription:
+            continue
+
+        filtered_users.append(user)
+
     return render(request, 'library/manage_users.html', {
         'library': library,
-        'users': users_with_subscriptions
+        'users': filtered_users,
+        'search_query': search_query,
+        'status_filter': status_filter
     })
 @csrf_exempt
 def check_access(request):
@@ -1188,15 +1227,15 @@ def subscription_details(request, subscription_id):
 @login_required
 def verify_payments(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
+
     transactions = Transaction.objects.filter(
         subscription__library=library
     ).select_related('user', 'subscription').order_by('-created_at')
-    
+
     status = request.GET.get('status')
     if status and status != 'all':
         transactions = transactions.filter(status=status)
-    
+
     search_query = request.GET.get('search')
     if search_query:
         transactions = transactions.filter(
@@ -1204,11 +1243,24 @@ def verify_payments(request, library_id):
             Q(user__email__icontains=search_query) |
             Q(subscription__name__icontains=search_query)
         )
-    
+
+    # Attach user_subscription to each transaction
+    for transaction in transactions:
+        transaction.user_subscription = UserSubscription.objects.filter(
+            user=transaction.user,
+            subscription=transaction.subscription
+        ).first()
+
+    # Pagination
+    paginator = Paginator(transactions, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
         'library': library,
-        'transactions': transactions,
-        'status_filter': status
+        'transactions': page_obj,
+        'status_filter': status,
+        'page_obj': page_obj
     }
     return render(request, 'library/verify_payments.html', context)
 
@@ -1241,7 +1293,7 @@ def verify_single_payment(request, transaction_id):
 @login_required
 def update_transaction_status(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
-    
+
     if request.method == 'POST':
         new_status = request.POST.get('status')
         if new_status in dict(Transaction.STATUS_CHOICES).keys():
@@ -1250,8 +1302,32 @@ def update_transaction_status(request, transaction_id):
             messages.success(request, f"Transaction status updated to {new_status}")
         else:
             messages.error(request, "Invalid status selected")
-    
+
     return redirect('verify_payments', library_id=transaction.subscription.library.id)
+
+@login_required
+def update_subscription_start_date(request, subscription_id):
+    if request.method == 'POST':
+        new_start_date = request.POST.get('start_date')
+
+        if not new_start_date:
+            messages.error(request, "New start date is required.")
+            return redirect('dashboard')
+
+        try:
+            subscription = UserSubscription.objects.get(id=subscription_id)
+            subscription.start_date = new_start_date
+            subscription.save()
+            messages.success(request, "Subscription start date updated successfully.")
+        except UserSubscription.DoesNotExist:
+            messages.error(request, "Subscription not found.")
+        except Exception as e:
+            messages.error(request, f"Error updating start date: {str(e)}")
+
+        return redirect('verify_payments', library_id=subscription.subscription.library.id)
+    else:
+        messages.error(request, "Invalid request method.")
+        return redirect('dashboard')
 
 @login_required
 def edit_library_profile(request, library_id):

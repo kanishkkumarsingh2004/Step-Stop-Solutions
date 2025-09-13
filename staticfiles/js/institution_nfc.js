@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Script loaded: institution_nfc.js'); // Debug: Script initialization
-
     // Get DOM elements
     const form = document.getElementById('nfc-form');
     const nfcIdDisplay = document.getElementById('nfc-id-display');
@@ -20,44 +18,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelDeallocate = document.getElementById('cancel-deallocate');
     const confirmDeallocate = document.getElementById('confirm-deallocate');
 
-    console.log('DOM elements initialized:', {
-        form: !!form,
-        nfcIdDisplay: !!nfcIdDisplay,
-        errorMessageContainer: !!errorMessageContainer,
-        invalidCardMessage: !!invalidCardMessage,
-        allocatedUserInfo: !!allocatedUserInfo,
-        userSelect: !!userSelect,
-        activateButton: !!activateButton,
-        deleteButton: !!deleteButton,
-        nfcIdInput: !!nfcIdInput,
-        institutionId: institutionId,
-        csrfToken: !!csrfToken,
-        deallocateModal: !!deallocateModal
-    }); // Debug: Element availability
-
+    
     // Helper functions for UI updates
     const showError = (message) => {
-        console.log('Showing error:', message); // Debug
         if (errorMessageContainer && errorMessageText) {
             errorMessageContainer.classList.remove('hidden');
             errorMessageText.textContent = message;
         }
     };
     const hideError = () => {
-        console.log('Hiding error'); // Debug
         if (errorMessageContainer && errorMessageText) {
             errorMessageContainer.classList.add('hidden');
             errorMessageText.textContent = '';
         }
     };
     const showInvalidCardMessage = () => {
-        console.log('Showing invalid card message'); // Debug
         if (invalidCardMessage) {
             invalidCardMessage.classList.remove('hidden');
         }
     };
     const hideInvalidCardMessage = () => {
-        console.log('Hiding invalid card message'); // Debug
         if (invalidCardMessage) {
             invalidCardMessage.classList.add('hidden');
         }
@@ -67,35 +47,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let buffer = '';
     let timeout = null;
     document.addEventListener('keydown', (e) => {
-        console.log(`Key pressed: ${e.key}, Document has focus: ${document.hasFocus()}`); // Debug
         document.body.focus(); // Ensure focus for NFC reader input
         if (e.key >= '0' && e.key <= '9') {
             e.preventDefault(); // Prevent default to avoid typing in other places
             buffer += e.key;
-            console.log(`Buffer updated: ${buffer}`); // Debug
             if (timeout) clearTimeout(timeout);
             timeout = setTimeout(() => {
-                console.log('Buffer reset due to timeout');
                 buffer = '';
             }, 1000); // 1000ms timeout for reliability
             if (buffer.length === 10) {
-                console.log('10 digits reached, processing card ID'); // Debug
                 processCardId(buffer);
             }
         } else if (e.key === 'Enter') {
             e.preventDefault(); // Prevent form submission
-            console.log(`Enter key pressed, buffer: ${buffer}`); // Debug
             if (buffer.length === 10) {
-                console.log('Enter with 10 digits, processing card ID'); // Debug
                 processCardId(buffer);
             } else if (buffer.length > 0) {
                 showError(`Invalid card ID length: ${buffer.length} digits`);
-                console.log(`Invalid buffer length: ${buffer.length}`); // Debug
                 buffer = '';
                 clearTimeout(timeout);
             }
         } else {
-            console.log(`Non-digit key pressed, resetting buffer: ${e.key}`); // Debug
             buffer = '';
             clearTimeout(timeout);
         }
@@ -104,11 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Process card ID and check allocation
     const processCardId = async (serialNumber) => {
         serialNumber = serialNumber.trim(); // Normalize input
-        console.log(`Processing serial number: ${serialNumber}`); // Debug
         nfcIdInput.value = serialNumber; // Store in hidden input
-        console.log(`nfc_id input updated: ${nfcIdInput.value}`); // Debug
         nfcIdDisplay.textContent = serialNumber;
-        console.log(`nfc-id-display updated: ${nfcIdDisplay.textContent}`); // Debug
         await checkNfcAllocation(serialNumber);
         buffer = '';
         clearTimeout(timeout);
@@ -117,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check NFC allocation (institution workflow)
     async function checkNfcAllocation(serialNumber) {
         try {
-            console.log(`Checking allocation for serial number: ${serialNumber}`); // Debug
             const response = await fetch('/check_institution_nfc_allocation/', {
                 method: 'POST',
                 headers: {

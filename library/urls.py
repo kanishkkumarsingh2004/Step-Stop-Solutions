@@ -46,6 +46,7 @@ urlpatterns = [
    path('library/<int:library_id>/verify-payments/', views.verify_payments, name='verify_payments'),
    path('verify-payment/<int:transaction_id>/', views.verify_single_payment, name='verify_single_payment'),
    path('transactions/<int:transaction_id>/update-status/', views.update_transaction_status, name='update_transaction_status'),
+   path('subscription/<int:subscription_id>/update-start-date/', views.update_subscription_start_date, name='update_subscription_start_date'),
    
    # Enrollment
    path('library/<int:library_id>/enroll/', views.enroll_library, name='enroll_library'),

@@ -36,29 +36,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let buffer = '';
     let timeout = null;
     document.addEventListener('keydown', (e) => {
-        console.log(`Key pressed: ${e.key}`); // Debug: Log each key press
         if (e.key >= '0' && e.key <= '9') {
             e.preventDefault(); // Prevent default to avoid typing in other places
             buffer += e.key;
-            console.log(`Buffer: ${buffer}`); // Debug: Log current buffer
             if (timeout) clearTimeout(timeout);
             timeout = setTimeout(() => {
-                console.log('Buffer reset due to timeout');
                 buffer = '';
             }, 500); // Reset buffer after 500ms inactivity
         } else if (e.key === 'Enter') {
             e.preventDefault(); // Prevent form submission
-            console.log(`Enter key pressed, buffer: ${buffer}`); // Debug
             if (buffer.length === 10) {
                 processCardId(buffer);
             } else if (buffer.length > 0) {
                 showError(`Invalid card ID length: ${buffer.length} digits`);
-                console.log(`Invalid buffer length: ${buffer.length}`); // Debug
                 buffer = '';
                 clearTimeout(timeout);
             }
         } else {
-            console.log(`Non-digit key pressed, resetting buffer: ${e.key}`); // Debug
             buffer = '';
             clearTimeout(timeout);
         }
@@ -67,7 +61,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Process card ID and check matching checkbox
     const processCardId = (cardId) => {
         cardId = cardId.trim(); // Normalize input
-        console.log(`Processing card ID: ${cardId}`); // Debug
         hideError();
         nfcIdInput.value = cardId; // Store in hidden input (optional)
         const correspondingCheckbox = Array.from(cardCheckboxes).find(checkbox => 
@@ -75,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
         );
         if (correspondingCheckbox) {
             correspondingCheckbox.checked = true;
-            console.log(`Selected checkbox for card ID: ${cardId}`); // Debug
             updateSelectedCardsDisplay();
             const row = correspondingCheckbox.closest('tr');
             row.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -85,8 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1000); // Remove highlight after 1 second
         } else {
             showError(`Card ID ${cardId} not found in the list.`);
-            console.log(`No checkbox found for card ID: ${cardId}`); // Debug
-            console.log('Available card IDs:', Array.from(cardCheckboxes).map(cb => cb.value)); // Debug: Log all card IDs
         }
         buffer = '';
         clearTimeout(timeout);
@@ -138,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(data.message || 'Failed to allocate cards');
                 }
             } catch (error) {
-                console.error('Submission error:', error);
                 showError(error.message || 'A network error occurred. Please try again.');
             } finally {
                 submitButton.disabled = false;
