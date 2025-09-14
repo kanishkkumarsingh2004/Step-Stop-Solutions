@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Reminder - {{ institution_name }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .greeting {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .message {
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+        .payment-details {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .payment-details h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 18px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #28a745;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .cta-button:hover {
+            background-color: #218838;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .warning strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 10px;
+            }
+            .header {
+                padding: 20px 15px;
+            }
+            .content {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>{{ institution_name }}</h1>
+            <p>Payment Reminder Notice</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Dear {{ recipient_name }},
+            </div>
+
+            <div class="message">
+                <p>We hope this email finds you well. This is a friendly reminder regarding your outstanding payment for the subscription at {{ institution_name }}.</p>
+
+                <p>Your commitment to continuing education is important to us, and we appreciate your ongoing support. To ensure uninterrupted access to our services, we kindly request that you settle the remaining balance at your earliest convenience.</p>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="payment-details">
+                <h3>Payment Summary</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Subscription Plan:</span>
+                    <span>{{ subscription_plan }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Amount:</span>
+                    <span>₹{{ total_amount }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount Paid:</span>
+                    <span>₹{{ amount_paid }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Outstanding Amount:</span>
+                    <span class="detail-value">₹{{ outstanding_amount }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Due Date:</span>
+                    <span>{{ due_date }}</span>
+                </div>
+            </div>
+
+            <!-- Warning -->
+            <div class="warning">
+                <strong>Important:</strong>
+                Please note that failure to make the payment by the due date may result in temporary suspension of your account access. We value your partnership and would like to avoid any disruption to your learning experience.
+            </div>
+
+            <div class="message">
+                <p>If you have already made the payment or if you believe this is an error, please disregard this reminder or contact our support team immediately.</p>
+
+                <p>For any questions or assistance with your payment, please don't hesitate to reach out to us:</p>
+                <ul>
+                    <li>Email: {{ support_email }}</li>
+                    <li>Phone: {{ support_phone }}</li>
+                </ul>
+
+                <p>Thank you for your prompt attention to this matter. We look forward to continuing to serve you.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>{{ institution_name }}</strong></p>
+            <p>{{ institution_address }}</p>
+            <p>Email: <a href="mailto:{{ institution_email }}">{{ institution_email }}</a> | Phone: {{ institution_phone }}</p>
+            <p>&copy; {{ current_year }} {{ institution_name }}. All rights reserved.</p>
+            <p style="font-size: 12px; color: #adb5bd;">
+                This is an automated payment reminder. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

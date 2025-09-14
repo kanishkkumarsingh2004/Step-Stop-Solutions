@@ -2657,34 +2657,91 @@ def send_payment_reminder(request):
         if request.user != institution.owner and request.user not in institution.staff.all():
             return JsonResponse({'success': False, 'error': 'Permission denied'})
 
-        # Send email reminder
-        from django.core.mail import send_mail
+        # Get subscription details for the user
+        try:
+            subscription = InstitutionSubscription.objects.filter(
+                user__email=email,
+                subscription_plan__institution=institution
+            ).select_related('subscription_plan', 'user').first()
+
+            if not subscription:
+                return JsonResponse({'success': False, 'error': 'Subscription not found'})
+
+            # Calculate payment details
+            total_paid = InstallmentPayment.objects.filter(
+                subscription=subscription
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+
+            total_amount = subscription.subscription_plan.new_price or subscription.subscription_plan.old_price
+            outstanding_amount = total_amount - total_paid
+
+            # Prepare context for email template
+            context = {
+                'institution_name': institution.name,
+                'recipient_name': name,
+                'subscription_plan': subscription.subscription_plan.name,
+                'total_amount': f"{total_amount:.2f}",
+                'amount_paid': f"{total_paid:.2f}",
+                'outstanding_amount': f"{outstanding_amount:.2f}",
+                'due_date': (subscription.created_at + timedelta(days=30)).strftime('%B %d, %Y'),
+                'payment_link': f"https://yourdomain.com/payment/{subscription.id}",  # Replace with actual payment URL
+                'support_email': institution.contact_email or 'support@example.com',
+                'support_phone': institution.contact_phone or 'N/A',
+                'institution_address': institution.address or 'N/A',
+                'institution_email': institution.contact_email or 'info@example.com',
+                'institution_phone': institution.contact_phone or 'N/A',
+                'current_year': timezone.now().year,
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting subscription details: {str(e)}")
+            return JsonResponse({'success': False, 'error': 'Failed to get subscription details'})
+
+        # Send HTML email reminder
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
         from django.conf import settings
 
         subject = f'Payment Reminder - {institution.name}'
-        message = f"""
+
+        # Render HTML content
+        html_content = render_to_string('coaching/payment_reminder_email.html', context)
+
+        # Create plain text version as fallback
+        text_content = f"""
 Dear {name},
 
-This is a friendly reminder that you have an outstanding payment of ₹{amount} for your subscription at {institution.name}.
+This is a friendly reminder that you have an outstanding payment of ₹{outstanding_amount} for your subscription at {institution.name}.
+
+Subscription Details:
+- Plan: {subscription.subscription_plan.name}
+- Total Amount: ₹{total_amount}
+- Amount Paid: ₹{total_paid}
+- Outstanding Amount: ₹{outstanding_amount}
 
 Please complete your payment at your earliest convenience to continue enjoying our services.
 
 If you have already made the payment, please disregard this reminder.
 
-Thank you for your attention to this matter.
+For any questions, contact us at {institution.contact_phone or 'N/A'}.
 
 Best regards,
 {institution.name} Team
-{institution.contact_phone}
         """
 
-        send_mail(
+        # Create email message
+        email_message = EmailMultiAlternatives(
             subject=subject,
-            message=message,
+            body=text_content,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
+            to=[email]
         )
+
+        # Attach HTML version
+        email_message.attach_alternative(html_content, "text/html")
+
+        # Send the email
+        email_message.send(fail_silently=False)
 
         logger.info(f"Payment reminder sent successfully to {email} for institution {institution.name}")
         return JsonResponse({'success': True, 'message': 'Reminder sent successfully'})
