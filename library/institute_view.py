@@ -395,6 +395,11 @@ def manage_institution_users(request, uid):
     """Display all students who have enrolled in the institution through subscriptions"""
     institution = get_object_or_404(Institution, uid=uid)
 
+    # Check if the user is the owner of the institution or a staff member
+    if request.user != institution.owner and not InstitutionStaff.objects.filter(institution=institution, user=request.user).exists():
+        messages.error(request, "You don't have permission to view this page.")
+        return redirect('home')
+
     # Get all students who have subscribed to this institution's subscription plans
     subscriptions = InstitutionSubscription.objects.filter(
         subscription_plan__institution=institution

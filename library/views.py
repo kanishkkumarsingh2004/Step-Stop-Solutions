@@ -1,4 +1,4 @@
-# Django core imports
+ # Django core imports
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
@@ -365,7 +365,7 @@ def manage_users(request, library_id):
 
     # Prefetch library attendance for check-in status
     attendance_prefetch = Prefetch(
-        'libraryattendance_set',
+        'library_attendances',
         queryset=LibraryAttendance.objects.filter(
             check_in_time__isnull=False,
             check_out_time__isnull=True,
@@ -381,7 +381,7 @@ def manage_users(request, library_id):
     for user in users:
         user.has_active_subscription = len(user.active_subscriptions) > 0
         user.is_checked_in = len(user.active_attendance) > 0
-
+        user.nfc_id = LibraryCardLog.objects.filter(user=user, library=library).last().card_id if LibraryCardLog.objects.filter(user=user, library=library).exists() else None
         # Apply status filter if provided
         if status_filter == 'active' and not user.has_active_subscription:
             continue
@@ -396,6 +396,7 @@ def manage_users(request, library_id):
         'search_query': search_query,
         'status_filter': status_filter
     })
+
 @csrf_exempt
 def check_access(request):
     if request.method == "POST":
@@ -1323,6 +1324,30 @@ def update_subscription_start_date(request, subscription_id):
             messages.error(request, "Subscription not found.")
         except Exception as e:
             messages.error(request, f"Error updating start date: {str(e)}")
+
+        return redirect('verify_payments', library_id=subscription.subscription.library.id)
+    else:
+        messages.error(request, "Invalid request method.")
+        return redirect('dashboard')
+
+@login_required
+def update_subscription_end_date(request, subscription_id):
+    if request.method == 'POST':
+        new_end_date = request.POST.get('end_date')
+
+        if not new_end_date:
+            messages.error(request, "New end date is required.")
+            return redirect('dashboard')
+
+        try:
+            subscription = UserSubscription.objects.get(id=subscription_id)
+            subscription.end_date = new_end_date
+            subscription.save()
+            messages.success(request, "Subscription end date updated successfully.")
+        except UserSubscription.DoesNotExist:
+            messages.error(request, "Subscription not found.")
+        except Exception as e:
+            messages.error(request, f"Error updating end date: {str(e)}")
 
         return redirect('verify_payments', library_id=subscription.subscription.library.id)
     else:

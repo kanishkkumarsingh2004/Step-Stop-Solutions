@@ -1,144 +1,208 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 md:py-4">
-    <div class="mb-4 md:mb-6">
-        <h1 class="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-800 mb-1">All Transactions</h1>
-        <p class="text-xs xs:text-sm sm:text-base text-gray-600">Review all transactions (valid, invalid, and pending)</p>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+    <div class="mb-8 md:mb-10">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 animate-fade-in">
+            <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">All Transactions</span>
+        </h1>
+        <p class="text-sm sm:text-base text-gray-600 leading-relaxed">Review and manage all transactions (valid, invalid, and pending)</p>
     </div>
 
     <!-- Filter and Search Section -->
-    <div class="flex flex-col space-y-2 sm:space-y-0 sm:flex-row items-stretch sm:items-center justify-between mb-4">
-        <!-- Filter Buttons -->
-        <div class="flex flex-row space-x-1 justify-center">
-            <a href="?status=all" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                All
-            </a>
-            <a href="?status=valid" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'valid' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                Valid
-            </a>
-            <a href="?status=pending" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'pending' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                Pending
-            </a>
-            <a href="?status=invalid" class="px-2 py-1 text-xs sm:text-sm font-medium rounded-md text-center {% if request.GET.status == 'invalid' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                Invalid
-            </a>
-        </div>
-
-        <!-- Search Field -->
-        <form method="get" class="w-full sm:w-56">
-            <div class="relative">
-                <input type="text" name="search" placeholder="Search transactions..." value="{{ request.GET.search }}" class="w-full px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                <button type="submit" class="absolute inset-y-0 right-0 px-2 flex items-center">
-                    <i class="bi bi-search text-gray-500 text-sm"></i>
-                </button>
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-200/50 p-6 mb-8">
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
+            <!-- Filter Buttons -->
+            <div class="flex flex-wrap gap-3 justify-center lg:justify-start">
+                <a href="?status=all" class="px-6 py-3 text-sm font-semibold rounded-xl text-center transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 {% if request.GET.status == 'all' %}bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-blue-200{% else %}bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200{% endif %}">
+                    <i class="bi bi-grid-3x3-gap-fill mr-2"></i>All
+                </a>
+                <a href="?status=valid" class="px-6 py-3 text-sm font-semibold rounded-xl text-center transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 {% if request.GET.status == 'valid' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-green-200{% else %}bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200{% endif %}">
+                    <i class="bi bi-check-circle-fill mr-2"></i>Valid
+                </a>
+                <a href="?status=pending" class="px-6 py-3 text-sm font-semibold rounded-xl text-center transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 {% if request.GET.status == 'pending' %}bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-yellow-200{% else %}bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200{% endif %}">
+                    <i class="bi bi-clock-fill mr-2"></i>Pending
+                </a>
+                <a href="?status=invalid" class="px-6 py-3 text-sm font-semibold rounded-xl text-center transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 {% if request.GET.status == 'invalid' %}bg-gradient-to-r from-red-600 to-red-700 text-white shadow-red-200{% else %}bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200{% endif %}">
+                    <i class="bi bi-x-circle-fill mr-2"></i>Invalid
+                </a>
             </div>
-        </form>
+
+            <!-- Search Field -->
+            <form method="get" class="w-full lg:w-80">
+                <div class="relative">
+                    <input type="text" name="search" placeholder="Search transactions by user, ID, or subscription..." value="{{ request.GET.search }}"
+                           class="w-full px-4 py-3 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50 hover:bg-white transition-all duration-200 shadow-sm hover:shadow-md pr-12">
+                    <button type="submit" class="absolute inset-y-0 right-0 px-4 flex items-center text-slate-500 hover:text-blue-600 transition-colors duration-200">
+                        <i class="bi bi-search text-lg"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="bg-white rounded-lg md:rounded-xl shadow p-2 sm:p-4 md:p-6">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200/50 overflow-hidden">
         {% if transactions %}
-        <div class="block md:hidden space-y-2">
-            {% for transaction in transactions %}
-            <div class="p-2 sm:p-3 border rounded-md">
-                <div class="space-y-1">
-                    <div class="flex justify-between text-xs xs:text-sm">
-                        <span class="font-medium text-gray-500">User:</span>
-                        <span>{{ transaction.user.get_full_name }}</span>
+        <div class="block md:hidden">
+            <div class="p-6 space-y-4">
+                {% for transaction in transactions %}
+                <div class="bg-gradient-to-br from-slate-50 to-blue-50/30 p-5 rounded-xl border border-slate-200/50 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                {{ transaction.user.get_full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-slate-900 text-sm">{{ transaction.user.get_full_name }}</h3>
+                                <p class="text-xs text-slate-500">{{ transaction.transaction_id }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-green-600">₹{{ transaction.amount }}</div>
+                            <div class="text-xs text-slate-500">{{ transaction.created_at|date:"M d, Y" }}</div>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-xs xs:text-sm">
-                        <span class="font-medium text-gray-500">Transaction ID:</span>
-                        <span>{{ transaction.transaction_id }}</span>
-                    </div>
-                    <div class="flex justify-between text-xs xs:text-sm">
-                        <span class="font-medium text-gray-500">Subscription name:</span>
-                        <span>{{ transaction.subscription.name }}</span>
-                    </div>
-                    <div class="flex justify-between text-xs xs:text-sm">
-                        <span class="font-medium text-gray-500">Amount:</span>
-                        <span>₹{{ transaction.amount }}</span>
-                    </div>
-                    <div class="flex justify-between text-xs xs:text-sm">
-                        <span class="font-medium text-gray-500">Status:</span>
-                        <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="inline">
-                            {% csrf_token %}
-                            <select name="status" onchange="this.form.submit()" class="text-2xs xs:text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500">
-                                <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %}>Pending</option>
-                                <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %}>Valid</option>
-                                <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %}>Invalid</option>
-                            </select>
-                        </form>
-                    </div>
-                    <div class="flex justify-between text-xs xs:text-sm">
-                        <span class="font-medium text-gray-500">Start Date:</span>
-                        {% if transaction.user_subscription %}
-                            <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="inline">
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-white/60 p-3 rounded-lg">
+                            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Subscription</div>
+                            <div class="text-sm font-semibold text-slate-900 mt-1">{{ transaction.subscription.name }}</div>
+                        </div>
+                        <div class="bg-white/60 p-3 rounded-lg">
+                            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Status</div>
+                            <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="mt-1">
                                 {% csrf_token %}
-                                <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}" class="text-2xs xs:text-xs border rounded px-1 py-0.5">
-                                <button type="submit" class="text-2xs xs:text-xs bg-blue-500 text-white px-1 py-0.5 rounded ml-1">Update</button>
+                                <select name="status" onchange="this.form.submit()"
+                                        class="w-full text-xs font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-2 py-1 transition-all duration-200">
+                                    <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %} class="text-yellow-600">⏳ Pending</option>
+                                    <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %} class="text-green-600">✅ Valid</option>
+                                    <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %} class="text-red-600">❌ Invalid</option>
+                                </select>
                             </form>
-                        {% else %}
-                            <span>Not set</span>
-                        {% endif %}
+                        </div>
                     </div>
-                    <div class="flex justify-between text-xs xs:text-sm">
-                        <span class="font-medium text-gray-500">Date:</span>
-                        <span>{{ transaction.created_at|date:"M d, Y" }}</span>
+
+                    {% if transaction.user_subscription %}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/60 p-3 rounded-lg">
+                            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</div>
+                            <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="mt-2">
+                                {% csrf_token %}
+                                <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}"
+                                       class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <button type="submit" class="w-full mt-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium py-1.5 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md">
+                                    Update Start Date
+                                </button>
+                            </form>
+                        </div>
+                        <div class="bg-white/60 p-3 rounded-lg">
+                            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">End Date</div>
+                            <form method="post" action="{% url 'update_subscription_end_date' transaction.user_subscription.id %}" class="mt-2">
+                                {% csrf_token %}
+                                <input type="date" name="end_date" value="{{ transaction.user_subscription.end_date|date:'Y-m-d' }}"
+                                       class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <button type="submit" class="w-full mt-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-xs font-medium py-1.5 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-sm hover:shadow-md">
+                                    Update End Date
+                                </button>
+                            </form>
+                        </div>
                     </div>
+                    {% else %}
+                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                        <div class="text-xs font-medium text-amber-700">No subscription dates set</div>
+                    </div>
+                    {% endif %}
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
 
         <div class="hidden md:block overflow-x-auto">
-            <table class="min-w-full">
-                <thead>
-                    <tr class="border-b">
-                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription</th>
-                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                        <th class="px-2 py-1 md:px-4 md:py-2 text-left text-2xs xs:text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {% for transaction in transactions %}
-                    <tr>
-                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.user.get_full_name }}</td>
-                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.transaction_id }}</td>
-                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.subscription.name }}</td>
-                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">₹{{ transaction.amount }}</td>
-                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">
-                            <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="inline">
-                                {% csrf_token %}
-                                <select name="status" onchange="this.form.submit()" class="text-2xs xs:text-xs rounded-sm border border-gray-300 focus:ring-1 focus:ring-blue-500">
-                                    <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %}>Pending</option>
-                                    <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %}>Valid</option>
-                                    <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %}>Invalid</option>
-                                </select>
-                            </form>
-                        </td>
-                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">
-                            {% if transaction.user_subscription %}
-                                <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="inline">
+            <div class="bg-gradient-to-r from-slate-50 to-blue-50/30 rounded-xl p-6">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b-2 border-slate-200">
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50 rounded-tl-lg">User</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50">Transaction ID</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50">Subscription</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50">Amount</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50">Status</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50">Start Date</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50">End Date</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider bg-slate-100/50 rounded-tr-lg">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        {% for transaction in transactions %}
+                        <tr class="hover:bg-slate-50/50 transition-colors duration-150">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                                        {{ transaction.user.get_full_name|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">{{ transaction.user.get_full_name }}</div>
+                                        <div class="text-xs text-slate-500">{{ transaction.transaction_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-900 font-medium">{{ transaction.transaction_id }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-900">{{ transaction.subscription.name }}</td>
+                            <td class="px-6 py-4 text-sm font-bold text-green-600">₹{{ transaction.amount }}</td>
+                            <td class="px-6 py-4">
+                                <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="inline">
                                     {% csrf_token %}
-                                    <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}" class="text-2xs xs:text-xs border rounded px-1 py-0.5">
-                                    <button type="submit" class="text-2xs xs:text-xs bg-blue-500 text-white px-1 py-0.5 rounded ml-1">Update</button>
+                                    <select name="status" onchange="this.form.submit()"
+                                            class="text-xs font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-3 py-1 transition-all duration-200 shadow-sm hover:shadow-md">
+                                        <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %} class="text-yellow-600">⏳ Pending</option>
+                                        <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %} class="text-green-600">✅ Valid</option>
+                                        <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %} class="text-red-600">❌ Invalid</option>
+                                    </select>
                                 </form>
-                            {% else %}
-                                Not set
-                            {% endif %}
-                        </td>
-                        <td class="px-2 py-1 md:px-4 md:py-2 text-xs xs:text-sm">{{ transaction.created_at|date:"M d, Y" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if transaction.user_subscription %}
+                                    <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="space-y-2">
+                                        {% csrf_token %}
+                                        <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}"
+                                               class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200">
+                                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md">
+                                            Update
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-xs text-slate-500 italic">Not set</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if transaction.user_subscription %}
+                                    <form method="post" action="{% url 'update_subscription_end_date' transaction.user_subscription.id %}" class="space-y-2">
+                                        {% csrf_token %}
+                                        <input type="date" name="end_date" value="{{ transaction.user_subscription.end_date|date:'Y-m-d' }}"
+                                               class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200">
+                                        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-xs font-medium py-1 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-sm hover:shadow-md">
+                                            Update
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-xs text-slate-500 italic">Not set</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-900">{{ transaction.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         {% else %}
-        <p class="text-gray-600 text-center py-2 text-xs xs:text-sm">No transactions found</p>
+        <div class="text-center py-12">
+            <div class="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="bi bi-receipt text-2xl text-slate-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">No Transactions Found</h3>
+            <p class="text-slate-600 max-w-md mx-auto">There are no transactions matching your current filters. Try adjusting your search criteria or filter settings.</p>
+        </div>
         {% endif %}
     </div>
 </div>
