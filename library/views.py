@@ -1330,24 +1330,39 @@ def update_subscription_start_date(request, subscription_id):
         messages.error(request, "Invalid request method.")
         return redirect('dashboard')
 
+from django.utils.dateparse import parse_date
+from django.core.exceptions import ValidationError
+
 @login_required
 def update_subscription_end_date(request, subscription_id):
     if request.method == 'POST':
-        new_end_date = request.POST.get('end_date')
+        new_end_date_str = request.POST.get('end_date')
 
-        if not new_end_date:
+        if not new_end_date_str:
             messages.error(request, "New end date is required.")
             return redirect('dashboard')
 
+        new_end_date = parse_date(new_end_date_str)
+        if not new_end_date:
+            messages.error(request, "Invalid date format for end date.")
+            return redirect('dashboard')
+
         try:
-            subscription = UserSubscription.objects.get(id=subscription_id)
+            subscription = get_object_or_404(UserSubscription, id=subscription_id)
+            if subscription.start_date and new_end_date < subscription.start_date:
+                messages.error(request, "End date cannot be earlier than start date.")
+                return redirect('verify_payments', library_id=subscription.subscription.library.id)
+
             subscription.end_date = new_end_date
             subscription.save()
             messages.success(request, "Subscription end date updated successfully.")
-        except UserSubscription.DoesNotExist:
-            messages.error(request, "Subscription not found.")
+            logger.info(f"Subscription {subscription_id} end date updated to {new_end_date} by user {request.user.id}")
+        except ValidationError as ve:
+            messages.error(request, f"Validation error: {ve.message}")
+            logger.error(f"Validation error updating subscription end date: {ve}", exc_info=True)
         except Exception as e:
             messages.error(request, f"Error updating end date: {str(e)}")
+            logger.error(f"Error updating subscription end date: {e}", exc_info=True)
 
         return redirect('verify_payments', library_id=subscription.subscription.library.id)
     else:
