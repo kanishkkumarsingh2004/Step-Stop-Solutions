@@ -71,7 +71,7 @@ DATABASES = {
         'ENGINE': os.environ['ENGINE'],
         'HOST': os.environ['HOST'],
         'NAME': os.environ['NAME'],
-        'USER': 'postgres.nswagajowuojntnhkyqv',
+        'USER': 'postgres.zdfqdnvmtuitqafxxtwc',
         'PASSWORD': os.environ['PASSWORD'],
         'PORT': os.environ['DB_PORT'],
     }
