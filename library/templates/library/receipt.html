@@ -1,0 +1,107 @@
+<header>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-ieY5qS+qX5x1F5Z6G+D6k8x03vN0s6E4iK+n6W91+4t+o5t4V+A+w/w/o/y/e+Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</header>
+<style>
+    /* This style is for print-specific behavior */
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+    }
+</style>
+
+{% if error %}
+<div class="max-w-4xl mx-auto my-10 p-6 md:p-10 bg-white border border-red-200 rounded-xl shadow-lg font-sans">
+    <div class="text-center">
+        <h1 class="text-2xl font-bold text-red-600 mb-4">Error</h1>
+        <p class="text-gray-700">{{ error }}</p>
+        <a href="{% url 'home' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Go Back Home
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="max-w-4xl mx-auto my-10 p-6 md:p-10 bg-white border border-gray-200 rounded-xl shadow-lg font-sans">
+    <div class="flex flex-col md:flex-row justify-between items-start mb-8">
+        <div class="text-left mb-4 md:mb-0">
+            <h1 class="text-4xl font-bold text-indigo-800 tracking-tight">{{ library_name }}</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ library_address }}</p>
+        </div>
+        <div class="text-right">
+            <h2 class="text-3xl font-bold text-gray-800">Receipt</h2>
+            <p class="text-sm text-gray-500 mt-1">Date: <span class="font-semibold text-gray-700">{{ transactions.last.created_at|date:"d M, Y" }}</span></p>
+        </div>
+    </div>
+
+    <div class="mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-700 pb-2 mb-2 border-b border-gray-200">Billed To</h3>
+                <p class="text-gray-600"><strong class="font-medium text-gray-800">Name:</strong> {{ user.get_full_name }}</p>
+                <p class="text-gray-600"><strong class="font-medium text-gray-800">Email:</strong> {{ user.email }}</p>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-700 pb-2 mb-2 border-b border-gray-200">Summary</h3>
+                <p class="text-gray-600"><strong class="font-medium text-gray-800">Total Transactions:</strong> {{ transactions|length }}</p>
+                <p class="text-gray-600"><strong class="font-medium text-gray-800">Period:</strong> {{ transactions.first.created_at|date:"d M, Y" }} - {{ transactions.last.created_at|date:"d M, Y" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Transaction Details</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left table-auto">
+                <thead>
+                    <tr class="text-gray-700 bg-gray-100">
+                        <th class="p-3 font-semibold">Date</th>
+                        <th class="p-3 font-semibold">Description</th>
+                        <th class="p-3 font-semibold">Transaction ID</th>
+                        <th class="p-3 font-semibold text-right">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr class="border-t border-gray-200 hover:bg-white">
+                        <td class="p-3">{{ transaction.created_at|date:"d M, Y" }}</td>
+                        <td class="p-3">{{ transaction.subscription.name }}</td>
+                        <td class="p-3">{{ transaction.transaction_id }}</td>
+                        <td class="p-3 text-right">₹ {{ transaction.amount|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-8">
+        <div class="flex justify-end">
+            <div class="w-full max-w-xs">
+                <div class="flex justify-between items-center py-2 border-t border-gray-200 text-lg font-semibold text-gray-700">
+                    <span>Total Amount:</span>
+                    <span class="text-green-600">₹ {{ total_amount|floatformat:2 }}</span>
+                </div>
+                <div class="py-2 text-md font-medium text-gray-700">
+                    <p class="italic"><strong class="font-semibold">Amount in Words:</strong> {{ amount_in_words }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-between items-center mt-12 pt-4 border-t border-gray-200">
+        <div>
+            <p class="text-gray-500 text-sm">Thank you for your trust and business!</p>
+        </div>
+        <div class="text-right">
+            <p class="text-gray-800 font-semibold border-t-2 border-gray-400 pt-2">Authorized Signature</p>
+        </div>
+    </div>
+</div>
+
+<div class="no-print mt-6 text-center">
+    <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+        <i class="fas fa-print mr-2"></i> Download / Print Receipt
+    </button>
+</div>
+{% endif %}

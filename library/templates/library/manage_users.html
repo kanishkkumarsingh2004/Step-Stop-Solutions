@@ -82,7 +82,7 @@
                         NFC ID
                     </th>
                     <th scope="col" class="px-3 py-2 sm:px-4 sm:py-3 text-center font-medium text-gray-600 uppercase tracking-wider">
-                        Status
+                        Attendance Status
                     </th>
                     <th scope="col" class="px-3 py-2 sm:px-4 sm:py-3 text-center font-medium text-gray-600 uppercase tracking-wider">
                         Actions
@@ -114,10 +114,18 @@
                                 View Details
                             </a>
                             <span class="text-gray-300">|</span>
-                            <button onclick="markAttendance('{{ user.id }}')" 
-                                    class="btn {% if user.is_checked_in %}text-red-600  {% else %}text-green-600 {% endif %}">
-                                    {% if user.is_checked_in %}Check Out {% else %}Check In{% endif %}
-                            </span>
+                            <button onclick="markAttendance('{{ user.id }}', this)"
+                                    class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200
+                                           {% if user.is_checked_in %}bg-red-100 text-red-800 hover:bg-red-200{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %}">
+                                <span class="attendance-text">
+                                    {% if user.is_checked_in %}Check Out{% else %}Check In{% endif %}
+                                </span>
+                                <span class="loading-spinner hidden ml-2">
+                                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </span>
                             </button>
                         </div>
                     </td>
@@ -129,51 +137,94 @@
 </div>
 <!-- Add this script at the bottom of the file -->
 <script>
-    function markAttendance(userId) {
-    fetch(`/mark-attendance/${userId}/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            library_id: '{{ library.id }}'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const button = document.querySelector(`button[onclick="markAttendance('${userId}')"]`);
-            if (data.action === 'checkin') {
-                button.textContent = 'Check-out';
-                button.classList.remove('btn-success');
-                button.classList.add('btn-danger');
-            } else if (data.action === 'checkout') {
-                button.textContent = 'Check-in';
-                button.classList.remove('btn-danger');
-                button.classList.add('btn-success');
-            }
-            showToast(data.message, 'success');
-        } else {
-            showToast(data.error || 'An error occurred', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while marking attendance', 'error');
-    });
-}
+    function markAttendance(userId, buttonElement) {
+        // Show loading state
+        const textSpan = buttonElement.querySelector('.attendance-text');
+        const spinner = buttonElement.querySelector('.loading-spinner');
+        const originalText = textSpan.textContent.trim();
 
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 1000);
-    window.location.reload();
-}
+        textSpan.textContent = 'Processing...';
+        spinner.classList.remove('hidden');
+        buttonElement.disabled = true;
+
+        fetch(`{% url 'mark_attendance_manual' 0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                library_id: '{{ library.id }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update button appearance based on action
+                if (data.action === 'checkin') {
+                    textSpan.textContent = 'Check Out';
+                    buttonElement.classList.remove('bg-green-100', 'text-green-800', 'hover:bg-green-200');
+                    buttonElement.classList.add('bg-red-100', 'text-red-800', 'hover:bg-red-200');
+                } else if (data.action === 'checkout') {
+                    textSpan.textContent = 'Check In';
+                    buttonElement.classList.remove('bg-red-100', 'text-red-800', 'hover:bg-red-200');
+                    buttonElement.classList.add('bg-green-100', 'text-green-800', 'hover:bg-green-200');
+                }
+
+                // Update the user's status in the table
+                const statusCell = buttonElement.closest('tr').querySelector('td:nth-child(4) span');
+                if (statusCell) {
+                    if (data.action === 'checkin') {
+                        statusCell.className = 'inline-flex items-center px-2 py-0.5 text-xs sm:px-3 sm:py-1 rounded-full font-semibold bg-green-50 text-green-700';
+                        statusCell.textContent = 'Checked In';
+                    } else if (data.action === 'checkout') {
+                        statusCell.className = 'inline-flex items-center px-2 py-0.5 text-xs sm:px-3 sm:py-1 rounded-full font-semibold bg-gray-50 text-gray-700';
+                        statusCell.textContent = 'Checked Out';
+                    }
+                }
+
+                showToast(data.message, 'success');
+            } else {
+                // Revert button text on error
+                textSpan.textContent = originalText;
+                showToast(data.error || 'An error occurred', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert button text on error
+            textSpan.textContent = originalText;
+            showToast('An error occurred while marking attendance', 'error');
+        })
+        .finally(() => {
+            // Hide loading state
+            spinner.classList.add('hidden');
+            buttonElement.disabled = false;
+        });
+    }
+
+    function showToast(message, type) {
+        // Remove existing toasts
+        const existingToasts = document.querySelectorAll('.toast-notification');
+        existingToasts.forEach(toast => toast.remove());
+
+        const toast = document.createElement('div');
+        toast.className = `toast-notification fixed top-4 right-4 z-50 px-4 py-2 rounded-md text-white text-sm font-medium shadow-lg transition-all duration-300 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.style.transform = 'translateX(0)';
+        }, 100);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
 </script>
 {% endblock %}

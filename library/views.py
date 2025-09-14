@@ -493,8 +493,7 @@ def mark_attendance(request):
             
             # Check if current time is within allowed period
             is_within_time = (start_datetime <= current_datetime <= end_datetime)
-            check_out_color = 0 if is_within_time else 1
-            current_time = timezone.now()
+            check_out_co = 0 if is_within_time else 1
             ist_time = current_time + timedelta(hours=5, minutes=30)
             if not latest_attendance or latest_attendance.check_out_time:
                 # Check if seats are available
@@ -509,7 +508,7 @@ def mark_attendance(request):
                     user=user,
                     library=library,
                     check_in_time=current_time,
-                    check_in_color=check_out_color,
+                    check_in_color=check_out_co,
                     check_out_color=0,
                     nfc_id=nfc_serial
                 )
@@ -528,7 +527,7 @@ def mark_attendance(request):
             else:
                 # Check-out
                 latest_attendance.check_out_time = current_time
-                latest_attendance.check_out_color = check_out_color
+                latest_attendance.check_out_color = check_out_co
                 latest_attendance.save()
                 
                 # Increase available seats
@@ -2810,19 +2809,22 @@ def mark_attendance_manual(request, user_id):
         try:
             data = json.loads(request.body)
             library_id = data.get('library_id')
-            
+
             if not library_id:
                 return JsonResponse({"error": "Library ID is required"}, status=400)
-            
+
             user = CustomUser.objects.get(id=user_id)
             library = Library.objects.get(id=library_id)
-            
+
+            # Get NFC ID from LibraryCardLog instead of user object
+            nfc_id = LibraryCardLog.objects.filter(user=user, library=library).last().card_id if LibraryCardLog.objects.filter(user=user, library=library).exists() else None
+
             current_time = timezone.now()
             latest_attendance = LibraryAttendance.objects.filter(
                 user=user,
                 library=library
             ).order_by('-check_in_time').first()
-            
+
             if not latest_attendance or latest_attendance.check_out_time:
                 # Check if seats are available
                 if library.available_seats <= 0:
@@ -2830,7 +2832,7 @@ def mark_attendance_manual(request, user_id):
                         "error": "No seats available",
                         "status": "full"
                     }, status=400)
-                
+
                 # New check-in
                 LibraryAttendance.objects.create(
                     user=user,
@@ -2838,13 +2840,13 @@ def mark_attendance_manual(request, user_id):
                     check_in_time=current_time,
                     check_in_color=0,
                     check_out_color=0,
-                    nfc_id=user.nfc_id
+                    nfc_id=nfc_id
                 )
-                
+
                 # Decrease available seats
                 library.available_seats -= 1
                 library.save()
-                
+
                 return JsonResponse({
                     "success": True,
                     "message": "Checked in successfully",
@@ -2855,25 +2857,25 @@ def mark_attendance_manual(request, user_id):
                 # Check-out
                 latest_attendance.check_out_time = current_time
                 latest_attendance.save()
-                
+
                 # Increase available seats
                 library.available_seats += 1
                 library.save()
-                
+
                 return JsonResponse({
                     "success": True,
                     "message": "Checked out successfully",
                     "action": "checkout",
                     "available_seats": library.available_seats
                 })
-                
+
         except CustomUser.DoesNotExist:
             return JsonResponse({"success": False, "error": "User not found"}, status=404)
         except Library.DoesNotExist:
             return JsonResponse({"success": False, "error": "Library not found"}, status=404)
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)}, status=500)
-    
+
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 @login_required
@@ -3762,3 +3764,87 @@ def gym_card_count(request):
     return render(request, 'admin_page/gym_card_count.html', {
         'gyms': gym_data
     })
+
+
+@login_required
+def library_receipt(request, user_id, transaction_id):
+    """Generate receipt for library transactions"""
+    User = get_user_model()
+    try:
+        user_obj = User.objects.get(id=user_id)
+        # Get all transactions for this user with the given transaction_id
+        all_transactions = Transaction.objects.filter(
+            user=user_obj, 
+            transaction_id__icontains=transaction_id
+        ).order_by('-created_at')
+        
+        if not all_transactions.exists():
+            return render(request, 'library/receipt.html', {'error': 'Transaction not found'})
+
+        # Get the library from the first transaction
+        library = all_transactions.first().subscription.library if all_transactions.first().subscription.library else None
+        
+        # Calculate total amount
+        total_amount = all_transactions.aggregate(total=Sum('amount'))['total']
+        if total_amount is None:
+            total_amount = 0
+        
+        # Convert amount to words
+        amount_in_words = convert_amount_to_words(total_amount)
+        
+        context = {
+            'user': user_obj,
+            'transactions': all_transactions,
+            'total_amount': total_amount,
+            'amount_in_words': amount_in_words,
+            'library_name': library.venue_name if library else 'Library',
+            'library_address': library.venue_location if library else '',
+        }
+        
+        return render(request, 'library/receipt.html', context)
+        
+    except User.DoesNotExist:
+        return render(request, 'library/receipt.html', {'error': 'User not found'})
+
+
+def convert_amount_to_words(amount):
+    """Convert amount to words for receipt"""
+    if amount == 0:
+        return "Zero Rupees"
+    
+    units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+    teens = ["", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+    
+    in_words = ""
+    amount_int = int(amount)
+    
+    def num_to_words_hundreds(n):
+        s = ""
+        if n >= 100:
+            s += units[n // 100] + " Hundred "
+            n %= 100
+        if n >= 20:
+            s += tens[n // 10] + " "
+            n %= 10
+        elif 11 <= n <= 19:
+            s += teens[n - 10] + " "
+            return s
+        if n >= 1:
+            s += units[n] + " "
+        return s
+
+    lakhs = amount_int // 100000
+    thousands = (amount_int % 100000) // 1000
+    hundreds = amount_int % 1000
+    
+    if lakhs > 0:
+        in_words += num_to_words_hundreds(lakhs) + "Lakh "
+    if thousands > 0:
+        in_words += num_to_words_hundreds(thousands) + "Thousand "
+    if hundreds > 0:
+        in_words += num_to_words_hundreds(hundreds)
+    
+    in_words = in_words.strip() + " Rupees Only"
+    
+    return in_words

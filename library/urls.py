@@ -208,4 +208,6 @@ urlpatterns = [
    path('delete-gym-card/<int:card_id>/', views.delete_gym_card, name='delete_gym_card'),
    path('deallocate-gym-nfc/', views.deallocate_gym_nfc, name='deallocate_gym_nfc'),
    path('gym-card-count/', views.gym_card_count, name='gym_card_count'),
+
+   path('library/receipt/<int:user_id>/<str:transaction_id>/', views.library_receipt, name='library_receipt'),
  ]
