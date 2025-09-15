@@ -1917,12 +1917,12 @@ def allocate_card_to_institution_page(request, uid):
     # Augment user data with subscription status
     users_with_status = []
     for user in users_without_card:
-        # has_active_subscription = InstitutionSubscription.objects.filter(
-        #     user=user,
-        #     subscription_plan__institution=institution,
-        #     status='valid',
-        #     payment_status='valid'
-        # ).exists()
+        has_active_subscription = InstitutionSubscription.objects.filter(
+            user=user,
+            subscription_plan__institution=institution,
+            status='Valid',
+            payment_status='valid'
+        ).exists()
         
         users_with_status.append({
             'user': user
@@ -2194,7 +2194,7 @@ def mark_institute_attendance(request):
             active_subscription = InstitutionSubscription.objects.filter(
                 user=user,
                 subscription_plan__institution=institution,
-                status='valid'
+                status='Valid'
             ).first()
 
             if not active_subscription:
