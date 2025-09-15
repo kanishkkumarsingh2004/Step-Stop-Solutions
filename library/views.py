@@ -450,8 +450,7 @@ def mark_attendance(request):
 
             library = Library.objects.get(id=library_id)
              
-            # Get current time in IST (UTC+5:30)
-            current_time = timezone.now() + timedelta(hours=5, minutes=30)
+            current_time = timezone.now()
             active_subscription = UserSubscription.objects.filter(
                 user=user,
                 subscription__library=library,
