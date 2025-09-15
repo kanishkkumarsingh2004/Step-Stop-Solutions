@@ -39,12 +39,20 @@
             </div>
         </div>
     </div>
+
+    <!-- Cumulative Admin Expense Chart -->
+    <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Cumulative Admin Expenses Over Time</h2>
+        <div class="chart-container" style="position: relative; height: 400px; width: 100%">
+            <canvas id="cumulativeExpenseChart"></canvas>
+        </div>
+    </div>
 </div>
 
 <!-- Hidden divs to pass data to JavaScript -->
-<div id="cardAllocationData" 
-     data-labels="{% for library in libraries %}{{ library.venue_name }},{% endfor %}" 
-     data-values="{% for library in libraries %}{{ library.allocated_cards_count }},{% endfor %}" 
+<div id="cardAllocationData"
+     data-labels="{% for library in libraries %}{{ library.venue_name }},{% endfor %}"
+     data-values="{% for library in libraries %}{{ library.allocated_cards_count }},{% endfor %}"
      style="display: none;"></div>
 
 <div id="institutionCardAllocationData"
@@ -52,14 +60,20 @@
      data-values="{% for institution in institutions %}{{ institution.allocated_cards_count }},{% endfor %}"
      style="display: none;"></div>
 
-<div id="userStatusData" 
-     data-labels="Active Users,Inactive Users" 
-     data-values="{{ user_counts.active }},{{ user_counts.inactive }}" 
+<div id="userStatusData"
+     data-labels="Active Users,Inactive Users"
+     data-values="{{ user_counts.active }},{{ user_counts.inactive }}"
      style="display: none;"></div>
 
-<div id="subscriptionData" 
-     data-labels="Active Subscriptions,Expired Subscriptions" 
-     data-values="{{ subscription_data.active }},{{ subscription_data.expired }}" 
+<div id="subscriptionData"
+     data-labels="Active Subscriptions,Expired Subscriptions"
+     data-values="{{ subscription_data.active }},{{ subscription_data.expired }}"
+     style="display: none;"></div>
+
+<div id="cumulativeExpenseData"
+     data-labels="{{ expense_dates|join:',' }}"
+     data-profit="{{ cumulative_profit|join:',' }}"
+     data-loss="{{ cumulative_loss|join:',' }}"
      style="display: none;"></div>
 
 <!-- Include Chart.js and custom JS -->

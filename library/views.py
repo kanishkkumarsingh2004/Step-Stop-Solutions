@@ -3072,7 +3072,7 @@ def allocate_card_count(request):
 def admin_graphs(request):
     if not request.user.is_staff:
         raise PermissionDenied
-    
+
     # Data for charts
     libraries = Library.objects.annotate(
         allocated_cards_count=Count('admin_cards')
@@ -3081,23 +3081,47 @@ def admin_graphs(request):
     institutions = Institution.objects.annotate(
         allocated_cards_count=Count('admin_cards')
     ).order_by('-allocated_cards_count')[:10] # Top 10 institutions
-    
+
     user_counts = {
         'total': CustomUser.objects.count(),
         'active': CustomUser.objects.filter(is_active=True).count(),
         'inactive': CustomUser.objects.filter(is_active=False).count()
     }
-    
+
     subscription_data = {
         'active': UserSubscription.objects.filter(end_date__gte=timezone.now().date()).count(),
         'expired': UserSubscription.objects.filter(end_date__lt=timezone.now().date()).count()
     }
-    
+
+    # Cumulative expense data separated by profit and loss
+    expenses = AdminExpense.objects.order_by('date')
+    date_sums = defaultdict(lambda: {'profit': 0, 'loss': 0})
+    for expense in expenses:
+        if expense.type == 'Profit':
+            date_sums[expense.date]['profit'] += expense.amount
+        elif expense.type == 'Loss':
+            date_sums[expense.date]['loss'] += expense.amount
+
+    dates = []
+    cumulative_profit = []
+    cumulative_loss = []
+    profit_sum = 0
+    loss_sum = 0
+    for date in sorted(date_sums.keys()):
+        dates.append(date.strftime('%Y-%m-%d'))
+        profit_sum += date_sums[date]['profit']
+        loss_sum += date_sums[date]['loss']
+        cumulative_profit.append(float(profit_sum))
+        cumulative_loss.append(float(loss_sum))
+
     return render(request, 'admin_page/admin_graphs.html', {
         'libraries': libraries,
         'institutions': institutions,
         'user_counts': user_counts,
-        'subscription_data': subscription_data
+        'subscription_data': subscription_data,
+        'expense_dates': dates,
+        'cumulative_profit': cumulative_profit,
+        'cumulative_loss': cumulative_loss
     })
 
 @login_required
