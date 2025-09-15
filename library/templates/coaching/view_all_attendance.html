@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-4">Attendance Records for {{ institution.name }}</h1>
+
+    <div class="mb-4">
+        <input type="text" id="searchInput" placeholder="Search by user name or email" class="border rounded px-3 py-2 w-full max-w-md" />
+    </div>
+
+    <table id="attendanceTable" class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="text-left px-4 py-2 border-b">User Name</th>
+                <th class="text-left px-4 py-2 border-b">Email</th>
+                <th class="text-left px-4 py-2 border-b">Check-in Time</th>
+                <th class="text-left px-4 py-2 border-b">Check-out Time</th>
+                <th class="text-left px-4 py-2 border-b">Duration</th>
+                <th class="text-left px-4 py-2 border-b">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be loaded via AJAX -->
+        </tbody>
+    </table>
+
+    <div class="mt-4 flex justify-between items-center">
+        <button id="prevPage" class="px-4 py-2 bg-gray-300 rounded disabled:opacity-50" disabled>Previous</button>
+        <span id="pageInfo" class="text-sm"></span>
+        <button id="nextPage" class="px-4 py-2 bg-gray-300 rounded disabled:opacity-50" disabled>Next</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableBody = document.querySelector('#attendanceTable tbody');
+    const searchInput = document.getElementById('searchInput');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+
+    let currentPage = 1;
+    const pageSize = 10;
+    let totalRecords = 0;
+
+    function fetchData(page, search='') {
+        const start = (page - 1) * pageSize;
+        const url = new URL(window.location.href);
+        url.searchParams.set('draw', page);
+        url.searchParams.set('start', start);
+        url.searchParams.set('length', pageSize);
+        url.searchParams.set('search[value]', search);
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            totalRecords = data.recordsTotal;
+            renderTable(data.data);
+            updatePagination();
+        })
+        .catch(error => {
+            console.error('Error fetching attendance data:', error);
+        });
+    }
+
+    function renderTable(records) {
+        tableBody.innerHTML = '';
+        if (records.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 6;
+            td.className = 'text-center py-4 text-gray-500';
+            td.textContent = 'No attendance records found.';
+            tr.appendChild(td);
+            tableBody.appendChild(tr);
+            return;
+        }
+
+        records.forEach(record => {
+            const tr = document.createElement('tr');
+            tr.className = 'border-b hover:bg-gray-50';
+
+            tr.innerHTML = `
+                <td class="px-4 py-2">${record.user_name}</td>
+                <td class="px-4 py-2">${record.user_email}</td>
+                <td class="px-4 py-2">${record.check_in_time}</td>
+                <td class="px-4 py-2">${record.check_out_time}</td>
+                <td class="px-4 py-2">${record.duration || '-'}</td>
+                <td class="px-4 py-2">${record.date}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+    }
+
+    searchInput.addEventListener('input', function() {
+        currentPage = 1;
+        fetchData(currentPage, this.value.trim());
+    });
+
+    prevPageBtn.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchData(currentPage, searchInput.value.trim());
+        }
+    });
+
+    nextPageBtn.addEventListener('click', function() {
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        if (currentPage < totalPages) {
+            currentPage++;
+            fetchData(currentPage, searchInput.value.trim());
+        }
+    });
+
+    // Initial fetch
+    fetchData(currentPage);
+});
+</script>
+{% endblock %}

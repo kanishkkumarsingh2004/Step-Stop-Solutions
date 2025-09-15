@@ -158,6 +158,12 @@
             <div class="mt-2 text-xs text-red-500">Record Attendance</div>
         </a>
 
+        <!-- View All Attendance Records -->
+        <a href="{% url 'coaching:view_all_attendance' institution.uid %}" class="bg-white p-5 sm:p-6 rounded-2xl border border-orange-100 hover:border-orange-200 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div class="text-sm sm:text-base font-medium text-orange-800 text-center">All Attendance</div>
+            <div class="mt-2 text-xs text-orange-500">View Attendance Records</div>
+        </a>
+
         <!-- Payment Reminders -->
         {% if subscriptions_with_remaining %}
         <a href="{% url 'coaching:payment_reminders' institution.uid %}" class="block bg-orange-100 p-4 rounded-lg text-center text-orange-800 font-semibold hover:bg-orange-200 transition-colors">

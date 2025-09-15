@@ -2162,6 +2162,81 @@ def coaching_attendance_page(request, uid):
     institute = get_object_or_404(Institution, uid=uid)
     return render(request, 'coaching/coaching_attendance_page.html', {'institute': institute})
 
+@login_required
+def view_all_attendance(request, uid):
+    """View all attendance records for an institution with AJAX support"""
+    institution = get_object_or_404(Institution, uid=uid)
+
+    # Check if the user is the owner of the institution
+    if request.user != institution.owner:
+        messages.error(request, "You don't have permission to view attendance records.")
+        return redirect('coaching_dashboard', uid=institution.uid)
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # AJAX request for data
+        draw = int(request.GET.get('draw', 1))
+        start = int(request.GET.get('start', 0))
+        length = int(request.GET.get('length', 10))
+        search_value = request.GET.get('search[value]', '').strip()
+
+        # Base queryset
+        attendance_queryset = CoachingAttendance.objects.filter(
+            institution=institution
+        ).select_related('user').order_by('-check_in_time')
+
+        # Apply search filter
+        if search_value:
+            attendance_queryset = attendance_queryset.filter(
+                Q(user__first_name__icontains=search_value) |
+                Q(user__last_name__icontains=search_value) |
+                Q(user__email__icontains=search_value)
+            )
+
+        # Get total records count
+        total_records = attendance_queryset.count()
+
+        # Apply pagination
+        attendance_records = attendance_queryset[start:start + length]
+
+        # Prepare data for DataTables
+        data = []
+        for record in attendance_records:
+            # Calculate duration if both check-in and check-out exist
+            duration = None
+            if record.check_in_time and record.check_out_time:
+                duration_delta = record.check_out_time - record.check_in_time
+                hours, remainder = divmod(duration_delta.seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+            data.append({
+                'id': record.id,
+                'user_name': record.user.get_full_name(),
+                'user_email': record.user.email,
+                'check_in_time': record.check_in_time.strftime('%Y-%m-%d %H:%M:%S') if record.check_in_time else '',
+                'check_out_time': record.check_out_time.strftime('%Y-%m-%d %H:%M:%S') if record.check_out_time else '',
+                'duration': duration,
+                'check_in_color': record.check_in_color,
+                'check_out_color': record.check_out_color,
+                'date': record.check_in_time.date().isoformat() if record.check_in_time else '',
+            })
+
+        response_data = {
+            'draw': draw,
+            'recordsTotal': total_records,
+            'recordsFiltered': total_records,
+            'data': data
+        }
+
+        return JsonResponse(response_data)
+
+    # Regular HTML request
+    context = {
+        'institution': institution,
+    }
+
+    return render(request, 'coaching/view_all_attendance.html', context)
+
 @csrf_exempt
 def mark_institute_attendance(request):
     if request.method == "POST":

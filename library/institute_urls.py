@@ -60,6 +60,7 @@ urlpatterns = [
    path('institution/<str:uid>/staff-dashboard/', institute_view.institution_staff_dashboard, name='institution_staff_dashboard'),
    path('admin-dashboard/manage-cards/', institute_view.manage_institution_cards, name='manage_institution_cards'),
    path('institution/<str:uid>/attendance/', institute_view.coaching_attendance_page, name='institute_attendance_page'),
+   path('institution/<str:uid>/attendance-records/', institute_view.view_all_attendance, name='view_all_attendance'),
    path('mark-institute-attendance/', institute_view.mark_institute_attendance, name='mark_attendance'),
 
    # Installment Payments
