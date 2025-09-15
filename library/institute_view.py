@@ -1917,18 +1917,17 @@ def allocate_card_to_institution_page(request, uid):
     # Augment user data with subscription status
     users_with_status = []
     for user in users_without_card:
-        has_active_subscription = InstitutionSubscription.objects.filter(
-            user=user,
-            subscription_plan__institution=institution,
-            status='valid',
-            payment_status='valid'
-        ).exists()
+        # has_active_subscription = InstitutionSubscription.objects.filter(
+        #     user=user,
+        #     subscription_plan__institution=institution,
+        #     status='valid',
+        #     payment_status='valid'
+        # ).exists()
         
         users_with_status.append({
-            'user': user,
-            'has_active_subscription': has_active_subscription
+            'user': user
         })
-
+        print(f"User: {users_with_status}")
     context = {
         'institution': institution,
         'users_with_status': users_with_status
