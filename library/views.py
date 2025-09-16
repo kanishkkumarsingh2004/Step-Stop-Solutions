@@ -804,11 +804,11 @@ def user_attendance(request):
             duration_delta = attendance.check_out_time - attendance.check_in_time
             total_seconds = duration_delta.total_seconds()
 
-            if subscription:
-                subscription_duration = subscription.subscription_plan.duration_in_hours * 3600
-                duration_color = 1 if total_seconds > subscription_duration else 0
-            else:
-                duration_color = 0
+        if subscription:
+            subscription_duration = (end_datetime - start_datetime).total_seconds()
+            duration_color = 1 if total_seconds > subscription_duration else 0
+        else:
+            duration_color = 0
 
             # Format duration string correctly
             hours = int(total_seconds // 3600)
