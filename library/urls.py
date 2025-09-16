@@ -25,10 +25,7 @@ urlpatterns = [
    path('manage-libraries/', views.manage_libraries, name='manage_libraries'),
    path('toggle-library-approval/<int:library_id>/', views.toggle_library_approval, name='toggle_library_approval'),
    path('admin-dashboard/manage_institutions/', views.manage_institutions, name='manage_institutions'),
-   path('admin-dashboard/manage-gyms/', views.manage_gyms, name='manage_gyms'),
-   path('admin-dashboard/gym/<int:gym_id>/toggle-approval/', views.toggle_gym_approval, name='toggle_gym_approval'),
-   path('admin-dashboard/gym/<int:gym_id>/details/', views.admin_gym_details, name='admin_gym_details'),
-   
+
    # Library Details
    path('library-details/<int:library_id>/', views.public_library_details, name='library_details'),
    path('admin-dashboard/library-details/<int:library_id>/', views.admin_library_details, name='admin_library_details'),
@@ -203,12 +200,6 @@ urlpatterns = [
    path('allocate_institution_card/', views.allocate_institution_card, name='allocate_institution_card'),
    path('deallocate-institution-nfc/', views.deallocate_institution_nfc, name='deallocate_institution_nfc'),
    path('check_institution_nfc_allocation/', views.check_institution_nfc_allocation, name='check_institution_nfc_allocation'),
-   path('admin-dashboard/allocate-card-to-gym/', views.allocate_card_to_gym_page, name='allocate_card_to_gym_page'),
-   path('admin-dashboard/allocate-card-to-gym/submit/', views.allocate_card_to_gym, name='allocate_card_to_gym'),
-   path('manage-gym-cards/', views.manage_gym_cards, name='manage_gym_cards'),
-   path('delete-gym-card/<int:card_id>/', views.delete_gym_card, name='delete_gym_card'),
-   path('deallocate-gym-nfc/', views.deallocate_gym_nfc, name='deallocate_gym_nfc'),
-   path('gym-card-count/', views.gym_card_count, name='gym_card_count'),
 
    path('library/receipt/<int:user_id>/<str:transaction_id>/', views.library_receipt, name='library_receipt'),
  ]

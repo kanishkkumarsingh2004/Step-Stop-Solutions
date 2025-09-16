@@ -10,9 +10,6 @@
             <div class="border-b border-gray-200 pb-4 mb-4">
                 <div class="flex justify-between items-center">
                     <h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
-                    <a href="{% url 'user_attendance' %}" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition duration-200">
-                        View Attendance History
-                    </a>
                 </div>
             </div>
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Your Details</h2>
@@ -103,10 +100,15 @@
 
         <!-- Library Subscription Status Card -->
         <div class="bg-white p-4 rounded-lg shadow">
-            <div class="flex flex-col space-y-2 mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">Library Subscription Status</h2>
-                <a href="{% url 'user_subscriptions' %}" class="text-blue-500 text-sm">
-                    View All Subscriptions
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col space-y-2 mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800">Library Subscription Status</h2>
+                    <a href="{% url 'user_subscriptions' %}" class="text-blue-500 text-sm">
+                        View All Subscriptions
+                    </a>
+                </div>
+                <a href="{% url 'user_attendance' %}" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition duration-200">
+                    View Library Attendance History
                 </a>
             </div>
             
@@ -178,54 +180,6 @@
             {% endif %}
         </div>
 
-        <!-- Gym Subscription Status Card -->
-        {% if gym_subscriptions %}
-        <div class="bg-white p-4 rounded-lg shadow">
-            <div class="flex flex-col space-y-2 mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">Gym Subscriptions</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for sub in gym_subscriptions %}
-                <div class="p-3 border rounded-lg bg-{{ sub.end_date_color }}-50">
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div class="flex flex-col space-y-1">
-                            <h3 class="text-sm font-bold text-gray-900">{{ sub.plan.name }}</h3>
-                            <div class="flex flex-col space-y-1">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium 
-                                    bg-{% if sub.status == 'valid' %}green{% else %}red{% endif %}-100 
-                                    text-{% if sub.status == 'valid' %}green{% else %}red{% endif %}-800">
-                                    Subscription: {{ sub.status|title }}
-                                </span>
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ sub.payment_status.color }}-100 text-{{ sub.payment_status.color }}-800">
-                                    Payment: {{ sub.payment_status.status|title }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
-                                {{ sub.gym.name }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                        <div>
-                            <p class="text-xs text-gray-500">Start Date</p>
-                            <p class="text-sm font-medium text-gray-800">
-                                {{ sub.start_date|date:"F d, Y" }}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">End Date</p>
-                            <p class="text-sm font-medium text-gray-800">
-                                {{ sub.end_date|date:"F d, Y" }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

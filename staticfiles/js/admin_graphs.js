@@ -143,4 +143,49 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    // Initialize Cumulative Admin Expense Chart
+    const cumulativeExpenseContainer = document.getElementById('cumulativeExpenseData');
+    const labels = cumulativeExpenseContainer.dataset.labels.split(',').filter(Boolean);
+    const profitValues = cumulativeExpenseContainer.dataset.profit.split(',').filter(Boolean).map(Number);
+    const lossValues = cumulativeExpenseContainer.dataset.loss.split(',').filter(Boolean).map(Number);
+    const cumulativeExpenseCtx = document.getElementById('cumulativeExpenseChart').getContext('2d');
+    new Chart(cumulativeExpenseCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Cumulative Profit',
+                data: profitValues,
+                fill: false,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }, {
+                label: 'Cumulative Loss',
+                data: lossValues,
+                fill: false,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date' }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Cumulative Amount' }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { enabled: true }
+            }
+        }
+    });
 });

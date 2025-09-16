@@ -473,7 +473,6 @@ class AdminCard(models.Model):
     card_id = models.CharField(max_length=100, unique=True)
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
-    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -481,22 +480,20 @@ class AdminCard(models.Model):
             return f"{self.card_id} - {self.library.venue_name}"
         elif self.institution:
             return f"{self.card_id} - {self.institution.name}"
-        elif self.gym:
-            return f"{self.card_id} - {self.gym.name}"
         return f"{self.card_id} - Unallocated"
 
     def is_allocated(self):
         """Check if the card is allocated to any entity."""
-        return self.library is not None or self.institution is not None or self.gym is not None
+        return self.library is not None or self.institution is not None
 
     def clean(self):
-        allocations = [self.library, self.institution, self.gym]
+        allocations = [self.library, self.institution]
         num_allocations = sum(1 for item in allocations if item is not None)
 
         if num_allocations > 1:
-            raise ValidationError("A card can only be allocated to one entity (library, institution, or gym) at a time.")
+            raise ValidationError("A card can only be allocated to one entity (library, institution) at a time.")
         if num_allocations == 0:
-            raise ValidationError("A card must be allocated to either a library, an institution, or a gym.")
+            raise ValidationError("A card must be allocated to either a library, an institution")
     
 class AdminExpense(models.Model):
     TYPE_CHOICES = [
@@ -861,20 +858,6 @@ class LibraryCardLog(models.Model):
     def __str__(self):
         return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.library.venue_name}"
 
-class GymCardLog(models.Model):
-    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='card_allocation_logs')
-    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='gym_card_logs')
-    card_id = models.CharField(max_length=100)
-    allocated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='gym_allocations_logged')
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('gym', 'user', 'card_id')
-        ordering = ['-timestamp']
-
-    def __str__(self):
-        return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.gym.name}"
-    
 
 class InstitutionStaff(models.Model):
     PERMISSION_CHOICES = [
@@ -951,278 +934,3 @@ class PartialPayment(models.Model):
         verbose_name = "Partial Payment"
         verbose_name_plural = "Partial Payments"
         ordering = ['-payment_date']
-
-class Gym(models.Model):
-    gim_uid = ShortUUIDField(length=20, max_length=20, unique=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz')
-    name = models.CharField(max_length=200)
-    address = models.TextField()
-    pincode = models.CharField(max_length=6)
-    state = models.CharField(max_length=100)
-    city = models.CharField(max_length=100)
-    district = models.CharField(max_length=100)
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='owned_gyms')
-    description = models.TextField()
-    website_url = models.URLField(blank=True, null=True)
-    contact_email = models.EmailField()
-    contact_phone = models.JSONField(default=list, blank=True, help_text="A list of contact phone numbers.")
-    equipment_available = models.TextField(blank=True, null=True, help_text="List of available equipment")
-    additional_services = models.TextField(blank=True, null=True, help_text="Any additional services offered")
-    is_approved = models.BooleanField(default=False, help_text="Approval status of the application")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    upi_id = models.CharField(max_length=100, blank=True, null=True, help_text="UPI ID for gym payments")
-    recipient_name = models.CharField(max_length=100, blank=True, null=True, help_text="Recipient name for UPI payments")
-    thank_you_message = models.TextField(blank=True, null=True, help_text="Thank you message after payment")
-    max_banners = models.PositiveIntegerField(default=2, help_text="Maximum number of banners allowed")
-
-
-    def __str__(self):
-        return f"{self.name} ({self.gim_uid})"
-
-class GymProfileImage(models.Model):
-    gym = models.OneToOneField(Gym, on_delete=models.CASCADE, related_name='profile_image')
-    google_drive_link = models.URLField(max_length=500)
-    google_drive_id = models.CharField(max_length=100, blank=True, null=True)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        # Extract Google Drive file ID if not provided
-        if self.google_drive_link and not self.google_drive_id:
-            import re
-            match = re.search(r'/d/([\w-]+)', self.google_drive_link)
-            if match:
-                self.google_drive_id = match.group(1)
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"Profile Image for {self.gym.name}"
-    
-
-class GymCoupon(models.Model):
-    DISCOUNT_TYPE_CHOICES = [
-        ('PERCENTAGE', 'Percentage'),
-        ('FIXED', 'Fixed Amount'),
-    ]
-    STATUS_CHOICES = [
-        ('ACTIVE', 'Active'),
-        ('INACTIVE', 'Inactive'),
-        ('EXPIRED', 'Expired'),
-    ]
-    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='coupons')
-    code = models.CharField(max_length=20, unique=True)
-    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
-    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
-    valid_from = models.DateTimeField()
-    valid_to = models.DateTimeField()
-    max_usage = models.PositiveIntegerField(default=1)
-    current_usage = models.PositiveIntegerField(default=0)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ACTIVE')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    applicable_plans = models.ManyToManyField('GymSubscriptionPlan', blank=True, help_text="Plans this coupon can be applied to")
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.code} - {self.gym.name}"
-
-    def is_valid(self):
-        now = timezone.now()
-        return (
-            self.status == 'ACTIVE' and
-            self.valid_from <= now <= self.valid_to and
-            self.current_usage < self.max_usage
-        )
-    def use_coupon(self):
-        if not self.is_valid():
-            return False
-            
-        self.current_usage += 1
-        if self.current_usage >= self.max_usage:
-            self.status = 'INACTIVE'
-        self.save()
-        return True
-
-    def apply_discount(self, amount):
-        if not self.is_valid():
-            return amount
-        
-        if self.discount_type == 'PERCENTAGE':
-            discount = (amount * self.discount_value) / 100
-        else:  # FIXED
-            discount = self.discount_value
-        
-        return max(0, amount - discount)
-
-    def is_applicable_to_plan(self, plan):
-        if not self.applicable_plans.exists():
-            return True
-        return plan in self.applicable_plans.all()
-    
-
-# In models.py
-
-class GymBanner(models.Model):
-    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='banners')
-    google_drive_link = models.CharField(max_length=1000)
-    google_drive_id = models.CharField(max_length=100, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if self.google_drive_link:
-            self.google_drive_id = self.extract_file_id(self.google_drive_link)
-        super().save(*args, **kwargs)
-
-    @staticmethod
-    def extract_file_id(url):
-        import re
-        patterns = [
-            r'/file/d/([^/]+)',
-            r'/open\?id=([^&]+)',
-            r'/uc\?id=([^&]+)',
-            r'/uc\?export=view&id=([^&]+)'
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, url)
-            if match:
-                return match.group(1)
-        return None
-
-    def __str__(self):
-        return f"Banner for {self.gym.name}"
-
-class GymSubscriptionPlan(models.Model):
-    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='subscription_plans')
-    name = models.CharField(max_length=255, help_text="Name of the subscription plan")
-    description = models.TextField(blank=True, null=True, help_text="Description of the plan")
-    duration_in_months = models.PositiveIntegerField(help_text="Duration of the subscription in months")
-    duration_in_hours = models.PositiveIntegerField(default=0, help_text="Duration in hours (if applicable)")
-    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of the subscription plan")
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Discounted price (if any)")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name} - {self.gym.name}"
-
-    @property
-    def has_discount(self):
-        return self.discount_price is not None and self.discount_price < self.price
-
-class GymSubscription(models.Model):
-    STATUS_CHOICES = [
-        ('valid', 'Valid'),
-        ('expired', 'Expired'),
-    ]
-    PAYMENT_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('valid', 'Valid'),
-        ('invalid', 'Invalid'),
-    ]
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='gym_subscriptions')
-    subscription_plan = models.ForeignKey(GymSubscriptionPlan, on_delete=models.CASCADE, related_name='subscriptions')
-    start_date = models.DateField()
-    end_date = models.DateField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='valid')
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=20, blank=True, null=True)
-    transaction_id = models.CharField(max_length=100, blank=True, null=True)
-    payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='pending')
-    coupon_applied = models.ForeignKey('GymCoupon', on_delete=models.SET_NULL, null=True, blank=True, related_name='applied_subscriptions')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user.email} - {self.subscription_plan.name}"
-
-    def save(self, *args, **kwargs):
-        today = timezone.now().date()
-        if self.end_date < today:
-            self.status = 'expired'
-        super().save(*args, **kwargs)
-
-    def use_coupon(self):
-        if self.coupon_applied:
-            self.coupon_applied.use_coupon()
-
-class GymExpense(models.Model):
-    PAYMENT_MODE_CHOICES = [
-        ('cash', 'Cash'),
-        ('card', 'Card'),
-        ('upi', 'UPI'),
-    ]
-    EXPENSE_NAME_CHOICES = [
-        ('Wifi', 'Wifi'),
-        ('Water', 'Water'),
-        ('Chair', 'Chair'),
-        ('Table', 'Table'),
-        ('Light', 'Light'),
-        ('Books', 'Books'),
-        ('Electricity Bills', 'Electricity Bills'),
-        ('Rent Paid', 'Rent Paid'),
-        ('Stationary Items', 'Stationary Items'),
-        ('Legal Charges', 'Legal Charges'),
-        ('Others', 'Others'),
-    ]
-    
-    gym = models.ForeignKey('Gym', on_delete=models.CASCADE, related_name='expenses')
-    expense_name = models.CharField(max_length=50, choices=EXPENSE_NAME_CHOICES, blank=True, null=True, help_text="Expense name for allocation log.")
-    expense_description = models.TextField(blank=True, null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    date = models.DateField()
-    payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='cash')
-    transaction_id = models.CharField(max_length=100, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.expense_name} - ₹{self.amount} ({self.date})"
-
-    def clean(self):
-        if self.payment_mode in ['card', 'upi'] and not self.transaction_id:
-            raise ValidationError("Transaction ID is required for Card/UPI payments")
-         
-class Cafe(models.Model):
-    STATUS_CHOICES = [
-        ('approved', 'Approved'),
-        ('unapproved', 'Unapproved'),
-    ]
-
-    user = models.ForeignKey(
-        'CustomUser',
-        on_delete=models.CASCADE,
-        related_name='cafes'
-    )
-    first_name = models.CharField(max_length=100, blank=True, null=True)
-    last_name = models.CharField(max_length=100, blank=True, null=True)
-    address = models.TextField(blank=True, null=True)
-    owner = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='owned_cafes')
-    description = models.TextField()
-    venue_location = models.TextField(help_text="Detailed location of the venue")
-    venue_name = models.CharField(max_length=200, help_text="Name of the venue")
-    business_type = models.CharField(max_length=50, default="Cafe")
-    max_banners = models.PositiveIntegerField(default=2, help_text="Maximum number of banners allowed")
-    social_media_links = models.TextField(blank=True, null=True, help_text="Comma separated list of social media links")
-    capacity = models.PositiveIntegerField(help_text="Maximum capacity of the venue")
-    equipment_available = models.TextField(blank=True, null=True, help_text="List of available equipment")
-    is_approved = models.BooleanField(default=False, help_text="Approval status of the application")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    users = models.ManyToManyField('CustomUser', related_name='joined_cafes', blank=True)
-    email = models.EmailField(blank=True, null=True)
-    mobile_number = models.CharField(max_length=15, blank=True, null=True)
-    pincode = models.CharField(max_length=10, help_text="Pincode of the venue location")
-    district = models.CharField(max_length=100, help_text="District of the venue location")
-    city = models.CharField(max_length=100, help_text="City of the venue location")
-    state = models.CharField(max_length=100, help_text="State of the venue location")
-    staff = models.ManyToManyField('CustomUser', related_name='cafes_staffed', blank=True)
-    upi_id = models.CharField(max_length=50)
-    recipient_name = models.CharField(max_length=100)
-    thank_you_message = models.CharField(max_length=200)
-    available_seats = models.PositiveIntegerField(default=0)
-    opening_time = models.TimeField()
-    closing_time = models.TimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unapproved')
-
-    def __str__(self):
-        return self.venue_name if self.venue_name else f"Cafe {self.pk}"

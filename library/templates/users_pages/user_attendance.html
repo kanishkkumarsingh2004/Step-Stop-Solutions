@@ -12,7 +12,8 @@
     <table id="attendanceTable" class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
         <thead class="bg-gray-100">
             <tr>
-                <th class="text-left px-4 py-2 border-b">Library Name</th>
+                <th class="text-left px-4 py-2 border-b">Type</th>
+                <th class="text-left px-4 py-2 border-b">Venue Name</th>
                 <!-- <th class="text-left px-4 py-2 border-b">Address</th> -->
                 <th class="text-left px-4 py-2 border-b">Check-in Time</th>
                 <th class="text-left px-4 py-2 border-b">Check-out Time</th>
@@ -23,8 +24,9 @@
         <tbody>
             {% for attendance in attendances %}
             <tr class="border-b hover:bg-gray-50">
-                <td class="px-4 py-2">{{ attendance.library.venue_name }}</td>
-                <!-- <td class="px-4 py-2">{{ attendance.library.address }}</td> -->
+                <td class="px-4 py-2">{{ attendance.type|title }}</td>
+                <td class="px-4 py-2">{{ attendance.venue_name }}</td>
+                <!-- <td class="px-4 py-2">{{ attendance.venue_address }}</td> -->
                 <td class="px-4 py-2 {% if attendance.check_in_color == 0 %}text-green-500{% else %}text-red-500{% endif %}">
                     {{ attendance.check_in_time|date:"H:i:s" }}
                 </td>
@@ -42,7 +44,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" class="text-center py-4 text-gray-500">No attendance records found.</td>
+                <td colspan="7" class="text-center py-4 text-gray-500">No attendance records found.</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -93,39 +93,7 @@
         </div>
     </div>
 
-    <!-- Gyms Section -->
-    <div class="mb-8">
-        <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Gyms</h2>
-        <div class="bg-white rounded-lg shadow-sm p-3 sm:p-4">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Name</th>
-                            <th class="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Gym Name</th>
-                            <th class="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Banner Count</th>
-                            <th class="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for gym in gyms %}
-                        <tr id="gym-row-{{ gym.id }}">
-                            <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ gym.owner.get_full_name }}</td>
-                            <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ gym.name }}</td>
-                            <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-sm text-gray-500 text-center" id="gym-count-{{ gym.id }}">{{ gym.max_banners }}</td>
-                            <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                <button onclick="openEditModal('gym', '{{ gym.id }}', '{{ gym.max_banners }}')" 
-                                        class="text-blue-600 hover:text-blue-900 mx-auto">
-                                    Edit
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+
 </div>
 
 <!-- Edit Modal -->
@@ -137,7 +105,6 @@
                 {% csrf_token %}
                 <input type="hidden" name="library_id" id="library_id">
                 <input type="hidden" name="institution_id" id="institution_id">
-                <input type="hidden" name="gym_id" id="gym_id">
                 <div class="mt-2">
                     <input type="number" name="max_banners" id="max_banners" 
                            class="w-full px-3 py-2 border rounded-lg text-sm sm:text-base" min="1" required>
@@ -166,7 +133,6 @@
     function openEditModal(type, id, currentCount) {
         document.getElementById('library_id').value = type === 'library' ? id : '';
         document.getElementById('institution_id').value = type === 'institution' ? id : '';
-        document.getElementById('gym_id').value = type === 'gym' ? id : '';
         document.getElementById('max_banners').value = currentCount;
         document.getElementById('editModal').classList.remove('hidden');
     }
@@ -197,11 +163,7 @@
         if (formData.get('institution_id')) {
             type = 'institution';
             id = formData.get('institution_id');
-        } else if (formData.get('gym_id')) {
-            type = 'gym';
-            id = formData.get('gym_id');
-        }
-        
+        } 
         fetch('{% url "manage_banner_counts" %}', {
             method: 'POST',
             body: formData,

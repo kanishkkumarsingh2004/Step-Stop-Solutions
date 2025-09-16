@@ -46,8 +46,6 @@ from .models import (
     TimetableEntry,
     LibraryCardLog,
     InstitutionCardLog,
-    Gym,
-    GymSubscription,
     InstallmentPayment,
     CoachingAttendance
 )
@@ -197,49 +195,10 @@ def dashboard(request):
         }
         institute_subscriptions.append(subscription_data)
 
-    # Get gym subscriptions for the user
-    gym_subscriptions = []
-    for sub in GymSubscription.objects.filter(user=request.user).select_related('subscription_plan__gym'):
-        plan = sub.subscription_plan
-        gym = plan.gym
-        payment_status = sub.payment_status
-        payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
-        # Calculate days left until end_date
-        days_left = None
-        if sub.end_date:
-            today = timezone.localdate() if hasattr(timezone, 'localdate') else date.today()
-            days_left = (sub.end_date - today).days
-        # Determine color based on days left
-        if days_left is not None:
-            if days_left > 5:
-                end_date_color = 'green'
-            elif days_left <= 2:
-                end_date_color = 'red'
-            elif days_left <= 5:
-                end_date_color = 'yellow'
-            else:
-                end_date_color = 'green'
-        else:
-            end_date_color = 'red' if sub.status == 'expired' else 'green'
-        gym_subscriptions.append({
-            'plan': plan,
-            'gym': gym,
-            'start_date': sub.start_date,
-            'end_date': sub.end_date,
-            'amount_paid': sub.amount_paid,
-            'end_date_color': end_date_color,
-            'payment_status': {
-                'status': payment_status,
-                'color': payment_color
-            },
-            'status': sub.status,
-            'transaction_id': sub.transaction_id,
-        })
 
     context = {
         'active_subscriptions': active_subscriptions,
         'institute_subscriptions': institute_subscriptions,
-        'gym_subscriptions': gym_subscriptions,  # <-- add to context
     }
     return render(request, 'users_pages/dashboard.html', context)
 
@@ -251,22 +210,18 @@ def admin_dashboard(request):
     total_users = CustomUser.objects.count()
     total_libraries = Library.objects.count()
     total_institutions = Institution.objects.count()
-    total_gyms = Gym.objects.count()
 
     approved_libraries = Library.objects.filter(is_approved=True).count()
     approved_institutions = Institution.objects.filter(is_approved=True).count()
-    approved_gyms = Gym.objects.filter(is_approved=True).count()
     
     pending_libraries = total_libraries - approved_libraries
     pending_institutions = total_institutions - approved_institutions
-    pending_gyms = total_gyms - approved_gyms
     
     # Card allocation stats
     allocated_cards_count = AdminCard.objects.filter(
-        Q(library__isnull=False) | Q(institution__isnull=False) | Q(gym__isnull=False)
-    ).count()
+        Q(library__isnull=False) | Q(institution__isnull=False)).count()
     non_allocated_cards_count = AdminCard.objects.filter(
-        library__isnull=True, institution__isnull=True, gym__isnull=True
+        library__isnull=True, institution__isnull=True,
     ).count()
 
     # Get active subscriptions
@@ -283,15 +238,12 @@ def admin_dashboard(request):
         'total_institutions': total_institutions,
         'approved_libraries': approved_libraries,
         'approved_institutions': approved_institutions,
-        'approved_gyms': approved_gyms,
         'pending_libraries': pending_libraries,
         'pending_institutions': pending_institutions,
-        'pending_gyms': pending_gyms,
         'active_subscriptions': active_subscriptions,
         'recent_activities_count': recent_activities_count,
         'allocated_cards_count': allocated_cards_count,
         'non_allocated_cards_count': non_allocated_cards_count,
-        'total_gyms': total_gyms,
     })
 
 def user_login(request):
@@ -692,19 +644,26 @@ def all_attendance(request, vendor_id):
 @login_required
 def user_attendance(request):
     # Get attendance records for the current user
-    attendances = LibraryAttendance.objects.filter(user=request.user).order_by('-check_in_time')
-    Coaching = CoachingAttendance.objects.filter(user=request.user).order_by('-check_in_time')
+    library_attendances = LibraryAttendance.objects.filter(user=request.user).select_related('library')
+    coaching_attendances = CoachingAttendance.objects.filter(user=request.user).select_related('institution')
 
-    # Add search functionality by library name
+    # Add search functionality
     search_query = request.GET.get('search')
     if search_query:
-        attendances = attendances.filter(
+        library_attendances = library_attendances.filter(
             Q(library__venue_name__icontains=search_query) |
             Q(library__address__icontains=search_query)
         )
+        coaching_attendances = coaching_attendances.filter(
+            Q(institution__name__icontains=search_query) |
+            Q(institution__address__icontains=search_query)
+        )
 
-    # Calculate duration and colors for each attendance
-    for attendance in attendances:
+    # Create combined list with type field
+    combined_attendances = []
+
+    # Process library attendances
+    for attendance in library_attendances:
         # Find active subscription
         subscription = UserSubscription.objects.filter(
             user=attendance.user,
@@ -741,40 +700,141 @@ def user_attendance(request):
             ))
 
             # Check if check-in time is within allowed period
-            attendance.check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
+            check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
 
             if attendance.check_out_time:
                 check_out_datetime = timezone.make_aware(datetime.combine(
                     attendance.check_out_time.date(),
                     attendance.check_out_time.time()
                 ))
-                attendance.check_out_color = 0 if (start_datetime <= check_out_datetime <= end_datetime) else 1
+                check_out_color = 0 if (start_datetime <= check_out_datetime <= end_datetime) else 1
             else:
-                attendance.check_out_color = 0
+                check_out_color = 0
         else:
-            attendance.check_in_color = 1
-            attendance.check_out_color = 0
+            check_in_color = 1
+            check_out_color = 0
 
+        duration = "00h:00m:00s"
+        duration_color = 0
         if attendance.check_in_time and attendance.check_out_time:
-            duration = attendance.check_out_time - attendance.check_in_time
-            total_seconds = duration.total_seconds()
+            duration_delta = attendance.check_out_time - attendance.check_in_time
+            total_seconds = duration_delta.total_seconds()
 
             if subscription:
                 subscription_duration = subscription.subscription.duration_in_hours * 3600
-                attendance.duration_color = 1 if total_seconds > subscription_duration else 0
+                duration_color = 1 if total_seconds > subscription_duration else 0
             else:
-                attendance.duration_color = 0
+                duration_color = 0
 
             # Format duration string correctly
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
-            attendance.duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
-        else:
-            attendance.duration = "00h:00m:00s"
-            attendance.duration_color = 0
+            duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
 
-    paginator = Paginator(attendances, 25)  # Show 25 attendances per page
+        combined_attendances.append({
+            'id': attendance.id,
+            'type': 'library',
+            'venue_name': attendance.library.venue_name,
+            'venue_address': attendance.library.venue_location,
+            'check_in_time': attendance.check_in_time,
+            'check_out_time': attendance.check_out_time,
+            'check_in_color': check_in_color,
+            'check_out_color': check_out_color,
+            'duration': duration,
+            'duration_color': duration_color,
+            'nfc_id': attendance.nfc_id,
+        })
+
+    # Process coaching attendances
+    for attendance in coaching_attendances:
+        # Find active subscription
+        subscription = InstitutionSubscription.objects.filter(
+            user=attendance.user,
+            subscription_plan__institution=attendance.institution,
+            start_date__lte=attendance.check_in_time.date(),
+            end_date__gte=attendance.check_in_time.date()
+        ).first()
+
+        # Set check-in color based on subscription time range
+        if subscription:
+            start_time = subscription.start_time
+            end_time = subscription.end_time
+
+            # Adjust dates based on time comparison
+            if start_time > end_time:
+                end_date = subscription.start_date + timedelta(days=1)
+                start_date = subscription.start_date
+            else:
+                start_date = subscription.start_date
+                end_date = subscription.start_date
+
+            # Create datetime objects with adjusted dates
+            start_datetime = timezone.make_aware(datetime.combine(
+                start_date,
+                start_time
+            ))
+            end_datetime = timezone.make_aware(datetime.combine(
+                end_date,
+                end_time
+            ))
+            check_in_datetime = timezone.make_aware(datetime.combine(
+                attendance.check_in_time.date(),
+                attendance.check_in_time.time()
+            ))
+
+            # Check if check-in time is within allowed period
+            check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
+
+            if attendance.check_out_time:
+                check_out_datetime = timezone.make_aware(datetime.combine(
+                    attendance.check_out_time.date(),
+                    attendance.check_out_time.time()
+                ))
+                check_out_color = 0 if (start_datetime <= check_out_datetime <= end_datetime) else 1
+            else:
+                check_out_color = 0
+        else:
+            check_in_color = 1
+            check_out_color = 0
+
+        duration = "00h:00m:00s"
+        duration_color = 0
+        if attendance.check_in_time and attendance.check_out_time:
+            duration_delta = attendance.check_out_time - attendance.check_in_time
+            total_seconds = duration_delta.total_seconds()
+
+            if subscription:
+                subscription_duration = subscription.subscription_plan.duration_in_hours * 3600
+                duration_color = 1 if total_seconds > subscription_duration else 0
+            else:
+                duration_color = 0
+
+            # Format duration string correctly
+            hours = int(total_seconds // 3600)
+            minutes = int((total_seconds % 3600) // 60)
+            seconds = int(total_seconds % 60)
+            duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+
+        combined_attendances.append({
+            'id': attendance.id,
+            'type': 'coaching',
+            'venue_name': attendance.institution.name,
+            'venue_address': attendance.institution.address,
+            'check_in_time': attendance.check_in_time,
+            'check_out_time': attendance.check_out_time,
+            'check_in_color': check_in_color,
+            'check_out_color': check_out_color,
+            'duration': duration,
+            'duration_color': duration_color,
+            'nfc_id': attendance.nfc_id,
+        })
+
+    # Sort combined attendances by check_in_time descending
+    combined_attendances.sort(key=lambda x: x['check_in_time'], reverse=True)
+
+    # Paginate
+    paginator = Paginator(combined_attendances, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -2590,7 +2650,6 @@ def manage_banner_counts(request):
     if request.method == 'POST':
         library_id = request.POST.get('library_id')
         institution_id = request.POST.get('institution_id')
-        gym_id = request.POST.get('gym_id')
         max_banners = request.POST.get('max_banners')
         msg = ''
         if library_id:
@@ -2603,11 +2662,6 @@ def manage_banner_counts(request):
             institution.max_banners = max_banners
             institution.save()
             msg = 'Institution banner count updated successfully!'
-        elif gym_id:
-            gym = get_object_or_404(Gym, id=gym_id)
-            gym.max_banners = max_banners
-            gym.save()
-            msg = 'Gym banner count updated successfully!'
         else:
             msg = 'No valid entity provided for banner update.'
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -2623,7 +2677,6 @@ def manage_banner_counts(request):
     search_query = request.GET.get('search', '')
     libraries = Library.objects.all()
     institutions = Institution.objects.all()
-    gyms = Gym.objects.all()
     
     if search_query:
         libraries = libraries.filter(
@@ -2636,16 +2689,10 @@ def manage_banner_counts(request):
             Q(owner__last_name__icontains=search_query) |
             Q(name__icontains=search_query)
         )
-        gyms = gyms.filter(
-            Q(owner__first_name__icontains=search_query) |
-            Q(owner__last_name__icontains=search_query) |
-            Q(name__icontains=search_query)
-        )
     
     return render(request, 'admin_page/manage_banner_counts.html', {
         'libraries': libraries,
         'institutions': institutions,
-        'gyms': gyms,
         'search_query': search_query
     })
 
@@ -3129,7 +3176,7 @@ def allocate_card_to_library(request):
 def allocate_card_to_library_page(request):
     libraries = Library.objects.all()
     # Correctly filter for cards that are not allocated to EITHER a library or an institution.
-    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True, gym__isnull=True)
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True)
     return render(request, 'admin_page/allocate_card_to_library.html', {
         'libraries': libraries,
         'admin_cards': admin_cards
@@ -3379,7 +3426,7 @@ def allocate_card_to_institution_page(request):
     
     institutions = Institution.objects.all()
     # Correctly filter for cards that are not allocated to EITHER a library or an institution.
-    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True, gym__isnull=True)
+    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True)
     return render(request, 'admin_page/allocate_card_to_institution.html', {
         'institutions': institutions,
         'admin_cards': admin_cards
@@ -3712,177 +3759,6 @@ def check_institution_nfc_allocation(request):
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-@login_required
-def manage_gyms(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied("You don't have permission to access this page")
-    
-    gyms = Gym.objects.all().select_related('owner')
-    
-    # Filter by status
-    status = request.GET.get('status')
-    if status == 'approved':
-        gyms = gyms.filter(is_approved=True)
-    elif status == 'pending':
-        gyms = gyms.filter(is_approved=False)
-    
-    # Search by name or owner
-    search_query = request.GET.get('search')
-    if search_query:
-        gyms = gyms.filter(
-            Q(name__icontains=search_query) |
-            Q(owner__first_name__icontains=search_query) |
-            Q(owner__last_name__icontains=search_query) |
-            Q(city__icontains=search_query) |
-            Q(pincode__icontains=search_query)
-        )
-    
-    return render(request, 'admin_page/manage_gyms.html', {
-        'gyms': gyms,
-        'status': status,
-        'search_query': search_query
-    })
-
-@login_required
-@require_POST
-def toggle_gym_approval(request, gym_id):
-    if not request.user.is_superuser:
-        return JsonResponse({'status': 'error', 'message': "You don't have permission to perform this action"}, status=403)
-    
-    gym = get_object_or_404(Gym, id=gym_id)
-    gym.is_approved = not gym.is_approved
-    gym.save()
-    
-    return JsonResponse({'status': 'success', 'is_approved': gym.is_approved})
-
-@login_required
-def admin_gym_details(request, gym_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied("You don't have permission to access this page")
-    
-    gym = get_object_or_404(Gym, id=gym_id)
-    return render(request, 'admin_page/admin_gym_details.html', {
-        'gym': gym,
-    })
-
-@login_required
-@user_passes_test(lambda u: u.is_superuser)
-def allocate_card_to_gym_page(request):
-    gyms = Gym.objects.all()
-    admin_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True, gym__isnull=True)
-    return render(request, 'admin_page/allocate_card_to_gym.html', {
-        'gyms': gyms,
-        'admin_cards': admin_cards
-    })
-
-@login_required
-@user_passes_test(lambda u: u.is_superuser)
-@csrf_exempt
-def allocate_card_to_gym(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            gym_id = data.get('gym_id')
-            nfc_serials = data.get('nfc_serials', [])
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'message': 'Invalid JSON.'}, status=400)
-
-        if not gym_id or not nfc_serials:
-            return JsonResponse({'success': False, 'message': 'Missing gym ID or NFC serials.'}, status=400)
-
-        errors = []
-        allocated = []
-        try:
-            gym = Gym.objects.get(id=gym_id)  # Using ID as per the form
-        except Gym.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Gym not found.'}, status=404)
-
-        for serial in nfc_serials:
-            try:
-                card = AdminCard.objects.get(card_id=serial)
-                if card.is_allocated():
-                    errors.append(f'Card {serial} is already allocated.')
-                    continue
-                card.gym = gym
-                card.save()
-                allocated.append(serial)
-            except AdminCard.DoesNotExist:
-                errors.append(f'Card {serial} not found.')
-
-        if errors:
-            return JsonResponse({
-                'success': False, 
-                'message': 'Some cards could not be allocated.', 
-                'errors': errors, 
-                'allocated': allocated
-            }, status=400)
-        
-        return JsonResponse({'success': True, 'message': 'Cards allocated successfully.'})
-
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
-
-
-@user_passes_test(lambda u: u.is_superuser)
-def manage_gym_cards(request):
-    # Only get allocated gym cards
-    allocated_cards = AdminCard.objects.filter(gym__isnull=False).select_related('gym')
-    context = {
-        'allocated_cards': allocated_cards,
-        'total_allocated': allocated_cards.count(),
-    }
-    return render(request, 'gym/manage_gym_cards.html', context)
-
-@user_passes_test(lambda u: u.is_superuser)
-@require_POST
-def delete_gym_card(request, card_id):
-    try:
-        card = AdminCard.objects.get(id=card_id)
-        card.delete()
-        return JsonResponse({'success': True})
-    except AdminCard.DoesNotExist:
-        return JsonResponse({'error': 'Card not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-@user_passes_test(lambda u: u.is_superuser)
-@csrf_exempt
-def deallocate_gym_nfc(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            nfc_serial = data.get("nfc_serial")
-            if not nfc_serial:
-                return JsonResponse({'error': 'NFC serial is required'}, status=400)
-            try:
-                card = AdminCard.objects.get(card_id=nfc_serial)
-            except AdminCard.DoesNotExist:
-                return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
-            if card.gym is None:
-                return JsonResponse({'error': 'This card is not allocated to any gym'}, status=400)
-            # Remove gym association
-            card.gym = None
-            card.save()
-            return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-@login_required
-@user_passes_test(lambda u: u.is_superuser)
-def gym_card_count(request):
-    gyms = Gym.objects.annotate(
-        allocated_cards_count=Count('admin_cards', distinct=True)
-    ).order_by('name')
-    
-    gym_data = [{
-        'name': gym.name,
-        'allocated_cards_count': gym.allocated_cards_count,
-        'owner': gym.owner
-    } for gym in gyms]
-    
-    return render(request, 'admin_page/gym_card_count.html', {
-        'gyms': gym_data
-    })
 
 
 @login_required
