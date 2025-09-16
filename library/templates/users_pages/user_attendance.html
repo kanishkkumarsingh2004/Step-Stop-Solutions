@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-4">My Attendance Records</h1>
+
+    <div class="mb-4">
+        <input type="text" id="searchInput" placeholder="Search by library name or address" class="border rounded px-3 py-2 w-full max-w-md" />
+    </div>
+
+    <table id="attendanceTable" class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="text-left px-4 py-2 border-b">Library Name</th>
+                <!-- <th class="text-left px-4 py-2 border-b">Address</th> -->
+                <th class="text-left px-4 py-2 border-b">Check-in Time</th>
+                <th class="text-left px-4 py-2 border-b">Check-out Time</th>
+                <th class="text-left px-4 py-2 border-b">Duration</th>
+                <th class="text-left px-4 py-2 border-b">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attendance in attendances %}
+            <tr class="border-b hover:bg-gray-50">
+                <td class="px-4 py-2">{{ attendance.library.venue_name }}</td>
+                <!-- <td class="px-4 py-2">{{ attendance.library.address }}</td> -->
+                <td class="px-4 py-2 {% if attendance.check_in_color == 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                    {{ attendance.check_in_time|date:"H:i:s" }}
+                </td>
+                <td class="px-4 py-2 {% if attendance.check_out_color == 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                    {% if attendance.check_out_time %}
+                        {{ attendance.check_out_time|date:"H:i:s" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2 {% if attendance.duration_color == 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                    {{ attendance.duration|default:"-" }}
+                </td>
+                <td class="px-4 py-2">{{ attendance.check_in_time|date:"Y-m-d" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-4 text-gray-500">No attendance records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if attendances.has_other_pages %}
+    <div class="mt-4 flex justify-between items-center">
+        {% if attendances.has_previous %}
+        <a href="?page={{ attendances.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-gray-300 rounded">Previous</a>
+        {% else %}
+        <span class="px-4 py-2 bg-gray-300 rounded opacity-50 cursor-not-allowed">Previous</span>
+        {% endif %}
+
+        <span class="text-sm">Page {{ attendances.number }} of {{ attendances.paginator.num_pages }}</span>
+
+        {% if attendances.has_next %}
+        <a href="?page={{ attendances.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-gray-300 rounded">Next</a>
+        {% else %}
+        <span class="px-4 py-2 bg-gray-300 rounded opacity-50 cursor-not-allowed">Next</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.trim();
+        const currentUrl = new URL(window.location);
+
+        if (searchTerm) {
+            currentUrl.searchParams.set('search', searchTerm);
+        } else {
+            currentUrl.searchParams.delete('search');
+        }
+
+        // Reset to page 1 when searching
+        currentUrl.searchParams.set('page', '1');
+
+        window.location.href = currentUrl.toString();
+    });
+});
+</script>
+{% endblock %}

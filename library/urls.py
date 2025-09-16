@@ -56,6 +56,7 @@ urlpatterns = [
    # Attendance
    path('vendor/<int:vendor_id>/all-attendance/', views.all_attendance, name='all_attendance'),
    path('check-access/', views.check_access, name='check_access'),
+   path('user-attendance/', views.user_attendance, name='user_attendance'),
    
    # Expenses
    path('library/<int:library_id>/expenses/', views.expense_dashboard, name='expense_dashboard'),

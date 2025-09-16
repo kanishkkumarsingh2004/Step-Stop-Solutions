@@ -1,10 +1,11 @@
-# Attendance IST Time Fix
+# TODO: Merge CoachingAttendance with LibraryAttendance in user_attendance view
 
-## Pending Tasks
-- [ ] Update `mark_attendance` function to save check-in/check-out times in IST
-- [ ] Update `mark_attendance_manual` function to save check-in/check-out times in IST
-- [ ] Ensure time comparisons use IST for consistency
-- [ ] Test attendance marking to verify IST dates are saved correctly
-
-## Summary
-Modify attendance functions to store times in Indian Standard Time (IST) instead of UTC for proper date/time recording.
+## Tasks
+- [x] Modify user_attendance function in views.py to include CoachingAttendance
+- [x] Create combined list of attendances with type field
+- [x] Sort combined list by check_in_time descending
+- [x] Update search logic for both library and coaching records
+- [x] Handle duration and color calculations for both types
+- [x] Apply pagination to combined sorted list
+- [x] Update user_attendance.html template to display attendance type
+- [x] Test the merged view functionality

@@ -49,6 +49,7 @@ from .models import (
     Gym,
     GymSubscription,
     InstallmentPayment,
+    CoachingAttendance
 )
 # Python standard library imports
 import json
@@ -637,11 +638,11 @@ def payment_confirmation(request, transaction_id):
 def all_attendance(request, vendor_id):
     # Get the library/vendor
     library = get_object_or_404(Library, id=vendor_id)
-    
+
     # Get all attendance records for this library
     attendances = LibraryAttendance.objects.filter(library=library).order_by('-check_in_time')
       # This ensures page_obj is always defined
-    
+
     # Add search functionality
     search_query = request.GET.get('search')
     if search_query:
@@ -649,13 +650,13 @@ def all_attendance(request, vendor_id):
             Q(user__first_name__icontains=search_query) |
             Q(user__last_name__icontains=search_query)
         )
-    
+
     # Calculate duration for each attendance
     for attendance in attendances:
         if attendance.check_in_time and attendance.check_out_time:
             duration = attendance.check_out_time - attendance.check_in_time
             total_seconds = duration.total_seconds()
-            
+
             # Find active subscription
             subscription = UserSubscription.objects.filter(
                 user=attendance.user,
@@ -663,13 +664,13 @@ def all_attendance(request, vendor_id):
                 start_date__lte=attendance.check_in_time.date(),
                 end_date__gte=attendance.check_in_time.date()
             ).first()
-            
+
             if subscription:
                 subscription_duration = subscription.subscription.duration_in_hours * 3600
                 attendance.duration_color = 1 if total_seconds > subscription_duration else 0
             else:
                 attendance.duration_color = 0
-            
+
             # Format duration string correctly
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
@@ -678,14 +679,108 @@ def all_attendance(request, vendor_id):
         else:
             attendance.duration = "00h:00m:00s"
             attendance.duration_color = 0
-            
+
     paginator = Paginator(attendances, 25)  # Show 25 attendances per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'library/all_attendence.html', {
         'attendances': page_obj,
         'library': library
+    })
+
+@login_required
+def user_attendance(request):
+    # Get attendance records for the current user
+    attendances = LibraryAttendance.objects.filter(user=request.user).order_by('-check_in_time')
+    Coaching = CoachingAttendance.objects.filter(user=request.user).order_by('-check_in_time')
+
+    # Add search functionality by library name
+    search_query = request.GET.get('search')
+    if search_query:
+        attendances = attendances.filter(
+            Q(library__venue_name__icontains=search_query) |
+            Q(library__address__icontains=search_query)
+        )
+
+    # Calculate duration and colors for each attendance
+    for attendance in attendances:
+        # Find active subscription
+        subscription = UserSubscription.objects.filter(
+            user=attendance.user,
+            subscription__library=attendance.library,
+            start_date__lte=attendance.check_in_time.date(),
+            end_date__gte=attendance.check_in_time.date()
+        ).first()
+
+        # Set check-in color based on subscription time range
+        if subscription:
+            start_time = subscription.start_time
+            end_time = subscription.end_time
+
+            # Adjust dates based on time comparison
+            if start_time > end_time:
+                end_date = subscription.start_date + timedelta(days=1)
+                start_date = subscription.start_date
+            else:
+                start_date = subscription.start_date
+                end_date = subscription.start_date
+
+            # Create datetime objects with adjusted dates
+            start_datetime = timezone.make_aware(datetime.combine(
+                start_date,
+                start_time
+            ))
+            end_datetime = timezone.make_aware(datetime.combine(
+                end_date,
+                end_time
+            ))
+            check_in_datetime = timezone.make_aware(datetime.combine(
+                attendance.check_in_time.date(),
+                attendance.check_in_time.time()
+            ))
+
+            # Check if check-in time is within allowed period
+            attendance.check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
+
+            if attendance.check_out_time:
+                check_out_datetime = timezone.make_aware(datetime.combine(
+                    attendance.check_out_time.date(),
+                    attendance.check_out_time.time()
+                ))
+                attendance.check_out_color = 0 if (start_datetime <= check_out_datetime <= end_datetime) else 1
+            else:
+                attendance.check_out_color = 0
+        else:
+            attendance.check_in_color = 1
+            attendance.check_out_color = 0
+
+        if attendance.check_in_time and attendance.check_out_time:
+            duration = attendance.check_out_time - attendance.check_in_time
+            total_seconds = duration.total_seconds()
+
+            if subscription:
+                subscription_duration = subscription.subscription.duration_in_hours * 3600
+                attendance.duration_color = 1 if total_seconds > subscription_duration else 0
+            else:
+                attendance.duration_color = 0
+
+            # Format duration string correctly
+            hours = int(total_seconds // 3600)
+            minutes = int((total_seconds % 3600) // 60)
+            seconds = int(total_seconds % 60)
+            attendance.duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+        else:
+            attendance.duration = "00h:00m:00s"
+            attendance.duration_color = 0
+
+    paginator = Paginator(attendances, 25)  # Show 25 attendances per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'users_pages/user_attendance.html', {
+        'attendances': page_obj,
+        'search_query': search_query,
     })
 
 @login_required
