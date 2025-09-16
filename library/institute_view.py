@@ -2226,6 +2226,7 @@ def attendance_data_api(request, uid):
             'duration': duration,
             'check_in_color': record.check_in_color,
             'check_out_color': record.check_out_color,
+            'duration_color': record.duration_color,
             'date': record.check_in_time.date().isoformat() if record.check_in_time else '',
         })
 
@@ -2276,44 +2277,88 @@ def mark_institute_attendance(request):
             if not active_subscription:
                 return JsonResponse({"error": "User does not have an active subscription"}, status=403)
 
-            # Find latest attendance for this user and institution
-            latest_attendance = CoachingAttendance.objects.filter(
-                user=user,
-                institution=institution
-            ).order_by('-check_in_time').first()
-
-            # Handle time comparisons with date adjustments
-            start_time = active_subscription.start_time
-            end_time = active_subscription.end_time
-
-            if start_time and end_time and start_time > end_time:
-                end_date = active_subscription.start_date + timedelta(days=1)
-                start_date = active_subscription.start_date
+            # Check if current date is within subscription start_date and end_date
+            current_date = current_time.date()
+            if not (active_subscription.start_date <= current_date <= active_subscription.end_date):
+                # Outside subscription date range, mark colors as red
+                check_in_color = 1
+                check_out_color = 1
+                duration_color = 1
             else:
-                start_date = active_subscription.start_date
-                end_date = active_subscription.start_date
+                # Handle time comparisons with date adjustments
+                start_time = active_subscription.start_time
+                end_time = active_subscription.end_time
 
-            # Create datetime objects with adjusted dates
-            if start_time and end_time:
-                start_datetime = timezone.make_aware(datetime.combine(start_date, start_time))
-                end_datetime = timezone.make_aware(datetime.combine(end_date, end_time))
-                current_datetime = timezone.make_aware(datetime.combine(current_time.date(), current_time.time()))
-                is_within_time = (start_datetime <= current_datetime <= end_datetime)
-            else:
-                is_within_time = True  # If no time window, always allow
+                if start_time and end_time and start_time > end_time:
+                    end_date = current_date + timedelta(days=1)
+                    start_date = current_date
+                else:
+                    start_date = current_date
+                    end_date = current_date
 
-            check_out_color = 0 if is_within_time else 1
+                # Create datetime objects with adjusted dates
+                if start_time and end_time:
+                    start_datetime = timezone.make_aware(datetime.combine(start_date, start_time))
+                    end_datetime = timezone.make_aware(datetime.combine(end_date, end_time))
+                    current_datetime = timezone.make_aware(datetime.combine(current_date, current_time.time()))
+                    is_within_time = (start_datetime <= current_datetime <= end_datetime)
+                else:
+                    is_within_time = True  # If no time window, always allow
+
+                check_out_color = 0 if is_within_time else 1
+
+                if latest_attendance := CoachingAttendance.objects.filter(
+                    user=user,
+                    institution=institution
+                ).order_by('-check_in_time').first():
+                    check_in_time = latest_attendance.check_in_time
+                    check_out_time = current_time  # Now as checkout
+
+                    # If subscription has start/end times
+                    if start_time and end_time:
+                        start_date = current_date
+                        end_date = current_date
+
+                        # Handle overnight case (e.g., 10 PM → 2 AM)
+                        if start_time > end_time:
+                            end_date += timedelta(days=1)
+
+                        start_datetime = timezone.make_aware(datetime.combine(start_date, start_time))
+                        end_datetime = timezone.make_aware(datetime.combine(end_date, end_time))
+
+                        # Allowed duration in minutes
+                        allowed_duration = (end_datetime - start_datetime).total_seconds() / 60
+
+                        # Actual duration in minutes
+                        actual_duration = (check_out_time - check_in_time).total_seconds() / 60
+
+                        is_within_duration = actual_duration <= allowed_duration
+                        duration_color = 0 if is_within_duration else 1
+                    else:
+                        # No time restriction → always valid
+                        is_within_duration = True
+
+                        duration_color = 0 if is_within_duration else 1
+                else:
+                    duration_color = 0  # Default for first check-in
+
+                check_in_color = 0 if is_within_time else 1
+
             current_time = timezone.now()
             ist_time = current_time + timedelta(hours=5, minutes=30)
-
-            if not latest_attendance or latest_attendance.check_out_time:
+            # print(end_datetime, start_datetime, current_datetime, is_within_time, check_in_color, check_out_color, duration_color)
+            if not (latest_attendance := CoachingAttendance.objects.filter(
+                user=user,
+                institution=institution
+            ).order_by('-check_in_time').first()) or latest_attendance.check_out_time:
                 # New check-in
                 attendance = CoachingAttendance.objects.create(
                     user=user,
                     institution=institution,
                     check_in_time=current_time,
-                    check_in_color=check_out_color,
+                    check_in_color=check_in_color,
                     check_out_color=0,
+                    duration_color=duration_color
                 )
                 return JsonResponse({
                     "message": f"Checked in: {user.get_full_name()}",
@@ -2325,6 +2370,8 @@ def mark_institute_attendance(request):
                 # Check-out
                 latest_attendance.check_out_time = current_time
                 latest_attendance.check_out_color = check_out_color
+                latest_attendance.duration_color = duration_color
+
                 latest_attendance.save()
                 return JsonResponse({
                     "message": f"Checked out: {user.get_full_name()}",
@@ -2758,7 +2805,6 @@ def send_payment_reminder(request):
                 'amount_paid': f"{total_paid:.2f}",
                 'outstanding_amount': f"{outstanding_amount:.2f}",
                 'due_date': (subscription.created_at + timedelta(days=30)).strftime('%B %d, %Y'),
-                'payment_link': f"https://yourdomain.com/payment/{subscription.id}",  # Replace with actual payment URL
                 'support_email': institution.contact_email or 'support@example.com',
                 'support_phone': institution.contact_phone or 'N/A',
                 'institution_address': institution.address or 'N/A',

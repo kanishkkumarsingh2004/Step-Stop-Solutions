@@ -666,8 +666,9 @@ def all_attendance(request, vendor_id):
             
             if subscription:
                 subscription_duration = subscription.subscription.duration_in_hours * 3600
-                # Set duration_color to 1 if exceeded, 0 if within limit
                 attendance.duration_color = 1 if total_seconds > subscription_duration else 0
+            else:
+                attendance.duration_color = 0
             
             # Format duration string correctly
             hours = int(total_seconds // 3600)

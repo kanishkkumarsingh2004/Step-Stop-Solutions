@@ -84,14 +84,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const tr = document.createElement('tr');
             tr.className = 'border-b hover:bg-gray-50';
 
-            const checkInColor = record.check_in_color == 1 ? 'text-green-500' : 'text-red-500';
-            const checkOutColor = record.check_out_color == 1 ? 'text-green-500' : 'text-red-500';
+            const checkInColor = record.check_in_color == 0 ? 'text-green-500' : 'text-red-500';
+            const checkOutColor = record.check_out_color == 0 ? 'text-green-500' : 'text-red-500';
+            const durationColor = record.duration_color == 0 ? 'text-green-500' : 'text-red-500';
             tr.innerHTML = `
                 <td class="px-4 py-2">${record.user_name}</td>
                 <td class="px-4 py-2">${record.user_email}</td>
                 <td class="px-4 py-2 ${checkInColor}">${record.check_in_time}</td>
                 <td class="px-4 py-2 ${checkOutColor}">${record.check_out_time}</td>
-                <td class="px-4 py-2">${record.duration || '-'}</td>
+                <td class="px-4 py-2 ${durationColor}">${record.duration || '-'}</td>
                 <td class="px-4 py-2">${record.date}</td>
             `;
             tableBody.appendChild(tr);
