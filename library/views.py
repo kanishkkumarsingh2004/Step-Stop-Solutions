@@ -519,7 +519,7 @@ def mark_attendance(request):
                 return JsonResponse({
                     "message": f"Checked in: {user.get_full_name()}",
                     "action": "checkin",
-                    "date": current_time.date().isoformat(),
+                    "date": ist_time.date().isoformat(),
                     "time": ist_time.strftime("%H:%M:%S"),
                     "available_seats": library.available_seats
                 })

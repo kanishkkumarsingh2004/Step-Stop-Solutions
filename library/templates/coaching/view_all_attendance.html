@@ -31,9 +31,7 @@
         <button id="nextPage" class="px-4 py-2 bg-gray-300 rounded disabled:opacity-50" disabled>Next</button>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const tableBody = document.querySelector('#attendanceTable tbody');
@@ -43,31 +41,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const pageInfo = document.getElementById('pageInfo');
 
     let currentPage = 1;
-    const pageSize = 10;
+    const pageSize = 50;
     let totalRecords = 0;
 
-    function fetchData(page, search='') {
+    async function fetchData(page, search='') {
         const start = (page - 1) * pageSize;
-        const url = new URL(window.location.href);
+        const url = new URL('/institution/{{ institution.uid }}/api/attendance/', window.location.origin);
         url.searchParams.set('draw', page);
         url.searchParams.set('start', start);
         url.searchParams.set('length', pageSize);
         url.searchParams.set('search[value]', search);
 
-        fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
             totalRecords = data.recordsTotal;
             renderTable(data.data);
             updatePagination();
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error fetching attendance data:', error);
-        });
+        }
     }
 
     function renderTable(records) {
@@ -87,11 +84,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const tr = document.createElement('tr');
             tr.className = 'border-b hover:bg-gray-50';
 
+            const checkInColor = record.check_in_color == 1 ? 'text-green-500' : 'text-red-500';
+            const checkOutColor = record.check_out_color == 1 ? 'text-green-500' : 'text-red-500';
             tr.innerHTML = `
                 <td class="px-4 py-2">${record.user_name}</td>
                 <td class="px-4 py-2">${record.user_email}</td>
-                <td class="px-4 py-2">${record.check_in_time}</td>
-                <td class="px-4 py-2">${record.check_out_time}</td>
+                <td class="px-4 py-2 ${checkInColor}">${record.check_in_time}</td>
+                <td class="px-4 py-2 ${checkOutColor}">${record.check_out_time}</td>
                 <td class="px-4 py-2">${record.duration || '-'}</td>
                 <td class="px-4 py-2">${record.date}</td>
             `;

@@ -72,7 +72,7 @@
         btn.addEventListener('click', function() {
             const cardId = this.getAttribute('data-card-id');
             const nfcSerial = this.getAttribute('data-nfc-serial');
-            fetch('{% url "coaching:deallocate_institution_nfc" %}', {
+            fetch('{% url "deallocate_institution_nfc" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
