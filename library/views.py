@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, Http404
 from django.db.models import Sum, Q, Count
 from django.views.decorators.csrf import csrf_exempt
@@ -16,13 +16,11 @@ from django.utils.timezone import now
 from django.db import transaction
 from django.views.decorators.http import require_POST
 import time
-
-# Set up logging
+from django.utils.dateparse import parse_date
+from django.core.exceptions import ValidationError
 logger = logging.getLogger(__name__)
 from datetime import date
-
-# Local imports
-from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, UserProfileForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm, InstallmentPaymentForm
+from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm
 from .models import (
     CustomUser,
     SubscriptionPlan,
@@ -46,22 +44,16 @@ from .models import (
     TimetableEntry,
     LibraryCardLog,
     InstitutionCardLog,
-    InstallmentPayment,
     CoachingAttendance
 )
-# Python standard library imports
 import json
 import base64
 from io import BytesIO
 from datetime import timedelta, datetime
-
-# Third-party imports
 import qrcode
-from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.http import require_POST
 from decimal import Decimal
-import csv
 from collections import defaultdict
-
 User = get_user_model()
 
 def home(request):
@@ -85,13 +77,11 @@ def dashboard(request):
             else:
                 subscription.status = 'valid'
                 subscription.save()
-
         # Get latest transaction for this subscription
         latest_transaction = Transaction.objects.filter(
             subscription=subscription.subscription,
             user=request.user
         ).order_by('-created_at').first()
-        
         # Determine payment status and color
         if latest_transaction:
             payment_status = latest_transaction.status
@@ -101,20 +91,16 @@ def dashboard(request):
             payment_status = 'pending'
             payment_color = 'yellow'
             cost = subscription.subscription.normal_price
-            
         # Get library details for this subscription
         library = subscription.subscription.library
         total_seats = library.capacity if library else 0
         available_seats = library.available_seats if library else 0
-        
         # Get subscription status
         subscription_status = subscription.status
-
         days_left = None
         if subscription.end_date:
             today = timezone.localdate() if hasattr(timezone, 'localdate') else date.today()
             days_left = (subscription.end_date - today).days
-
         # Determine color based on days left
         if days_left is not None:
             if days_left > 5:
@@ -127,7 +113,6 @@ def dashboard(request):
                 status_color = 'green'
         else:
             status_color = 'red' if subscription_status == 'expired' else 'green'
-
         subscription_data = {
             'subscription': subscription.subscription,
             'start_date': subscription.start_date,
@@ -342,6 +327,14 @@ def manage_users(request, library_id):
             continue
 
         filtered_users.append(user)
+
+    # Update attendance status for manual attendance check
+    for user in filtered_users:
+        latest_attendance = LibraryAttendance.objects.filter(
+            user=user,
+            library=library
+        ).order_by('-check_in_time').first()
+        user.is_checked_in = latest_attendance is not None and latest_attendance.check_out_time is None
 
     return render(request, 'library/manage_users.html', {
         'library': library,
@@ -848,17 +841,12 @@ def expense_dashboard(request, library_id):
     if not request.user.is_authenticated:
         return redirect('login')
     library = get_object_or_404(Library, id=library_id)
-
     # Get date filters from request
     from_date = request.GET.get('from_date')
-    to_date = request.GET.get('to_date')
-    
+    to_date = request.GET.get('to_date')    
     # Base querysets
     transactions = Transaction.objects.filter(subscription__library=library)
     expenses = Expense.objects.filter(library=library)
-    
-    
-    
     # Calculate totals
     total_earnings = transactions.aggregate(total=Sum('amount'))['total'] or 0
     valid_amount = transactions.filter(status='valid').aggregate(total=Sum('amount'))['total'] or 0
@@ -866,7 +854,6 @@ def expense_dashboard(request, library_id):
     total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
     total_profit = float(valid_amount) - float(total_expenses)
     valid_transection = transactions.filter(status='valid').select_related('user', 'subscription').order_by('-created_at')
-
     # Apply date filters if provided
     if from_date and to_date:
         adjusted_from_date = (timezone.datetime.strptime(from_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
@@ -874,10 +861,6 @@ def expense_dashboard(request, library_id):
         transactions = transactions.filter(created_at__range=[from_date, to_date])
         expenses = expenses.filter(date__range=[from_date, to_date])
         valid_transection = valid_transection.filter(created_at__range=[adjusted_from_date, adjusted_to_date])
-        
-        
-
-    
     context = {
         'library': library,
         'total_earnings': total_earnings,
@@ -896,7 +879,6 @@ def expense_dashboard(request, library_id):
 @login_required
 def add_expense(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     if request.method == 'POST':
         form = ExpenseForm(request.POST)
         if form.is_valid():
@@ -910,9 +892,7 @@ def add_expense(request, library_id):
         else:
             for error in form.errors.values():
                 messages.error(request, error)
-    
     return redirect('expense_dashboard', library_id=library_id)
-
 def vender_type(request):
     """Render the vendor type selection page"""
     return render(request, 'vender/vender_type.html')
@@ -984,13 +964,11 @@ def public_library_details(request, library_id):
     if not library.is_approved:
         raise Http404("Library not found")
     banners = library.banners.order_by('-created_at')
-    recent_reviews = library.reviews.all().order_by('-created_at')[:2]
-    
+    recent_reviews = library.reviews.all().order_by('-created_at')[:2]    
     # Calculate average rating with 2 decimal places
     average_rating = round(library.average_rating(), 2)
     has_active_subscription = False
     has_reviewed = False
-
     if request.user.is_authenticated:
         has_reviewed = Review.objects.filter(library=library, user=request.user).exists()
         has_active_subscription = UserSubscription.objects.filter(
@@ -998,10 +976,8 @@ def public_library_details(request, library_id):
             subscription__library=library,
             end_date__gte=timezone.now().date()
         ).exists()
-
     if request.user.is_authenticated:
-        has_reviewed = Review.objects.filter(library=library, user=request.user).exists()
-    
+        has_reviewed = Review.objects.filter(library=library, user=request.user).exists()    
     return render(request, 'library/library_details.html', {
         'library': library,
         'banners': banners,
@@ -1185,10 +1161,8 @@ def manage_institutions(request):
 @login_required
 def create_subscription(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     if request.user != library.owner:
         raise PermissionDenied("You don't have permission to create plans for this library")
-    
     if request.method == 'POST':
         name = request.POST.get('name')
         normal_price = request.POST.get('normal_price')
@@ -1227,18 +1201,15 @@ def payment_page(request, plan_id):
     # Get the subscription plan and user's library
     plan = get_object_or_404(SubscriptionPlan, id=plan_id)
     library = plan.library
-    
     # Process coupon code from request
     coupon_code = request.GET.get('coupon')
     if coupon_code and '?coupon=' in coupon_code:
         coupon_code = coupon_code.split('?coupon=')[0]
-    
     # Initialize coupon and pricing variables
     coupon = None
     discount_applied = False
     final_price = plan.discount_price if plan.has_discount else plan.normal_price
     original_price = final_price
-    
     # Validate and apply coupon if provided
     if coupon_code:
         try:
@@ -1248,16 +1219,12 @@ def payment_page(request, plan_id):
                 discount_applied = True
         except Coupon.DoesNotExist:
             pass
-
     if discount_applied:
         coupon.increment_usage()
-    
     # Calculate discount amount
     discount_amount = float(original_price) - float(final_price) if discount_applied else 0
-    
     # Store final price in session
     request.session['final_price'] = str(final_price)
-    
     # Prepare UPI payment details
     upi_id = library.upi_id
     recipient_name = library.recipient_name
@@ -1301,14 +1268,12 @@ def user_subscriptions(request):
     subscriptions = UserSubscription.objects.filter(
         user=request.user
     ).select_related('subscription').order_by('-end_date')
-
     # Get latest transaction for each subscription
     for subscription in subscriptions:
         latest_transaction = Transaction.objects.filter(
             user=request.user,
             subscription=subscription.subscription
         ).order_by('-created_at').first()
-
         # Use the existing status field from UserSubscription model
         if subscription.status == 'expired':
             status_color = 'red'
@@ -1325,7 +1290,6 @@ def user_subscriptions(request):
                     'red'
         }
         subscription.cost = latest_transaction.amount if latest_transaction else subscription.subscription.normal_price
-
     context = {
         'subscriptions': subscriptions
     }
@@ -1342,22 +1306,18 @@ def subscription_details(request, subscription_id):
     except UserSubscription.DoesNotExist:
         messages.error(request, "Subscription not found.")
         return redirect('user_subscriptions')
-
     # Get all transactions for this subscription
     transactions = Transaction.objects.filter(
         user=request.user,
         subscription=subscription.subscription
     ).order_by('-created_at')
-
     # Get library information
     library = subscription.subscription.library
-
     # Calculate subscription status and colors
     if subscription.status == 'expired':
         subscription_status_color = 'red'
     else:
         subscription_status_color = 'green'
-
     # Determine payment status from latest transaction
     latest_transaction = transactions.first()
     if latest_transaction:
@@ -1376,21 +1336,17 @@ def subscription_details(request, subscription_id):
         'payment_color': payment_color,
         'latest_transaction': latest_transaction
     }
-
     return render(request, 'users_pages/subscription_details.html', context)
 
 @login_required
 def verify_payments(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-
     transactions = Transaction.objects.filter(
         subscription__library=library
     ).select_related('user', 'subscription').order_by('-created_at')
-
     status = request.GET.get('status')
     if status and status != 'all':
         transactions = transactions.filter(status=status)
-
     search_query = request.GET.get('search')
     if search_query:
         transactions = transactions.filter(
@@ -1398,19 +1354,16 @@ def verify_payments(request, library_id):
             Q(user__email__icontains=search_query) |
             Q(subscription__name__icontains=search_query)
         )
-
     # Attach user_subscription to each transaction
     for transaction in transactions:
         transaction.user_subscription = UserSubscription.objects.filter(
             user=transaction.user,
             subscription=transaction.subscription
         ).first()
-
     # Pagination
     paginator = Paginator(transactions, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
     context = {
         'library': library,
         'transactions': page_obj,
@@ -1421,13 +1374,11 @@ def verify_payments(request, library_id):
 
 @login_required
 def verify_single_payment(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
-    
+    transaction = get_object_or_404(Transaction, id=transaction_id)    
     if request.method == 'POST':
         # Update transaction status
         transaction.status = 'valid'
         transaction.save()
-        
         # Create or update user subscription
         user_subscription, created = UserSubscription.objects.update_or_create(
             user=transaction.user,
@@ -1438,17 +1389,14 @@ def verify_single_payment(request, transaction_id):
             }
         )
         user_subscription.transactions.add(transaction)
-        
         messages.success(request, "Payment successfully verified")
         return redirect('verify_payments', library_id=transaction.subscription.library.id)
-    
     messages.error(request, "Invalid request method")
     return redirect('verify_payments', library_id=transaction.subscription.library.id)
 
 @login_required
 def update_transaction_status(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
-
     if request.method == 'POST':
         new_status = request.POST.get('status')
         if new_status in dict(Transaction.STATUS_CHOICES).keys():
@@ -1457,18 +1405,15 @@ def update_transaction_status(request, transaction_id):
             messages.success(request, f"Transaction status updated to {new_status}")
         else:
             messages.error(request, "Invalid status selected")
-
     return redirect('verify_payments', library_id=transaction.subscription.library.id)
 
 @login_required
 def update_subscription_start_date(request, subscription_id):
     if request.method == 'POST':
         new_start_date = request.POST.get('start_date')
-
         if not new_start_date:
             messages.error(request, "New start date is required.")
             return redirect('dashboard')
-
         try:
             subscription = UserSubscription.objects.get(id=subscription_id)
             subscription.start_date = new_start_date
@@ -1478,14 +1423,10 @@ def update_subscription_start_date(request, subscription_id):
             messages.error(request, "Subscription not found.")
         except Exception as e:
             messages.error(request, f"Error updating start date: {str(e)}")
-
         return redirect('verify_payments', library_id=subscription.subscription.library.id)
     else:
         messages.error(request, "Invalid request method.")
         return redirect('dashboard')
-
-from django.utils.dateparse import parse_date
-from django.core.exceptions import ValidationError
 
 @login_required
 def update_subscription_end_date(request, subscription_id):

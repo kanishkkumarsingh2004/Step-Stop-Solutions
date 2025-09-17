@@ -133,7 +133,11 @@
                         </div>
                         <div class="flex items-end justify-end">
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
-                                {{ subscription.subscription.library.venue_name }}
+                                {% if subscription.subscription.library.venue_name|length > 10 %}
+                                    {{ subscription.subscription.library.venue_name|slice:":10" }}...
+                                {% else %}
+                                    {{ subscription.subscription.library.venue_name }}
+                                {% endif %}
                             </span>
                         </div>
                     </div>
