@@ -63,7 +63,7 @@ WSGI_APPLICATION = 'my_library.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-a = 0
+a = 1
 if a==1:
     b = 'postgres.nswagajowuojntnhkyqv'
 else:

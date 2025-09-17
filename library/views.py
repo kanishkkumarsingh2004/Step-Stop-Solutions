@@ -3107,10 +3107,10 @@ def admin_graphs(request):
 
 @login_required
 def Manage_Admin_loss(request):
-    if not request.user.is_superuser:
-        return redirect('home')
     if request.method == 'POST':
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            if not request.user.is_superuser:
+                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
             try:
                 data = json.loads(request.body)
                 name = data.get('expense_name')
@@ -3145,6 +3145,9 @@ def Manage_Admin_loss(request):
                 logger.error(f"Error adding loss expense via AJAX: {str(e)}")
                 return JsonResponse({'status': 'error', 'message': 'An error occurred while adding the loss expense'}, status=500)
         else:
+            if not request.user.is_superuser:
+                messages.error(request, 'You do not have permission to access this page.')
+                return redirect('home')
             try:
                 name = request.POST.get('expense_name')
                 amount = request.POST.get('amount')
@@ -3175,6 +3178,10 @@ def Manage_Admin_loss(request):
                 messages.error(request, 'An error occurred while adding the loss expense')
                 return redirect('Manage_Admin_Loss')
 
+    else:
+        if not request.user.is_superuser:
+            return redirect('home')
+
     expenses = AdminExpense.objects.filter(type='Loss').order_by('-date')
     total_losses = expenses.aggregate(total=Sum('amount'))['total'] or 0
     context = {
@@ -3187,11 +3194,11 @@ def Manage_Admin_loss(request):
 
 @login_required
 def EditAdminExpense_loss(request, expense_id):
-    if not request.user.is_superuser:
-        return redirect('home')
-    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')
     if request.method == 'POST':
+        if not request.user.is_superuser:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')
             try:
                 data = json.loads(request.body)
                 name = data.get('expense_name')
@@ -3230,11 +3237,11 @@ def EditAdminExpense_loss(request, expense_id):
 
 @login_required
 def DeleteAdminExpense_loss(request, expense_id):
-    if not request.user.is_superuser:
-        return redirect('home')
-    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')
     if request.method == 'POST':
+        if not request.user.is_superuser:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')
             try:
                 expense.delete()
                 return JsonResponse({'status': 'success'})
@@ -3242,6 +3249,10 @@ def DeleteAdminExpense_loss(request, expense_id):
                 logger.error(f"Error deleting loss expense via AJAX: {str(e)}")
                 return JsonResponse({'status': 'error', 'message': 'An error occurred while deleting the loss expense'}, status=500)
         else:
+            if not request.user.is_superuser:
+                messages.error(request, 'You do not have permission to access this page.')
+                return redirect('home')
+            expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')
             try:
                 expense.delete()
                 messages.success(request, 'Loss expense deleted successfully')
