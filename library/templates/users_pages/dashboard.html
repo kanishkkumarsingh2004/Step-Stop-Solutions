@@ -10,6 +10,9 @@
             <div class="border-b border-gray-200 pb-4 mb-4">
                 <div class="flex justify-between items-center">
                     <h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
+                    <a href="{% url 'user_attendance' %}" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition duration-200">
+                        View Attendance History
+                    </a>
                 </div>
             </div>
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Your Details</h2>
@@ -107,9 +110,6 @@
                         View All Subscriptions
                     </a>
                 </div>
-                <a href="{% url 'user_attendance' %}" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition duration-200">
-                    View Library Attendance History
-                </a>
             </div>
             
             {% if active_subscriptions %}

@@ -271,6 +271,9 @@ from django.db.models import Prefetch, Q
 
 @login_required
 def manage_users(request, library_id):
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('home')
     library = get_object_or_404(Library, id=library_id)
 
     # Filters from request
@@ -381,10 +384,8 @@ def mark_attendance(request):
             data = json.loads(request.body)
             nfc_serial = data.get("nfc_serial")
             library_id = data.get("library_id")
-            
             if not nfc_serial or not library_id:
                 return JsonResponse({"error": "NFC serial and Library ID are required"}, status=400)
-            
             # Use LibraryCardLog to look up the user by card_id (NFC serial) and library
             card_log = LibraryCardLog.objects.filter(
                 card_id=nfc_serial,
@@ -393,9 +394,7 @@ def mark_attendance(request):
             if not card_log or not card_log.user:
                 return JsonResponse({"error": "User not found for this NFC serial"}, status=404)
             user = card_log.user
-
             library = Library.objects.get(id=library_id)
-             
             current_time = timezone.now()
             active_subscription = UserSubscription.objects.filter(
                 user=user,
@@ -404,16 +403,13 @@ def mark_attendance(request):
             ).first()
             if not active_subscription:
                 return JsonResponse({"error": "User does not have an active subscription"}, status=403)
-            
             latest_attendance = LibraryAttendance.objects.filter(
                 user=user,
                 library=library
             ).order_by('-check_in_time').first()
-            
             # Handle time comparisons with date adjustments
             start_time = active_subscription.start_time
             end_time = active_subscription.end_time
-            
             # Adjust dates based on time comparison
             if start_time > end_time:
                 end_date = active_subscription.start_date + timedelta(days=1)
@@ -421,7 +417,6 @@ def mark_attendance(request):
             else:
                 start_date = active_subscription.start_date
                 end_date = active_subscription.start_date
-            
             # Create datetime objects with adjusted dates
             start_datetime = timezone.make_aware(datetime.combine(
                 start_date,
@@ -435,7 +430,6 @@ def mark_attendance(request):
                 current_time.date(),
                 current_time.time()
             ))
-            
             # Check if current time is within allowed period
             is_within_time = (start_datetime <= current_datetime <= end_datetime)
             check_out_co = 0 if is_within_time else 1
@@ -447,7 +441,6 @@ def mark_attendance(request):
                         "error": "No seats available",
                         "status": "full"
                     }, status=400)
-                
                 # New check-in
                 attendance = LibraryAttendance.objects.create(
                     user=user,
@@ -457,11 +450,9 @@ def mark_attendance(request):
                     check_out_color=0,
                     nfc_id=nfc_serial
                 )
-                
                 # Decrease available seats
                 library.available_seats -= 1
                 library.save()
-                
                 return JsonResponse({
                     "message": f"Checked in: {user.get_full_name()}",
                     "action": "checkin",
@@ -474,11 +465,9 @@ def mark_attendance(request):
                 latest_attendance.check_out_time = current_time
                 latest_attendance.check_out_color = check_out_co
                 latest_attendance.save()
-                
                 # Increase available seats
                 library.available_seats += 1
                 library.save()
-                
                 return JsonResponse({
                     "message": f"Checked out: {user.get_full_name()}",
                     "action": "checkout",
@@ -490,7 +479,6 @@ def mark_attendance(request):
             return JsonResponse({"error": "Library not found"}, status=404)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
-    
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 @login_required
@@ -499,24 +487,19 @@ def confirm_payment(request, plan_id):
         try:
             # Get the subscription plan
             subscription_plan = SubscriptionPlan.objects.get(id=plan_id)
-            
             # Get user-provided transaction ID and start time
             transaction_id = request.POST.get('transaction_id')
             start_time = request.POST.get('start_time')
-            
             # Validate inputs
             if not transaction_id or not start_time:
                 messages.error(request, "Transaction ID and Start Time are required")
                 return redirect('payment', plan_id=plan_id)
-            
             # Check if transaction ID already exists
             if Transaction.objects.filter(transaction_id=transaction_id).exists():
                 messages.error(request, "Transaction ID already exists")
                 return redirect('payment', plan_id=plan_id)
-            
             # Get the final price from the session
             final_price = Decimal(request.session.get('final_price', subscription_plan.normal_price))
-            
             # Create transaction record
             transaction = Transaction.objects.create(
                 user=request.user,
@@ -525,12 +508,10 @@ def confirm_payment(request, plan_id):
                 amount=final_price,
                 status='pending'
             )
-            
             # Calculate end time based on duration in hours
             start_datetime = datetime.combine(timezone.now().date(), 
                                             datetime.strptime(start_time, '%H:%M').time())
             end_datetime = start_datetime + timedelta(hours=subscription_plan.duration_in_hours)
-            
             # Create UserSubscription record with time
             UserSubscription.objects.create(
                 user=request.user,
@@ -540,20 +521,16 @@ def confirm_payment(request, plan_id):
                 start_time=start_time,
                 end_time=end_datetime.time()
             )
-            
             # Clear the session data
             if 'final_price' in request.session:
                 del request.session['final_price']
-
             return redirect('payment_confirmation', transaction_id=transaction.transaction_id)
-            
         except SubscriptionPlan.DoesNotExist:
             messages.error(request, "Subscription plan not found")
             return redirect('payment', plan_id=plan_id)
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
             return redirect('payment', plan_id=plan_id)
-    
     return redirect('home')
 
 @login_required
@@ -583,11 +560,9 @@ def payment_confirmation(request, transaction_id):
 def all_attendance(request, vendor_id):
     # Get the library/vendor
     library = get_object_or_404(Library, id=vendor_id)
-
     # Get all attendance records for this library
     attendances = LibraryAttendance.objects.filter(library=library).order_by('-check_in_time')
-      # This ensures page_obj is always defined
-
+    # This ensures page_obj is always defined
     # Add search functionality
     search_query = request.GET.get('search')
     if search_query:
@@ -595,13 +570,11 @@ def all_attendance(request, vendor_id):
             Q(user__first_name__icontains=search_query) |
             Q(user__last_name__icontains=search_query)
         )
-
     # Calculate duration for each attendance
     for attendance in attendances:
         if attendance.check_in_time and attendance.check_out_time:
             duration = attendance.check_out_time - attendance.check_in_time
             total_seconds = duration.total_seconds()
-
             # Find active subscription
             subscription = UserSubscription.objects.filter(
                 user=attendance.user,
@@ -609,13 +582,11 @@ def all_attendance(request, vendor_id):
                 start_date__lte=attendance.check_in_time.date(),
                 end_date__gte=attendance.check_in_time.date()
             ).first()
-
             if subscription:
                 subscription_duration = subscription.subscription.duration_in_hours * 3600
                 attendance.duration_color = 1 if total_seconds > subscription_duration else 0
             else:
                 attendance.duration_color = 0
-
             # Format duration string correctly
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
@@ -624,22 +595,19 @@ def all_attendance(request, vendor_id):
         else:
             attendance.duration = "00h:00m:00s"
             attendance.duration_color = 0
-
     paginator = Paginator(attendances, 25)  # Show 25 attendances per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
     return render(request, 'library/all_attendence.html', {
         'attendances': page_obj,
         'library': library
     })
-
 @login_required
 def user_attendance(request):
     # Get attendance records for the current user
-    library_attendances = LibraryAttendance.objects.filter(user=request.user).select_related('library')
-    coaching_attendances = CoachingAttendance.objects.filter(user=request.user).select_related('institution')
-
+    library_attendances = list(LibraryAttendance.objects.filter(user=request.user).select_related('library').order_by('-id')[:10])
+    library_attendances = LibraryAttendance.objects.filter(user=request.user).select_related('library')[:10]
+    coaching_attendances = CoachingAttendance.objects.filter(user=request.user).select_related('institution')[:10]
     # Add search functionality
     search_query = request.GET.get('search')
     if search_query:
@@ -651,10 +619,8 @@ def user_attendance(request):
             Q(institution__name__icontains=search_query) |
             Q(institution__address__icontains=search_query)
         )
-
     # Create combined list with type field
     combined_attendances = []
-
     # Process library attendances
     for attendance in library_attendances:
         # Find active subscription
@@ -664,12 +630,10 @@ def user_attendance(request):
             start_date__lte=attendance.check_in_time.date(),
             end_date__gte=attendance.check_in_time.date()
         ).first()
-
         # Set check-in color based on subscription time range
         if subscription:
             start_time = subscription.start_time
             end_time = subscription.end_time
-
             # Adjust dates based on time comparison
             if start_time > end_time:
                 end_date = subscription.start_date + timedelta(days=1)
@@ -677,7 +641,6 @@ def user_attendance(request):
             else:
                 start_date = subscription.start_date
                 end_date = subscription.start_date
-
             # Create datetime objects with adjusted dates
             start_datetime = timezone.make_aware(datetime.combine(
                 start_date,
@@ -691,10 +654,8 @@ def user_attendance(request):
                 attendance.check_in_time.date(),
                 attendance.check_in_time.time()
             ))
-
             # Check if check-in time is within allowed period
             check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
-
             if attendance.check_out_time:
                 check_out_datetime = timezone.make_aware(datetime.combine(
                     attendance.check_out_time.date(),
@@ -706,25 +667,21 @@ def user_attendance(request):
         else:
             check_in_color = 1
             check_out_color = 0
-
         duration = "00h:00m:00s"
         duration_color = 0
         if attendance.check_in_time and attendance.check_out_time:
             duration_delta = attendance.check_out_time - attendance.check_in_time
             total_seconds = duration_delta.total_seconds()
-
             if subscription:
                 subscription_duration = subscription.subscription.duration_in_hours * 3600
                 duration_color = 1 if total_seconds > subscription_duration else 0
             else:
                 duration_color = 0
-
             # Format duration string correctly
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
             duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
-
         combined_attendances.append({
             'id': attendance.id,
             'type': 'library',
@@ -738,7 +695,6 @@ def user_attendance(request):
             'duration_color': duration_color,
             'nfc_id': attendance.nfc_id,
         })
-
     # Process coaching attendances
     for attendance in coaching_attendances:
         # Find active subscription
@@ -748,12 +704,10 @@ def user_attendance(request):
             start_date__lte=attendance.check_in_time.date(),
             end_date__gte=attendance.check_in_time.date()
         ).first()
-
         # Set check-in color based on subscription time range
         if subscription:
             start_time = subscription.start_time
             end_time = subscription.end_time
-
             # Adjust dates based on time comparison
             if start_time > end_time:
                 end_date = subscription.start_date + timedelta(days=1)
@@ -761,7 +715,6 @@ def user_attendance(request):
             else:
                 start_date = subscription.start_date
                 end_date = subscription.start_date
-
             # Create datetime objects with adjusted dates
             start_datetime = timezone.make_aware(datetime.combine(
                 start_date,
@@ -775,10 +728,8 @@ def user_attendance(request):
                 attendance.check_in_time.date(),
                 attendance.check_in_time.time()
             ))
-
             # Check if check-in time is within allowed period
             check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
-
             if attendance.check_out_time:
                 check_out_datetime = timezone.make_aware(datetime.combine(
                     attendance.check_out_time.date(),
@@ -790,25 +741,21 @@ def user_attendance(request):
         else:
             check_in_color = 1
             check_out_color = 0
-
         duration = "00h:00m:00s"
         duration_color = 0
         if attendance.check_in_time and attendance.check_out_time:
             duration_delta = attendance.check_out_time - attendance.check_in_time
             total_seconds = duration_delta.total_seconds()
-
         if subscription:
             subscription_duration = (end_datetime - start_datetime).total_seconds()
             duration_color = 1 if total_seconds > subscription_duration else 0
         else:
             duration_color = 0
-
             # Format duration string correctly
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
             seconds = int(total_seconds % 60)
             duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
-
         combined_attendances.append({
             'id': attendance.id,
             'type': 'coaching',
@@ -822,15 +769,12 @@ def user_attendance(request):
             'duration_color': duration_color,
             'nfc_id': attendance.nfc_id,
         })
-
     # Sort combined attendances by check_in_time descending
     combined_attendances.sort(key=lambda x: x['check_in_time'], reverse=True)
-
     # Paginate
     paginator = Paginator(combined_attendances, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
     return render(request, 'users_pages/user_attendance.html', {
         'attendances': page_obj,
         'search_query': search_query,
@@ -873,7 +817,6 @@ def expense_dashboard(request, library_id):
         'from_date': from_date,
         'to_date': to_date,
     }
-    
     return render(request, 'library/expense.html', context)
 
 @login_required
@@ -893,6 +836,7 @@ def add_expense(request, library_id):
             for error in form.errors.values():
                 messages.error(request, error)
     return redirect('expense_dashboard', library_id=library_id)
+
 def vender_type(request):
     """Render the vendor type selection page"""
     return render(request, 'vender/vender_type.html')
@@ -910,8 +854,7 @@ def register_library(request):
             messages.success(request, "Library registered successfully!")
             return redirect('dashboard')
     else:
-        form = LibraryRegistrationForm()
-    
+        form = LibraryRegistrationForm()    
     return render(request, 'vender/register_library.html', {'form': form})
 
 def register_venders_shop(request):
@@ -940,7 +883,6 @@ def register_institute(request):
         Q(pincode__icontains=query)
     )
     items = list(institutions)
-    
     return render(request, 'users_pages/register_institute.html', {'items': items})
 
 @login_required
@@ -949,7 +891,6 @@ def admin_library_details(request, library_id):
         return redirect('login')
     if not request.user.is_staff:
         raise PermissionDenied("You don't have permission to access this page")
-    
     library = get_object_or_404(Library, id=library_id)
     return render(request, 'admin_page/admin_library_details.html', {
         'library': library,
@@ -985,18 +926,15 @@ def public_library_details(request, library_id):
         'has_reviewed': has_reviewed,
         'average_rating': average_rating,
         'has_active_subscription': has_active_subscription
-
     })
 
 @login_required
 def enroll_library(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     if request.method == 'POST':
         # Add user to library
         library.users.add(request.user)
         return redirect('subscription_page', vendor_id=library.owner.id)
-    
     return render(request, 'library/enroll_library.html', {'library': library})
 
 def enrollment_success(request):
@@ -1006,26 +944,21 @@ def enrollment_success(request):
 def library_dashboard(request, library_id):
     if not request.user.is_authenticated:
         return redirect('login')
-    
     library = get_object_or_404(Library, id=library_id)
     total_seats = library.capacity if library else 0
     available_seats = library.available_seats if library else 0
-    
     # Get unique users who have active subscriptions
     active_users = UserSubscription.objects.filter(
         subscription__library=library,
         end_date__gte=timezone.now().date()
     ).values('user').distinct().count()
-    
     # Get total active subscriptions
     active_subscriptions_count = UserSubscription.objects.filter(
         subscription__library=library,
         end_date__gte=timezone.now().date()
     ).count()
-    
     # Get all subscription plans
     plans = SubscriptionPlan.objects.filter(library=library)
-    
     # Prepare plans data with library-specific UPI details
     plans_data = []
     for plan in plans:
@@ -1039,14 +972,11 @@ def library_dashboard(request, library_id):
             'recipient_name': library.recipient_name,
             'thank_you_message': library.thank_you_message
         })
-    
     upidata = {
         "upi_id": library.upi_id,
         "recipient_name": library.recipient_name,
         "thank_you_message": library.thank_you_message,
     }
-    
-
     return render(request, 'library/library_dashboard.html', {
         'library': library,
         'plans': plans_data,
@@ -1063,12 +993,10 @@ def subscription_page(request, library_id):
         return redirect('login')
     library = get_object_or_404(Library, id=library_id)
     vendor = library.owner
-    
     subscription_plans = SubscriptionPlan.objects.filter(
         user=vendor,
         library=library
     )
-    
     # Calculate percentage difference for each plan
     plans_with_discount = []
     for plan in subscription_plans:
@@ -1079,29 +1007,25 @@ def subscription_page(request, library_id):
         else:
             plan.percentage_difference = 0
         plans_with_discount.append(plan)
-    
     context = {
         'vendor': vendor,
         'library': library,
         'subscription_plans': plans_with_discount
     }
-    
     return render(request, 'library/subscription_page.html', context)
 
 @login_required
 def manage_libraries(request):
     if not request.user.is_staff:
         raise PermissionDenied("You don't have permission to access this page")
-    
     libraries = Library.objects.all().select_related('owner')
-    
+
     # Filter by status
     status = request.GET.get('status')
     if status == 'approved':
         libraries = libraries.filter(is_approved=True)
     elif status == 'unapproved':
         libraries = libraries.filter(is_approved=False)
-    
     # Search by name or owner
     search_query = request.GET.get('search')
     if search_query:
@@ -1112,7 +1036,6 @@ def manage_libraries(request):
             Q(city__icontains=search_query) |
             Q(pincode__icontains=search_query)
         )
-    
     return render(request, 'admin_page/manage_libraries.html', {
         'libraries': libraries,
         'status': status,
@@ -1123,7 +1046,6 @@ def manage_libraries(request):
 def toggle_library_approval(request, library_id):
     if not request.user.is_staff:
         raise PermissionDenied("You don't have permission to perform this action")
-    
     library = get_object_or_404(Library, id=library_id)
     library.is_approved = not library.is_approved
     library.save()
@@ -1135,16 +1057,13 @@ def manage_institutions(request):
         return redirect('login')
     if not request.user.is_staff:
         raise PermissionDenied("You don't have permission to access this page")
-    
     institutions = Institution.objects.all()
-    
     # Filter by status
     status = request.GET.get('status')
     if status == 'approved':
         institutions = institutions.filter(is_approved=True)
     elif status == 'unapproved':
         institutions = institutions.filter(is_approved=False)
-    
     # Search by name or owner
     search_query = request.GET.get('search')
     if search_query:
@@ -1153,7 +1072,6 @@ def manage_institutions(request):
             Q(owner__first_name__icontains=search_query) |
             Q(owner__last_name__icontains=search_query)
         )
-    
     return render(request, 'admin_page/manage_institutions.html', {
         'institutions': institutions,
     })
@@ -1170,11 +1088,9 @@ def create_subscription(request, library_id):
         duration_in_months = request.POST.get('duration_in_months')
         duration_in_hours = request.POST.get('duration_in_hours')
         start_date = timezone.now().date()
-        
         if not all([name, normal_price, duration_in_months, duration_in_hours]):
             messages.error(request, "Please fill in all required fields")
             return redirect('create_subscription', library_id=library.id)
-        
         try:
             SubscriptionPlan.objects.create(
                 user=request.user,
@@ -1191,7 +1107,6 @@ def create_subscription(request, library_id):
         except Exception as e:
             messages.error(request, f"Error creating plan: {str(e)}")
             return redirect('create_subscription', library_id=library.id)
-    
     return render(request, 'library/create_subscription.html', {
         'library': library
     })
@@ -1247,7 +1162,6 @@ def payment_page(request, plan_id):
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     qr_code = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
     # Prepare context for template
     context = {
         'plan': plan,
@@ -1259,7 +1173,6 @@ def payment_page(request, plan_id):
         'recipient_name': recipient_name,
         'discount_amount': discount_amount
     }
-
     return render(request, 'users_pages/payment.html', context)
 
 @login_required
@@ -1326,7 +1239,6 @@ def subscription_details(request, subscription_id):
     else:
         payment_status = 'pending'
         payment_color = 'yellow'
-
     context = {
         'subscription': subscription,
         'transactions': transactions,
@@ -1432,22 +1344,18 @@ def update_subscription_start_date(request, subscription_id):
 def update_subscription_end_date(request, subscription_id):
     if request.method == 'POST':
         new_end_date_str = request.POST.get('end_date')
-
         if not new_end_date_str:
             messages.error(request, "New end date is required.")
             return redirect('dashboard')
-
         new_end_date = parse_date(new_end_date_str)
         if not new_end_date:
             messages.error(request, "Invalid date format for end date.")
             return redirect('dashboard')
-
         try:
             subscription = get_object_or_404(UserSubscription, id=subscription_id)
             if subscription.start_date and new_end_date < subscription.start_date:
                 messages.error(request, "End date cannot be earlier than start date.")
                 return redirect('verify_payments', library_id=subscription.subscription.library.id)
-
             subscription.end_date = new_end_date
             subscription.save()
             messages.success(request, "Subscription end date updated successfully.")
@@ -1458,7 +1366,6 @@ def update_subscription_end_date(request, subscription_id):
         except Exception as e:
             messages.error(request, f"Error updating end date: {str(e)}")
             logger.error(f"Error updating subscription end date: {e}", exc_info=True)
-
         return redirect('verify_payments', library_id=subscription.subscription.library.id)
     else:
         messages.error(request, "Invalid request method.")
@@ -1467,21 +1374,17 @@ def update_subscription_end_date(request, subscription_id):
 @login_required
 def edit_library_profile(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     if request.method == 'POST':
         # Get the new capacity value
         new_capacity = int(request.POST.get('capacity'))
         old_capacity = library.capacity
-        
         # Calculate the difference between new and old capacity
         capacity_diff = new_capacity - old_capacity
-        
         # Update available seats based on capacity change
         if capacity_diff > 0:
             library.available_seats += capacity_diff
         elif capacity_diff < 0:
             library.available_seats += capacity_diff
-        
         # Only update allowed fields
         library.address = request.POST.get('address')
         library.description = request.POST.get('description')
@@ -1500,7 +1403,6 @@ def edit_library_profile(request, library_id):
         library.save()
         messages.success(request, 'Library profile updated successfully!')
         return redirect('library_dashboard', library_id=library.id)
-    
     return render(request, 'library/edit_library_profile.html', {'form': library})
 
 @login_required
@@ -1512,10 +1414,8 @@ def allocate(request):
             nfc_serial = data.get("nfc_serial")
             user_id = data.get("user_id")
             library_id = data.get("library_id")
-
             if not nfc_serial or not user_id or not library_id:
                 return JsonResponse({'error': 'NFC serial, user ID, and library ID are required'}, status=400)
-
             # Check if card exists and is allocated to this library
             try:
                 card = AdminCard.objects.get(card_id=nfc_serial)
@@ -1526,14 +1426,11 @@ def allocate(request):
             if card.library.id != int(library_id):
                 return JsonResponse({'error': 'This card is allocated to a different library'}, status=400)
             # If we reach here, card is allocated to this library, so allow allocation to user
-
             # Check if user already has a card (by mapping)
             if LibraryCardLog.objects.filter(user_id=user_id, library_id=library_id, card_id=nfc_serial).exists():
                 return JsonResponse({'error': 'This user already has this card allocated in this library'}, status=400)
-
             user = CustomUser.objects.get(id=user_id)
             library = Library.objects.get(id=library_id)
-
             # Allocate card (create the mapping)
             with transaction.atomic():
                 LibraryCardLog.objects.create(
@@ -1571,7 +1468,6 @@ def deallocate_nfc(request):
                 return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
             if card.library is None:
                 return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
-
             # Find the user to deallocate (latest mapping)
             last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
             user_to_deallocate = last_log.user if last_log else None
@@ -3211,90 +3107,152 @@ def admin_graphs(request):
 
 @login_required
 def Manage_Admin_loss(request):
+    if not request.user.is_superuser:
+        return redirect('home')
     if request.method == 'POST':
-        try:
-            name = request.POST.get('expense_name')
-            amount = request.POST.get('amount')
-            date = request.POST.get('date')
-            description = request.POST.get('description')
-            
-            # Basic validation
-            if not all([name, amount, date]):
-                messages.error(request, 'All fields are required')
-                return redirect('Manage_Admin_Loss')  # Fixed: Self-redirect to loss page
-            
-            # Create new expense with type set to Loss (add type conversion if amount/date need it)
-            AdminExpense.objects.create(
-                name=name,
-                amount=float(amount),  # Assumes DecimalField or FloatField; adjust as needed
-                date=date,
-                description=description or '',  # Handle empty description
-                type='Loss',
-                created_by=request.user
-            )
-            messages.success(request, 'Loss expense added successfully')
-            return redirect('Manage_Admin_Loss')  # Fixed: Self-redirect
-            
-        except Exception as e:
-            logger.error(f"Error adding loss expense: {str(e)}")
-            messages.error(request, 'An error occurred while adding the loss expense')
-            return redirect('Manage_Admin_Loss')  # Fixed: Self-redirect
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            try:
+                data = json.loads(request.body)
+                name = data.get('expense_name')
+                amount = data.get('amount')
+                date_str = data.get('date')
+                description = data.get('description', '')
 
-    # GET: Display losses
+                if not all([name, amount, date_str]):
+                    return JsonResponse({'status': 'error', 'message': 'All fields are required'}, status=400)
+
+                date_obj = parse_date(date_str)
+                if not date_obj:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid date format'}, status=400)
+
+                expense = AdminExpense.objects.create(
+                    name=name,
+                    amount=float(amount),
+                    date=date_obj,
+                    description=description,
+                    type='Loss',
+                    created_by=request.user
+                )
+                expense_data = {
+                    'id': expense.id,
+                    'name': expense.name,
+                    'amount': str(expense.amount),
+                    'date': expense.date.strftime('%Y-%m-%d'),
+                    'description': expense.description
+                }
+                return JsonResponse({'status': 'success', 'expense': expense_data})
+            except Exception as e:
+                logger.error(f"Error adding loss expense via AJAX: {str(e)}")
+                return JsonResponse({'status': 'error', 'message': 'An error occurred while adding the loss expense'}, status=500)
+        else:
+            try:
+                name = request.POST.get('expense_name')
+                amount = request.POST.get('amount')
+                date_str = request.POST.get('date')
+                description = request.POST.get('description')
+
+                if not all([name, amount, date_str]):
+                    messages.error(request, 'All fields are required')
+                    return redirect('Manage_Admin_Loss')
+
+                date_obj = parse_date(date_str)
+                if not date_obj:
+                    messages.error(request, 'Invalid date format')
+                    return redirect('Manage_Admin_Loss')
+
+                AdminExpense.objects.create(
+                    name=name,
+                    amount=float(amount),
+                    date=date_obj,
+                    description=description or '',
+                    type='Loss',
+                    created_by=request.user
+                )
+                messages.success(request, 'Loss expense added successfully')
+                return redirect('Manage_Admin_Loss')
+            except Exception as e:
+                logger.error(f"Error adding loss expense: {str(e)}")
+                messages.error(request, 'An error occurred while adding the loss expense')
+                return redirect('Manage_Admin_Loss')
+
     expenses = AdminExpense.objects.filter(type='Loss').order_by('-date')
     total_losses = expenses.aggregate(total=Sum('amount'))['total'] or 0
     context = {
         'page_title': 'Manage Admin Losses',
         'expenses': expenses,
-        'total_losses': total_losses,  # Renamed for clarity
+        'total_losses': total_losses,
         'today': timezone.now().date()
     }
     return render(request, 'admin_page/manage_admin_loss.html', context)
 
 @login_required
 def EditAdminExpense_loss(request, expense_id):
-    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')  # Ensure we're only editing Loss type expenses
+    if not request.user.is_superuser:
+        return redirect('home')
+    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')
     if request.method == 'POST':
-        try:
-            # Get form data
-            name = request.POST.get('expense_name')
-            amount = request.POST.get('amount')
-            date = request.POST.get('date')
-            description = request.POST.get('description')
-            
-            # Basic validation
-            if not all([name, amount, date]):
-                return JsonResponse({'status': 'error', 'message': 'All fields are required'}, status=400)
-            
-            # Update expense
-            expense.name = name
-            expense.amount = amount
-            expense.date = date
-            expense.description = description
-            expense.save()
-            
-            return JsonResponse({'status': 'success'})
-        except Exception as e:
-            logger.error(f"Error updating expense: {str(e)}")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            try:
+                data = json.loads(request.body)
+                name = data.get('expense_name')
+                amount = data.get('amount')
+                date_str = data.get('date')
+                description = data.get('description', '')
+
+                if not all([name, amount, date_str]):
+                    return JsonResponse({'status': 'error', 'message': 'All fields are required'}, status=400)
+
+                date_obj = parse_date(date_str)
+                if not date_obj:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid date format'}, status=400)
+
+                expense.name = name
+                expense.amount = float(amount)
+                expense.date = date_obj
+                expense.description = description
+                expense.save()
+
+                expense_data = {
+                    'id': expense.id,
+                    'name': expense.name,
+                    'amount': str(expense.amount),
+                    'date': expense.date.strftime('%Y-%m-%d'),
+                    'description': expense.description
+                }
+                return JsonResponse({'status': 'success', 'expense': expense_data})
+            except Exception as e:
+                logger.error(f"Error updating expense via AJAX: {str(e)}")
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
 
 @login_required
 def DeleteAdminExpense_loss(request, expense_id):
-    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')  # Ensure we're only deleting Loss type expenses
+    if not request.user.is_superuser:
+        return redirect('home')
+    expense = get_object_or_404(AdminExpense, id=expense_id, type='Loss')
     if request.method == 'POST':
-        try:
-            expense.delete()
-            messages.success(request, 'Loss expense deleted successfully')
-            return redirect('Manage_Admin_Loss')  # Fixed: Redirect to loss page
-        except Exception as e:
-            logger.error(f"Error deleting loss expense: {str(e)}")
-            messages.error(request, 'An error occurred while deleting the loss expense')
-            return redirect('Manage_Admin_Loss')  # Fixed: Redirect to loss page
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            try:
+                expense.delete()
+                return JsonResponse({'status': 'success'})
+            except Exception as e:
+                logger.error(f"Error deleting loss expense via AJAX: {str(e)}")
+                return JsonResponse({'status': 'error', 'message': 'An error occurred while deleting the loss expense'}, status=500)
+        else:
+            try:
+                expense.delete()
+                messages.success(request, 'Loss expense deleted successfully')
+                return redirect('Manage_Admin_Loss')
+            except Exception as e:
+                logger.error(f"Error deleting loss expense: {str(e)}")
+                messages.error(request, 'An error occurred while deleting the loss expense')
+                return redirect('Manage_Admin_Loss')
     else:
         messages.error(request, 'Invalid request method')
-        return redirect('Manage_Admin_Loss')  # Fixed: Redirect to loss page
-    
+        return redirect('Manage_Admin_Loss')
 
 @login_required
 def Manage_Admin_profit(request):
@@ -3712,24 +3670,19 @@ def library_receipt(request, user_id, transaction_id):
         user_obj = User.objects.get(id=user_id)
         # Get all transactions for this user with the given transaction_id
         all_transactions = Transaction.objects.filter(
-            user=user_obj, 
+            user=user_obj,
             transaction_id__icontains=transaction_id
         ).order_by('-created_at')
-        
         if not all_transactions.exists():
             return render(request, 'library/receipt.html', {'error': 'Transaction not found'})
-
         # Get the library from the first transaction
         library = all_transactions.first().subscription.library if all_transactions.first().subscription.library else None
-        
         # Calculate total amount
         total_amount = all_transactions.aggregate(total=Sum('amount'))['total']
         if total_amount is None:
             total_amount = 0
-        
         # Convert amount to words
         amount_in_words = convert_amount_to_words(total_amount)
-        
         context = {
             'user': user_obj,
             'transactions': all_transactions,
@@ -3738,25 +3691,19 @@ def library_receipt(request, user_id, transaction_id):
             'library_name': library.venue_name if library else 'Library',
             'library_address': library.venue_location if library else '',
         }
-        
         return render(request, 'library/receipt.html', context)
-        
     except User.DoesNotExist:
         return render(request, 'library/receipt.html', {'error': 'User not found'})
-
 
 def convert_amount_to_words(amount):
     """Convert amount to words for receipt"""
     if amount == 0:
         return "Zero Rupees"
-    
     units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
     teens = ["", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
     tens = ["", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
-    
     in_words = ""
     amount_int = int(amount)
-    
     def num_to_words_hundreds(n):
         s = ""
         if n >= 100:
@@ -3771,18 +3718,14 @@ def convert_amount_to_words(amount):
         if n >= 1:
             s += units[n] + " "
         return s
-
     lakhs = amount_int // 100000
     thousands = (amount_int % 100000) // 1000
     hundreds = amount_int % 1000
-    
     if lakhs > 0:
         in_words += num_to_words_hundreds(lakhs) + "Lakh "
     if thousands > 0:
         in_words += num_to_words_hundreds(thousands) + "Thousand "
     if hundreds > 0:
         in_words += num_to_words_hundreds(hundreds)
-    
     in_words = in_words.strip() + " Rupees Only"
-    
     return in_words

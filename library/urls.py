@@ -184,8 +184,8 @@ urlpatterns = [
    # Admin Graphs
    path('admin-graphs/', views.admin_graphs, name='admin_graphs'),
    path('manage-admin-loss/', views.Manage_Admin_loss, name='Manage_Admin_Loss'),
-   path('edit-admin-loss/<int:expense_id>/', views.EditAdminExpense_loss, name='edit_admin_expense'),
-   path('delete-admin-loss/<int:expense_id>/', views.DeleteAdminExpense_loss, name='delete_admin_expense'),
+   path('edit-admin-expense/<int:expense_id>/', views.EditAdminExpense_loss, name='edit_admin_expense'),
+   path('delete-admin-expense/<int:expense_id>/', views.DeleteAdminExpense_loss, name='delete_admin_expense'),
 
    path('manage-admin-profit/', views.Manage_Admin_profit, name='Manage_Admin_Profit'),
 
