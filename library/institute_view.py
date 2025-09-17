@@ -1927,7 +1927,6 @@ def allocate_card_to_institution_page(request, uid):
         users_with_status.append({
             'user': user
         })
-        print(f"User: {users_with_status}")
     context = {
         'institution': institution,
         'users_with_status': users_with_status
@@ -2346,7 +2345,6 @@ def mark_institute_attendance(request):
 
             current_time = timezone.now()
             ist_time = current_time + timedelta(hours=5, minutes=30)
-            # print(end_datetime, start_datetime, current_datetime, is_within_time, check_in_color, check_out_color, duration_color)
             if not (latest_attendance := CoachingAttendance.objects.filter(
                 user=user,
                 institution=institution

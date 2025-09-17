@@ -1,14 +1,9 @@
-# TODO: Merge CoachingAttendance with LibraryAttendance in User Attendance View
+# Task: Add new column for total users with allocated cards in Library Card Allocation Counts page
 
-## Tasks
-- [x] Import CoachingAttendance in views.py
-- [x] Modify user_attendance function to fetch both LibraryAttendance and CoachingAttendance
-- [x] Create combined list with 'type' field ('library' or 'coaching')
-- [x] Sort combined list by check_in_time descending
-- [x] Update search logic for both library and coaching records
-- [x] Handle duration and color calculations for both types
-- [x] Apply pagination to combined sorted list
-- [x] Update user_attendance.html template to display attendance type
-- [ ] Test the merged view functionality
-- [ ] Verify search works for both types
-- [ ] Check pagination on combined results
+## Completed Tasks
+- [x] Updated `allocate_card_count` view in `my_library/library/views.py` to annotate libraries with `total_users_with_cards` count using `Count('card_allocation_logs__user', distinct=True)`
+- [x] Added new column header "Total Users with Cards" in `my_library/library/templates/admin_page/allocate_card_count.html`
+- [x] Added corresponding table cell to display `{{ library.total_users_with_cards }}` in the template
+
+## Summary
+The admin panel Library Card Allocation Counts page now displays an additional column showing the total number of users who have been allocated cards for each library. This is calculated by counting distinct users from the LibraryCardLog model for each library.

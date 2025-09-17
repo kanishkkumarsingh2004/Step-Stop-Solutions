@@ -12,6 +12,7 @@
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Library Name</th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Name</th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Allocated Cards</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Users with Cards</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -20,6 +21,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ library.venue_name }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ library.owner.get_full_name }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ library.allocated_cards_count }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ library.total_users_with_cards }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

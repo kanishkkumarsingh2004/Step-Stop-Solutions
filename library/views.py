@@ -3138,15 +3138,17 @@ def deallocate_card(request, card_id):
 @login_required
 def allocate_card_count(request):
     libraries = Library.objects.annotate(
-        allocated_cards_count=Count('admin_cards', distinct=True)
+        allocated_cards_count=Count('admin_cards', distinct=True),
+        total_users_with_cards=Count('card_allocation_logs__user', distinct=True)
     ).order_by('venue_name')
-    
+
     library_data = [{
         'venue_name': library.venue_name,
         'allocated_cards_count': library.allocated_cards_count,
+        'total_users_with_cards': library.total_users_with_cards,
         'owner': library.owner
     } for library in libraries]
-    
+
     return render(request, 'admin_page/allocate_card_count.html', {
         'libraries': library_data
     })
