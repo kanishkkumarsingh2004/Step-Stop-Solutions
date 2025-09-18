@@ -83,7 +83,7 @@
                     </div>
                 </div>
 
-                    {% if transaction.user_subscription %}
+                {% if transaction.user_subscription %}
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-white/60 p-3 rounded-lg">
                             <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</div>
@@ -223,6 +223,42 @@
             </div>
             <h3 class="text-lg font-semibold text-slate-900 mb-2">No Transactions Found</h3>
             <p class="text-slate-600 max-w-md mx-auto">There are no transactions matching your current filters. Try adjusting your search criteria or filter settings.</p>
+        </div>
+        {% endif %}
+
+        <!-- Pagination Controls -->
+        {% if page_obj.has_other_pages %}
+        <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+            <div class="text-sm text-slate-700">
+                Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} transactions
+            </div>
+            <div class="flex items-center space-x-2">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+                   class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <i class="bi bi-chevron-left mr-1"></i>Previous
+                </a>
+                {% else %}
+                <span class="px-4 py-2 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed">
+                    <i class="bi bi-chevron-left mr-1"></i>Previous
+                </span>
+                {% endif %}
+
+                <span class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+                   class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md">
+                    Next<i class="bi bi-chevron-right ml-1"></i>
+                </a>
+                {% else %}
+                <span class="px-4 py-2 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed">
+                    Next<i class="bi bi-chevron-right ml-1"></i>
+                </span>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
     </div>
