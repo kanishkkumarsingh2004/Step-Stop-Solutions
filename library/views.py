@@ -2772,7 +2772,11 @@ def get_permissions(request, library_id, staff_id):
 def library_user_details(request, library_id, user_id):
     library = get_object_or_404(Library, id=library_id)
     user = get_object_or_404(CustomUser, id=user_id)
-
+    
+    # Check if user has permission to view this user's details
+    if not request.user.has_perm('library.view_user_details'):
+        return redirect('home')
+    
     return render(request, 'library/user_details.html', {
         'user': user,
         'library': library
