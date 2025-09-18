@@ -18,18 +18,24 @@
                 <div class="space-y-1">
                     <label class="block text-sm font-medium text-gray-500">Full Name</label>
                     <p class="text-base font-medium text-gray-900">{{ user.get_full_name }}</p>
+                    <label class="block text-sm font-medium text-gray-500 mt-2">Mobile Number</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.mobile_number }}</p>
                 </div>
                 <div class="space-y-1">
                     <label class="block text-sm font-medium text-gray-500">Email Address</label>
                     <p class="text-base font-medium text-gray-900">{{ user.email }}</p>
                 </div>
                 <div class="space-y-1">
-                    <label class="block text-sm font-medium text-gray-500">Mobile Number</label>
-                    <p class="text-base font-medium text-gray-900">{{ user.mobile_number }}</p>
-                </div>
-                <div class="space-y-1">
                     <label class="block text-sm font-medium text-gray-500">Emergency Contact</label>
                     <p class="text-base font-medium text-gray-900">{{ user.emergency_number }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Date of Birth</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.dob|date:"d/m/Y" }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Age</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.age }}</p>
                 </div>
                 <div class="space-y-1">
                     <label class="block text-sm font-medium text-gray-500">Gender</label>
@@ -39,15 +45,89 @@
                     <label class="block text-sm font-medium text-gray-500">User Category</label>
                     <p class="text-base font-medium text-gray-900">{{ user.get_category_display }}</p>
                 </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Education</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.get_education_display }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">SSID</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.ssid }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Is Vendor</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.is_vendor|yesno:"Yes,No" }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Is Checked In</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.is_checked_in|yesno:"Yes,No" }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Accepted Terms</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.accepted_terms|yesno:"Yes,No" }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Accepted Privacy Policy</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.accepted_privacy_policy|yesno:"Yes,No" }}</p>
+                </div>
             </div>
         </div>
 
         <!-- Address Information Section -->
         <div class="px-6 py-5 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-800">Address Information</h2>
-            <div class="mt-4 space-y-1">
-                <label class="block text-sm font-medium text-gray-500">Residential Address</label>
-                <p class="text-base font-medium text-gray-900">{{ user.address }}</p>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Residential Address</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.address }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Pincode</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.pincode }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">District</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.district }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">City</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.city }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">State</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.state }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Libraries Section -->
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800">Associated Libraries</h2>
+            <div class="mt-4">
+                {% if user.library.all %}
+                    <ul class="list-disc list-inside space-y-1">
+                        {% for lib in user.library.all %}
+                            <li class="text-base font-medium text-gray-900">{{ lib.venue_name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-base font-medium text-gray-900">No associated libraries</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Vendor SSIDs Section -->
+        <div class="px-6 py-5">
+            <h2 class="text-xl font-semibold text-gray-800">Vendor SSIDs</h2>
+            <div class="mt-4">
+                {% if user.vendor_ssids.all %}
+                    <ul class="list-disc list-inside space-y-1">
+                        {% for ssid in user.vendor_ssids.all %}
+                            <li class="text-base font-medium text-gray-900">{{ ssid.ssid }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-base font-medium text-gray-900">No vendor SSIDs</p>
+                {% endif %}
             </div>
         </div>
     </div>

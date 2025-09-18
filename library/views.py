@@ -1720,9 +1720,18 @@ def search_user(request):
         except CustomUser.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'User with this SSID not found'}, status=404)
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+from django.core.paginator import Paginator
+
 def all_users(request):
-    users = CustomUser.objects.all()
-    return render(request, 'admin_page/all_users.html', {'users': users})
+    users_list = CustomUser.objects.all().order_by('id')
+    paginator = Paginator(users_list, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    start_index = (page_obj.number - 1) * paginator.per_page
+    return render(request, 'admin_page/all_users.html', {
+        'page_obj': page_obj,
+        'start_index': start_index
+    })
 
 @login_required
 def all_libraries(request):
@@ -3403,17 +3412,19 @@ def allocate_card_to_institution(request):
 def institution_card_count(request):
     if not request.user.is_staff:
         return redirect('home')
-    
+
     institutions = Institution.objects.annotate(
-        allocated_cards_count=Count('admin_cards', distinct=True)
+        allocated_cards_count=Count('admin_cards', distinct=True),
+        total_users_with_cards=Count('card_allocation_logs__user', distinct=True)
     ).order_by('name')
-    
+
     institution_data = [{
         'name': institution.name,
         'allocated_cards_count': institution.allocated_cards_count,
+        'total_users_with_cards': institution.total_users_with_cards,
         'owner': institution.owner
     } for institution in institutions]
-    
+
     return render(request, 'admin_page/institution_card_count.html', {
         'institutions': institution_data
     })
@@ -3680,10 +3691,7 @@ def library_receipt(request, user_id, transaction_id):
     try:
         user_obj = User.objects.get(id=user_id)
         # Get all transactions for this user with the given transaction_id
-        all_transactions = Transaction.objects.filter(
-            user=user_obj,
-            transaction_id__icontains=transaction_id
-        ).order_by('-created_at')
+        all_transactions = Transaction.objects.filter(user=user_obj, transaction_id__icontains=transaction_id).order_by('-created_at')
         if not all_transactions.exists():
             return render(request, 'library/receipt.html', {'error': 'Transaction not found'})
         # Get the library from the first transaction

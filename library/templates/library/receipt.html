@@ -77,13 +77,13 @@
 
     <div class="mt-8">
         <div class="flex justify-end">
-            <div class="w-full max-w-xs">
+            <div class="flex flex-row justify-between items-center w-full max-w-2xl mx-auto space-x-8">
+                <div class="py-2 text-md font-medium text-gray-700">
+                    <p class="italic"><strong class="font-semibold">Amount in Words:</strong> {{ amount_in_words }}</p>
+                </div>
                 <div class="flex justify-between items-center py-2 border-t border-gray-200 text-lg font-semibold text-gray-700">
                     <span>Total Amount:</span>
                     <span class="text-green-600">₹ {{ total_amount|floatformat:2 }}</span>
-                </div>
-                <div class="py-2 text-md font-medium text-gray-700">
-                    <p class="italic"><strong class="font-semibold">Amount in Words:</strong> {{ amount_in_words }}</p>
                 </div>
             </div>
         </div>
@@ -92,6 +92,7 @@
     <div class="flex justify-between items-center mt-12 pt-4 border-t border-gray-200">
         <div>
             <p class="text-gray-500 text-sm">Thank you for your trust and business!</p>
+            <p class="text-gray-500 text-sm">This is a computer generated receipt and does not require a physical signature.</p>
         </div>
         <div class="text-right">
             <p class="text-gray-800 font-semibold border-t-2 border-gray-400 pt-2">Authorized Signature</p>
