@@ -89,9 +89,8 @@ class LibraryAdmin(admin.ModelAdmin):
         }),
         ('Business Details', {
             'fields': (
-                'business_type', 
-                'social_media_links', 
-                'business_hours', 
+                'business_type',
+                'social_media_links',
                 'capacity'
             )
         }),
