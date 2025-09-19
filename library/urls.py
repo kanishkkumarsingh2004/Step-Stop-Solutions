@@ -188,6 +188,8 @@ urlpatterns = [
    path('delete-admin-expense/<int:expense_id>/', views.DeleteAdminExpense_loss, name='delete_admin_expense'),
 
    path('manage-admin-profit/', views.Manage_Admin_profit, name='Manage_Admin_Profit'),
+   path('edit-admin-profit/<int:expense_id>/', views.EditAdminExpense_profit, name='edit_admin_profit'),
+   path('delete-admin-profit/<int:expense_id>/', views.DeleteAdminExpense_profit, name='delete_admin_profit'),
 
    path('balance-sheet/', views.balance_sheet, name='balance_sheet'),
 

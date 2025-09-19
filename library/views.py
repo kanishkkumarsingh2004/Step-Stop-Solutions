@@ -46,6 +46,7 @@ from .models import (
     InstitutionCardLog,
     CoachingAttendance
 )
+from .functions import convert_amount_to_words
 import json
 import base64
 from io import BytesIO
@@ -1477,7 +1478,6 @@ def deallocate_nfc(request):
             # Find the user to deallocate (latest mapping)
             last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
             user_to_deallocate = last_log.user if last_log else None
-
             # Remove the mapping (delete the entry)
             if user_to_deallocate:
                 LibraryCardLog.objects.filter(library=card.library, user=user_to_deallocate, card_id=nfc_serial).delete()
@@ -1531,7 +1531,6 @@ def check_nfc_allocation(request):
         except Exception as e:
             logger.error(f"Error checking card allocation: {str(e)}")
             return False
-
     if request.method == 'POST':
         try:
             # Validate content type
@@ -1623,7 +1622,6 @@ def disclaimer(request):
 def staff_management(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     staff_members = library.staff.all()
-    
     # Get VendorSSID permissions for each staff member
     staff_data = []
     for staff in staff_members:
@@ -1633,47 +1631,36 @@ def staff_management(request, library_id):
             'staff': staff,
             'permissions': permissions
         })
-    
     return render(request, 'library/staff_management.html', {
         'library': library,
         'staff_members': staff_members,
         'staff_data': staff_data
-
     })
 
 @login_required
 def add_staff(request, library_id):
     if request.method == 'POST':
         library = get_object_or_404(Library, id=library_id)
-        
         # Ensure only the library owner can add staff
         if request.user != library.owner:
             return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
-        
         ssid = request.POST.get('ssid')
         permissions = request.POST.getlist('permissions[]')  # Get selected permissions
-        
         if not ssid:
             return JsonResponse({'success': False, 'message': 'SSID is required'}, status=400)
-        
         try:
             user = CustomUser.objects.get(ssid=ssid)
-            
             # Check if user is already a staff member
             if user in library.staff.all():
                 return JsonResponse({'success': False, 'message': 'User is already a staff member'})
-            
             # Add user to staff and update vendor relationship
-            library.staff.add(user)
-            
+            library.staff.add(user) 
             # Store vendor's SSID and permissions in the user's vendor_ssids field
             if not user.vendor_ssids:
                 user.vendor_ssids = f"{request.user.ssid}:{','.join(permissions)}"
             else:
                 user.vendor_ssids += f",{request.user.ssid}:{','.join(permissions)}"
-            
             user.save()
-            
             return JsonResponse({
                 'success': True,
                 'message': f'{user.get_full_name()} added as staff',
@@ -1683,10 +1670,8 @@ def add_staff(request, library_id):
                     'permissions': permissions
                 }
             })
-            
         except CustomUser.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'User with this SSID not found'}, status=404)
-    
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
 @login_required
@@ -1694,21 +1679,15 @@ def get_staff(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     if request.user != library.owner:
         return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
-    
     staff = library.staff.all()
     staff_data = [{
         'full_name': user.get_full_name(),
         'ssid': user.ssid
     } for user in staff]
-    
     return JsonResponse({'staff': staff_data})
 
 @login_required
 def search_user(request):
-    """
-    Search for a user by SSID (for staff management page).
-    Returns a single user if found, or an error message.
-    """
     if request.method == 'POST':
         ssid = request.POST.get('ssid', '').strip()
         if not ssid:
@@ -1755,7 +1734,6 @@ def user_details(request, user_id):
 def admin_full_info_library_details(request, library_id):
     if not request.user.is_staff:
         raise PermissionDenied("You don't have permission to access this page")
-    
     try:
         library = Library.objects.get(id=library_id)
         return render(request, 'admin_page/library_details.html', {'library': library})
@@ -1769,17 +1747,13 @@ def apply_for_vendor(request):
 @login_required
 def manage_subscriptions(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     # Check if the user is the owner
     if request.user != library.owner:
         raise PermissionDenied("You don't have permission to manage subscriptions for this library")
-    
     subscriptions = SubscriptionPlan.objects.filter(library=library)
-    
     if request.method == 'POST':
         action = request.POST.get('action')
         subscription_id = request.POST.get('subscription_id')
-        
         if action == 'delete':
             try:
                 subscription = SubscriptionPlan.objects.get(id=subscription_id, library=library)
@@ -1787,7 +1761,6 @@ def manage_subscriptions(request, library_id):
                 messages.success(request, "Subscription deleted successfully!")
             except SubscriptionPlan.DoesNotExist:
                 messages.error(request, "Subscription not found")
-        
         elif action == 'edit':
             try:
                 subscription = SubscriptionPlan.objects.get(id=subscription_id, library=library)
@@ -1820,11 +1793,9 @@ def deallocate_nfc(request):
                 return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
             if card.library is None:
                 return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
-
             # Find the user to deallocate (latest mapping)
             last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
             user_to_deallocate = last_log.user if last_log else None
-
             # Remove the mapping (delete the entry)
             if user_to_deallocate:
                 LibraryCardLog.objects.filter(library=card.library, user=user_to_deallocate, card_id=nfc_serial).delete()
@@ -1839,16 +1810,13 @@ def expense_chart(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     if request.user != library.owner:
         raise PermissionDenied("You don't have permission to edit this library profile")
-    
     # Get filter parameters
     period = request.GET.get('period')
     from_date = request.GET.get('from_date')
     to_date = request.GET.get('to_date')
-    
     # Initialize date range
     start_date = None
     end_date = None
-    
     # Set date range based on period if provided
     if period:
         today = timezone.now().date()
@@ -1864,49 +1832,39 @@ def expense_chart(request, library_id):
     elif from_date and to_date:
         start_date = from_date
         end_date = to_date
-
     # Get expenses and transactions data
     expenses = Expense.objects.filter(library=library)
     transactions = Transaction.objects.filter(subscription__library=library)
-    
     # Apply date filters if provided
     if start_date and end_date:
         expenses = expenses.filter(date__range=[start_date, end_date])
         transactions = transactions.filter(created_at__range=[start_date, end_date])
-    
     # Calculate transaction data
     total_earnings = float(transactions.aggregate(total=Sum('amount'))['total'] or 0)
     valid_transactions = float(transactions.filter(status='valid').aggregate(total=Sum('amount'))['total'] or 0)
     invalid_transactions = float(transactions.filter(status='invalid').aggregate(total=Sum('amount'))['total'] or 0)
     total_expenses = float(expenses.aggregate(total=Sum('amount'))['total'] or 0)
     total_profit = valid_transactions - total_expenses
-
     # Prepare data for charts
     expense_data = expenses.values('expense_name').annotate(total=Sum('amount'))
     expense_categories = [item['expense_name'] for item in expense_data]
     expense_amounts = [float(item['total']) for item in expense_data]
-    
     # Prepare data for line chart
     date_data = expenses.values('date').annotate(total=Sum('amount')).order_by('date')
     date_labels = [item['date'].strftime('%Y-%m-%d') for item in date_data]
     date_amounts = [float(item['total']) for item in date_data]
-
     # Prepare pie chart data
     pie_data = {
         'labels': ['Total Expenses', 'Valid Transactions', 'Invalid Transactions'],
         'values': [total_expenses, valid_transactions, invalid_transactions]
     }
-
     # Prepare profit data
     profit_data = transactions.values('created_at__date').annotate(
         income=Sum('amount', filter=Q(status='valid')),
         expense=Sum('amount', filter=Q(status='invalid'))
     ).order_by('created_at__date')
-    
     profit_labels = [item['created_at__date'].strftime('%Y-%m-%d') for item in profit_data]
     profit_values = [float(item['income'] or 0) - float(item['expense'] or 0) for item in profit_data]
-    
-
     context = {
         'library': library,
         'total_earnings': total_earnings,
@@ -1924,17 +1882,14 @@ def expense_chart(request, library_id):
         'from_date': from_date,
         'to_date': to_date,
     }
-    
     return render(request, 'library/expense_charts.html', context)
 
 @login_required
 def edit_expense(request, library_id, expense_id):
     library = get_object_or_404(Library, id=library_id)
     expense = get_object_or_404(Expense, id=expense_id, library=library)
-    
     if request.user != library.owner:
         raise PermissionDenied("You don't have permission to edit this expense")
-    
     if request.method == 'POST':
         form = ExpenseForm(request.POST, instance=expense)
         if form.is_valid():
@@ -1943,7 +1898,6 @@ def edit_expense(request, library_id, expense_id):
             return redirect('expense_dashboard', library_id=library_id)
     else:
         form = ExpenseForm(instance=expense)
-    
     context = {
         'form': form,
         'library': library,
@@ -1955,15 +1909,12 @@ def edit_expense(request, library_id, expense_id):
 def delete_expense(request, library_id, expense_id):
     library = get_object_or_404(Library, id=library_id)
     expense = get_object_or_404(Expense, id=expense_id, library=library)
-    
     if request.user != library.owner:
         raise PermissionDenied("You don't have permission to delete this expense")
-    
     if request.method == 'POST':
         expense.delete()
         messages.success(request, "Expense deleted successfully")
         return redirect('expense_dashboard', library_id=library_id)
-    
     return redirect('expense_dashboard', library_id=library_id)
 
 @login_required
@@ -1974,7 +1925,6 @@ def user_profile(request, user_id):
 @login_required
 def update_profile(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
-    
     if request.method == 'POST':
         # Only update allowed fields
         user.emergency_number = request.POST.get('emergency_number')
@@ -1984,7 +1934,6 @@ def update_profile(request, user_id):
         user.save()
         messages.success(request, 'Profile updated successfully!')
         return redirect('user_profile', user_id=user.id)
-    
     return render(request, 'authentication/update_profile.html', {'user': user})
 
 @login_required
@@ -1996,14 +1945,12 @@ def create_coupon(request, library_id):
             coupon = form.save(commit=False)
             coupon.library = library
             coupon.created_by = request.user
-            
             # Handle "All Plans" selection
             if 'all' in form.cleaned_data['applicable_plans']:
                 coupon.applicable_plans.set(SubscriptionPlan.objects.filter(library=library))
             else:
                 coupon.save()
                 form.save_m2m()
-            
             messages.success(request, "Coupon created successfully!")
             return redirect('library_dashboard', library_id=library.id)
         else:
@@ -2012,7 +1959,6 @@ def create_coupon(request, library_id):
                 messages.error(request, error)
     else:
         form = CouponForm(library_id=library_id)
-    
     return render(request, 'library/create_coupon.html', {
         'library': library,
         'form': form
@@ -2031,63 +1977,50 @@ def apply_coupon(request):
         data = json.loads(request.body)
         coupon_code = data.get('coupon_code')
         library_id = data.get('library_id')
-        
         if not coupon_code:
             return JsonResponse({
                 'success': False,
                 'message': 'Coupon code is required'
             }, status=400)
-
         if not library_id:
             return JsonResponse({
                 'success': False,
                 'message': 'Library ID is required'
             }, status=400)
-
         coupon = Coupon.objects.get(code=coupon_code, library_id=library_id)
-
         if not coupon.is_active:
             return JsonResponse({
                 'success': False,
                 'message': 'Coupon is not active'
             })
-
         if not coupon.is_valid():
             return JsonResponse({
                 'success': False,
                 'message': 'Coupon is not valid'
             })
-
         applicable_plans = coupon.applicable_plans.all()
-        
         if not applicable_plans.exists():
             applicable_plans = SubscriptionPlan.objects.filter(library_id=library_id)
-
         discounted_plans = []
-
         for plan in applicable_plans:
             # Use discount_price if available, otherwise use normal_price
             base_price = plan.discount_price if plan.has_discount else plan.normal_price
-            
             if coupon.discount_type == 'percentage':
                 discount_amount = base_price * (coupon.discount_value / 100)
             else:
                 discount_amount = coupon.discount_value
-
             discounted_price = max(base_price - discount_amount, 0)
             discounted_plans.append({
                 'id': plan.id,
                 'original_price': str(base_price),
                 'discounted_price': str(discounted_price)
             })
-
         return JsonResponse({
             'success': True,
             'message': 'Coupon applied successfully',
             'discounted_plans': discounted_plans,
             'coupon_id': coupon.id
         })
-
     except Coupon.DoesNotExist:
         return JsonResponse({
             'success': False,
@@ -2108,46 +2041,37 @@ def edit_subscription(request):
         if not subscription_id:
             messages.error(request, 'Subscription ID is required')
             return redirect('manage_subscriptions', library_id=request.POST.get('library_id'))
-
         subscription = SubscriptionPlan.objects.get(id=subscription_id)
-        
         # Validate and update fields
         name = request.POST.get('name')
         duration_months = request.POST.get('duration_in_months')
         duration_hours = request.POST.get('duration_in_hours')
         normal_price = request.POST.get('normal_price')
         discount_price = request.POST.get('discount_price')
-
         if not all([name, duration_months, duration_hours, normal_price]):
             messages.error(request, 'All fields are required')
             return redirect('manage_subscriptions', library_id=subscription.library.id)
-
         subscription.name = name
         subscription.duration_in_months = int(duration_months)
         subscription.duration_in_hours = int(duration_hours)
         subscription.normal_price = Decimal(normal_price)
         subscription.discount_price = Decimal(discount_price) if discount_price else None
-        
         subscription.save()
         messages.success(request, 'Subscription updated successfully')
-        
     except SubscriptionPlan.DoesNotExist:
         messages.error(request, 'Subscription not found')
     except ValueError as e:
         messages.error(request, f'Invalid input: {str(e)}')
     except Exception as e:
         messages.error(request, f'An error occurred: {str(e)}')
-    
     return redirect('manage_subscriptions', library_id=subscription.library.id)
 
 @require_POST
 @login_required
 def toggle_coupon_status(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
-    
     coupon.is_active = not coupon.is_active
     coupon.save()
-    
     return redirect('manage_coupons', library_id=coupon.library.id)
 
 @csrf_exempt
@@ -2156,16 +2080,13 @@ def handle_payment_success(request):
     try:
         data = json.loads(request.body)
         coupon_id = data.get('coupon_id')
-        
         if not coupon_id:
             logger.error("No coupon ID provided in payment success")
             return JsonResponse({
                 'success': False,
                 'message': 'Coupon ID is required'
             }, status=400)
-
         coupon = Coupon.objects.get(id=coupon_id)
-        
         # Only increment usage if payment was successful
         if coupon.times_used < coupon.max_usage:
             coupon.times_used += 1
@@ -2173,12 +2094,10 @@ def handle_payment_success(request):
             logger.info(f"Successfully updated coupon {coupon_id} usage count")
         else:
             logger.warning(f"Coupon {coupon_id} has reached max usage")
-
         return JsonResponse({
             'success': True,
             'message': 'Payment processed successfully'
         })
-
     except Coupon.DoesNotExist:
         logger.error(f"Coupon {coupon_id} not found")
         return JsonResponse({
@@ -2197,16 +2116,13 @@ def handle_payment_success(request):
 def edit_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
     library = coupon.library
-
     # Only allow the coupon creator or the library owner to edit
     if request.user != coupon.created_by and request.user != library.owner:
         raise PermissionDenied("You don't have permission to edit this coupon")
-
     if request.method == 'POST':
         form = CouponForm(request.POST, instance=coupon, library_id=library.id)
         if form.is_valid():
             coupon = form.save(commit=False)
-
             # Handle "All Plans" selection
             if 'all' in form.cleaned_data['applicable_plans']:
                 coupon.save()
@@ -2214,12 +2130,10 @@ def edit_coupon(request, coupon_id):
             else:
                 coupon.save()
                 form.save_m2m()
-
             messages.success(request, "Coupon updated successfully!")
             return redirect('manage_coupons', library_id=library.id)
     else:
         form = CouponForm(instance=coupon, library_id=library.id)
-
     return render(request, 'library/edit_coupon.html', {
         'library': library,
         'form': form,
@@ -2230,11 +2144,9 @@ def edit_coupon(request, coupon_id):
 @require_POST
 def delete_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
-    
     # Check if the user has permission to delete this coupon
     if request.user != coupon.created_by:
         raise PermissionDenied("You don't have permission to delete this coupon")
-    
     coupon.delete()
     messages.success(request, "Coupon deleted successfully!")
     return redirect('manage_coupons', library_id=coupon.library.id)
@@ -2246,13 +2158,10 @@ def appoint_staff(request, library_id, user_id):
         try:
             library = Library.objects.get(id=library_id)
             user = User.objects.get(id=user_id)
-            
             if user in library.staff.all():
                 return JsonResponse({'success': False, 'message': 'User is already a staff member'})
-            
             library.staff.add(user)
             return JsonResponse({'success': True, 'message': 'User appointed successfully'})
-        
         except Library.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Library not found'}, status=404)
         except User.DoesNotExist:
@@ -2263,10 +2172,8 @@ def appoint_staff(request, library_id, user_id):
 @login_required
 def update_upi_data(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     if request.user != library.owner:
         raise PermissionDenied("You don't have permission to update UPI data for this library")
-    
     if request.method == 'POST':
         library.upi_id = request.POST.get('upi_id')
         library.recipient_name = request.POST.get('recipient_name')
@@ -2274,7 +2181,6 @@ def update_upi_data(request, library_id):
         library.save()
         messages.success(request, 'UPI data updated successfully!')
         return redirect('library_dashboard', library_id=library.id)
-    
     return redirect('library_dashboard', library_id=library.id)
 
 @login_required
@@ -2286,20 +2192,16 @@ def remove_staff(request, library_id, user_id):
     # Check if the current user is the library owner
     if request.user != library.owner:
         raise PermissionDenied("You don't have permission to remove staff from this library")
-    
     # Remove the user from staff
     library.staff.remove(user)
     messages.success(request, f'{user.get_full_name()} has been removed from staff')
-    
     return redirect('library_dashboard', library_id=library.id)
 
 @login_required
 def staff_dashboard(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     if request.user not in library.staff.all():
         raise PermissionDenied("You don't have permission to access this dashboard")
-    
     # Get staff permissions from VendorSSID table
     staff_permissions = []
     try:
@@ -2307,32 +2209,26 @@ def staff_dashboard(request, library_id):
             user=request.user,
             library=library
         ).first()
-        
         if vendor_ssid:
             staff_permissions = vendor_ssid.permissions.split(',') if vendor_ssid.permissions else []
     except Exception as e:
         logger.error(f"Error getting staff permissions: {str(e)}")
-    
     # Get today's date
     today = timezone.now().date()
-    
     # Get dashboard stats
     active_users_count = UserSubscription.objects.filter(
         subscription__library=library,
         end_date__gte=today
     ).values('user').distinct().count()
-    
     # Filter attendance by check_in_time instead of date
     todays_attendance_count = LibraryAttendance.objects.filter(
         library=library,
         check_in_time__date=today
     ).count()
-    
     active_subscriptions_count = UserSubscription.objects.filter(
         subscription__library=library,
         end_date__gte=today
     ).count()
-    
     return render(request, 'library/staff_dashboard.html', {
         'library': library,
         'active_users_count': active_users_count,
@@ -2344,13 +2240,10 @@ def staff_dashboard(request, library_id):
 @login_required
 def manage_banner(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     # Check if user has permission to manage banners
     if request.user != library.owner and request.user not in library.staff.all():
         raise PermissionDenied("You don't have permission to manage banners for this library")
-    
     banners = library.banners.order_by('-created_at')
-    
     if request.method == 'POST':
         form = BannerForm(request.POST)
         if form.is_valid():
@@ -2368,13 +2261,11 @@ def manage_banner(request, library_id):
             messages.error(request, 'Invalid banner data. Please check the form.')
     else:
         form = BannerForm()
-    
     context = {
         'library': library,
         'banners': banners,
         'form': form,
     }
-    
     return render(request, 'library/manage_banner.html', context)
     
 @login_required
@@ -2388,7 +2279,6 @@ def delete_banner(request, banner_id):
 @login_required
 def update_library_image(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     if request.method == 'POST':
         form = LibraryImageForm(request.POST)
         if form.is_valid():
@@ -2418,7 +2308,6 @@ def remove_library_image(request, library_id):
 def update_banner(request):
     if not request.user.is_superuser:
         raise PermissionDenied
-    
     if request.method == 'POST':
         text = request.POST.get('banner_text', '').strip()
         if text:
@@ -2432,16 +2321,13 @@ def update_banner(request):
             messages.success(request, 'Banner updated successfully!')
         else:
             messages.error(request, 'Banner text cannot be empty')
-    
     return redirect('admin_dashboard')
 
 @login_required
 def manage_home_banners(request):
     if not request.user.is_superuser:
         raise PermissionDenied
-    
     banners_image = HomePageImageBanner.objects.all()
-    
     if request.method == 'POST':
         form = HomePageBannerForm(request.POST)
         if form.is_valid():
@@ -2470,15 +2356,13 @@ def delete_home_banner(request, banner_id):
 def manage_text_banner(request):
     if request.method == 'POST':
         text = request.POST.get('banner_text', '').strip()
-        is_active = request.POST.get('is_active', False) == 'on'
-        
+        is_active = request.POST.get('is_active', False) == 'on' 
         if text:  # Only create if there's text
             banner = HomePageTextBanner(text=text, is_active=is_active)
             banner.save()
             messages.success(request, 'Text banner added successfully!')
         else:
-            messages.error(request, 'Banner text cannot be empty')
-    
+            messages.error(request, 'Banner text cannot be empty') 
     banners = HomePageTextBanner.objects.all()
     return render(request, 'admin_page/manage_text_banner.html', {
         'banners': banners
@@ -2488,7 +2372,6 @@ def manage_text_banner(request):
 def delete_text_banner(request, banner_id):
     if not request.user.is_superuser:
         raise PermissionDenied
-    
     banner = get_object_or_404(HomePageTextBanner, id=banner_id)
     banner.delete()
     messages.success(request, 'Banner deleted successfully!')
@@ -2498,7 +2381,6 @@ def delete_text_banner(request, banner_id):
 def manage_banner_counts(request):
     if not request.user.is_staff:
         raise PermissionDenied
-    
     if request.method == 'POST':
         library_id = request.POST.get('library_id')
         institution_id = request.POST.get('institution_id')
@@ -2525,11 +2407,9 @@ def manage_banner_counts(request):
             return JsonResponse({'success': True, 'message': msg})
         messages.success(request, msg)
         return redirect('manage_banner_counts')
-    
     search_query = request.GET.get('search', '')
     libraries = Library.objects.all()
     institutions = Institution.objects.all()
-    
     if search_query:
         libraries = libraries.filter(
             Q(owner__first_name__icontains=search_query) |
@@ -2551,24 +2431,20 @@ def manage_banner_counts(request):
 @login_required
 def add_review(request, library_id):
     library = get_object_or_404(Library, id=library_id)
-    
     # Check if user has already reviewed
     existing_review = Review.objects.filter(library=library, user=request.user).first()
     if existing_review:
         messages.info(request, "Your review means a lot to us! Thank you for your feedback.")
         return redirect('library_details', library_id=library_id)
-    
     # Check if user has active subscription
     has_active_subscription = UserSubscription.objects.filter(
         user=request.user,
         subscription__library=library,
         end_date__gte=timezone.now().date()
     ).exists()
-    
     if not has_active_subscription:
         messages.error(request, "You need an active subscription to review this library.")
         return redirect('library_details', library_id=library_id)
-    
     if request.method == 'POST':
         form = ReviewForm(request.POST)
         if form.is_valid():
@@ -2580,7 +2456,6 @@ def add_review(request, library_id):
             return redirect('library_details', library_id=library_id)
     else:
         form = ReviewForm()
-    
     return render(request, 'library/add_review.html', {
         'form': form,
         'library': library,
@@ -2869,7 +2744,6 @@ def mark_attendance_manual(request, user_id):
             return JsonResponse({"success": False, "error": "Library not found"}, status=404)
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)}, status=500)
-
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 @login_required
@@ -3249,7 +3123,6 @@ def EditAdminExpense_loss(request, expense_id):
             return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
-
 @login_required
 def DeleteAdminExpense_loss(request, expense_id):
     if request.method == 'POST':
@@ -3283,38 +3156,76 @@ def DeleteAdminExpense_loss(request, expense_id):
 @login_required
 def Manage_Admin_profit(request):
     if request.method == 'POST':
-        try:
-            name = request.POST.get('expense_name')
-            amount = request.POST.get('amount')
-            date = request.POST.get('date')
-            description = request.POST.get('description')
-            
-            # Basic validation
-            if not all([name, amount, date]):
-                messages.error(request, 'All fields are required')
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            if not request.user.is_superuser:
+                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+            try:
+                data = json.loads(request.body)
+                name = data.get('expense_name')
+                amount = data.get('amount')
+                date_str = data.get('date')
+                description = data.get('description', '')
+
+                if not all([name, amount, date_str]):
+                    return JsonResponse({'status': 'error', 'message': 'All fields are required'}, status=400)
+
+                date_obj = parse_date(date_str)
+                if not date_obj:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid date format'}, status=400)
+
+                profit = AdminExpense.objects.create(
+                    name=name,
+                    amount=float(amount),
+                    date=date_obj,
+                    description=description,
+                    type='Profit',
+                    created_by=request.user
+                )
+                profit_data = {
+                    'id': profit.id,
+                    'name': profit.name,
+                    'amount': str(profit.amount),
+                    'date': profit.date.strftime('%Y-%m-%d'),
+                    'description': profit.description
+                }
+                return JsonResponse({'status': 'success', 'profit': profit_data})
+            except Exception as e:
+                logger.error(f"Error adding profit via AJAX: {str(e)}")
+                return JsonResponse({'status': 'error', 'message': 'An error occurred while adding the profit'}, status=500)
+        else:
+            if not request.user.is_superuser:
+                messages.error(request, 'You do not have permission to access this page.')
+                return redirect('home')
+            try:
+                name = request.POST.get('expense_name')
+                amount = request.POST.get('amount')
+                date = request.POST.get('date')
+                description = request.POST.get('description')
+
+                if not all([name, amount, date]):
+                    messages.error(request, 'All fields are required')
+                    return redirect('Manage_Admin_Profit')
+
+                # Create new expense with type set to Profit
+                AdminExpense.objects.create(
+                    name=name,
+                    amount=amount,
+                    date=date,
+                    description=description,
+                    type='Profit',  # Set type to Profit
+                    created_by=request.user
+                )
+                messages.success(request, 'Profit added successfully')
                 return redirect('Manage_Admin_Profit')
-            
-            # Create new expense with type set to Profit
-            AdminExpense.objects.create(
-                name=name,
-                amount=amount,
-                date=date,
-                description=description,
-                type='Profit',  # Set type to Profit
-                created_by=request.user
-            )
-            messages.success(request, 'Profit added successfully')
-            return redirect('Manage_Admin_Profit')
-            
-        except Exception as e:
-            logger.error(f"Error adding profit: {str(e)}")
-            messages.error(request, 'An error occurred while adding the profit')
-            return redirect('Manage_Admin_Profit')
+            except Exception as e:
+                logger.error(f"Error adding profit: {str(e)}")
+                messages.error(request, 'An error occurred while adding the profit')
+                return redirect('Manage_Admin_Profit')
 
     # Get all profits for display, filtering for Profit type
     profits = AdminExpense.objects.filter(type='Profit').order_by('-date')
     total_profits = profits.aggregate(total=Sum('amount'))['total'] or 0
-    
+
     context = {
         'page_title': 'Manage Admin Profits',
         'profits': profits,
@@ -3323,6 +3234,77 @@ def Manage_Admin_profit(request):
     }
     return render(request, 'admin_page/manage_admin_profit.html', context)
 
+@login_required
+def EditAdminExpense_profit(request, expense_id):
+    if request.method == 'POST':
+        if not request.user.is_superuser:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            profit = get_object_or_404(AdminExpense, id=expense_id, type='Profit')
+            try:
+                data = json.loads(request.body)
+                name = data.get('expense_name')
+                amount = data.get('amount')
+                date_str = data.get('date')
+                description = data.get('description', '')
+
+                if not all([name, amount, date_str]):
+                    return JsonResponse({'status': 'error', 'message': 'All fields are required'}, status=400)
+
+                date_obj = parse_date(date_str)
+                if not date_obj:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid date format'}, status=400)
+
+                profit.name = name
+                profit.amount = float(amount)
+                profit.date = date_obj
+                profit.description = description
+                profit.save()
+
+                profit_data = {
+                    'id': profit.id,
+                    'name': profit.name,
+                    'amount': str(profit.amount),
+                    'date': profit.date.strftime('%Y-%m-%d'),
+                    'description': profit.description
+                }
+                return JsonResponse({'status': 'success', 'profit': profit_data})
+            except Exception as e:
+                logger.error(f"Error updating profit via AJAX: {str(e)}")
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+@login_required
+def DeleteAdminExpense_profit(request, expense_id):
+    if request.method == 'POST':
+        if not request.user.is_superuser:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            profit = get_object_or_404(AdminExpense, id=expense_id, type='Profit')
+            try:
+                profit.delete()
+                return JsonResponse({'status': 'success'})
+            except Exception as e:
+                logger.error(f"Error deleting profit expense via AJAX: {str(e)}")
+                return JsonResponse({'status': 'error', 'message': 'An error occurred while deleting the profit expense'}, status=500)
+        else:
+            if not request.user.is_superuser:
+                messages.error(request, 'You do not have permission to access this page.')
+                return redirect('home')
+            profit = get_object_or_404(AdminExpense, id=expense_id, type='Profit')
+            try:
+                profit.delete()
+                messages.success(request, 'Profit expense deleted successfully')
+                return redirect('Manage_Admin_Profit')
+            except Exception as e:
+                logger.error(f"Error deleting profit expense: {str(e)}")
+                messages.error(request, 'An error occurred while deleting the profit expense')
+                return redirect('Manage_Admin_Profit')
+    else:
+        messages.error(request, 'Invalid request method')
+        return redirect('Manage_Admin_Profit')
 
 @login_required
 def balance_sheet(request):
@@ -3541,7 +3523,6 @@ def allocate_card_to_user(request):
         logger.error(f"Error in allocate_card_to_user: {str(e)}")
         return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred during allocation.'}, status=500)
 
-
 @login_required
 def unlogged_card_allocations_library(request, library_id):
     library = get_object_or_404(Library, id=library_id)
@@ -3688,8 +3669,6 @@ def check_institution_nfc_allocation(request):
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-
-
 @login_required
 def library_receipt(request, user_id, transaction_id):
     """Generate receipt for a single library transaction"""
@@ -3718,38 +3697,3 @@ def library_receipt(request, user_id, transaction_id):
         return render(request, 'library/receipt.html', context)
     except User.DoesNotExist:
         return render(request, 'library/receipt.html', {'error': 'User not found'})
-
-def convert_amount_to_words(amount):
-    """Convert amount to words for receipt"""
-    if amount == 0:
-        return "Zero Rupees"
-    units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
-    teens = ["", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
-    tens = ["", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
-    in_words = ""
-    amount_int = int(amount)
-    def num_to_words_hundreds(n):
-        s = ""
-        if n >= 100:
-            s += units[n // 100] + " Hundred "
-            n %= 100
-        if n >= 20:
-            s += tens[n // 10] + " "
-            n %= 10
-        elif 11 <= n <= 19:
-            s += teens[n - 10] + " "
-            return s
-        if n >= 1:
-            s += units[n] + " "
-        return s
-    lakhs = amount_int // 100000
-    thousands = (amount_int % 100000) // 1000
-    hundreds = amount_int % 1000
-    if lakhs > 0:
-        in_words += num_to_words_hundreds(lakhs) + "Lakh "
-    if thousands > 0:
-        in_words += num_to_words_hundreds(thousands) + "Thousand "
-    if hundreds > 0:
-        in_words += num_to_words_hundreds(hundreds)
-    in_words = in_words.strip() + " Rupees Only"
-    return in_words

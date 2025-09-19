@@ -2,158 +2,528 @@
 {% load static %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-    <div class="max-w-7xl w-full mx-auto space-y-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Add Expense Form -->
-            <div class="bg-white p-6 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Add New Expense</h2>
-                <form id="addExpenseForm" method="POST" action="{% url 'Manage_Admin_Loss' %}">
-                    {% csrf_token %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="expense_name" class="block text-sm font-medium text-gray-700 mb-2">Expense Name</label>
-                            <input type="text" id="expense_name" name="expense_name" required
-                                   class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
-                        </div>
-                        <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                            <input type="number" id="amount" name="amount" step="0.01" required
-                                   class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
-                        </div>
-                        <div>
-                            <label for="date" class="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                            <input type="date" id="date" name="date" max="{{ today|date:'Y-m-d' }}" required
-                                   class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                            <textarea id="description" name="description" rows="4"
-                                      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"></textarea>
-                        </div>
-                    </div>
-                    <button type="submit" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-lg transition duration-150 ease-in-out">
-                        Add Expense
-                    </button>
-                </form>
+<div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800">Loss List</h2>
+            <button id="openAddExpenseModalBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg transition duration-200 shadow">
+                + Add Loss
+            </button>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <div></div>
+                <div class="bg-red-50 px-4 py-2 rounded-lg text-center">
+                    <p class="text-sm font-semibold text-red-700">
+                        Total: ₹{{ total_losses|floatformat:2 }}
+                    </p>
+                </div>
             </div>
-
-            <!-- Expense List -->
-            <div class="bg-white p-6 rounded-xl shadow-lg">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Loss List</h2>
-                    <div class="bg-red-100 px-4 py-2 rounded-lg">
-                        <p id="totalLosses" class="text-sm font-semibold text-red-800">
-                            Total: ₹{{ total_losses|floatformat:2 }}
-                        </p>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table id="expensesTable" class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for expense in expenses %}
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ expense.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ expense.amount }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ expense.date }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ expense.description|truncatechars:30 }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="edit-expense-btn text-indigo-600 hover:text-indigo-900 mr-2"
-                                            data-expense-id="{{ expense.id }}"
-                                            data-expense-name="{{ expense.name }}"
-                                            data-expense-amount="{{ expense.amount }}"
-                                            data-expense-date="{{ expense.date|date:'Y-m-d' }}"
-                                            data-expense-description="{{ expense.description }}">Edit</button>
-                                    <button class="delete-expense-btn text-red-600 hover:text-red-900"
-                                            data-expense-id="{{ expense.id }}">Delete</button>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No expenses recorded yet</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">#</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Loss Name</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Amount</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Description</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Added By</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-100">
+                        {% for expense in expenses %}
+                        <tr>
+                            <td class="px-4 py-2 text-sm text-gray-700">{{ forloop.counter }}</td>
+                            <td class="px-4 py-2 text-sm font-medium text-gray-800">{{ expense.name }}</td>
+                            <td class="px-4 py-2 text-sm font-semibold text-red-600">₹{{ expense.amount }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500">{{ expense.date }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-600">
+                                {% if expense.description %}
+                                    {{ expense.description|truncatechars:50 }}
+                                {% else %}
+                                    <span class="text-gray-300">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-2 text-sm text-gray-500">
+                                {{ expense.created_by.get_full_name|default:"Admin" }}
+                            </td>
+                            <td class="px-4 py-2 text-sm font-medium">
+                                <button class="edit-expense-btn text-indigo-600 hover:text-indigo-900 mr-2" data-expense-id="{{ expense.id }}" data-expense-name="{{ expense.name }}" data-expense-amount="{{ expense.amount }}" data-expense-date="{{ expense.date|date:'Y-m-d' }}" data-expense-description="{{ expense.description }}">Edit</button>
+                                <button class="delete-expense-btn text-red-600 hover:text-red-900" data-expense-id="{{ expense.id }}">Delete</button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-gray-500 py-6">No losses recorded yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Modal -->
-<div id="editExpenseModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+<!-- Add Loss Modal -->
+<div id="addExpenseModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div class="flex justify-between items-center p-5 border-b border-gray-200">
-            <h3 class="text-xl font-bold text-gray-900">Edit Expense</h3>
-            <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out">
+            <h3 class="text-xl font-bold text-gray-900">Add New Loss</h3>
+            <button onclick="closeAddExpenseModal()" class="text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
             </button>
         </div>
-        <form id="editExpenseForm" method="POST" class="p-5 space-y-4">
+        <form id="addExpenseForm" method="POST" action="{% url 'Manage_Admin_Loss' %}" class="p-5 space-y-4">
             {% csrf_token %}
-            <input type="hidden" name="expense_id" id="editExpenseId">
-            <div>
-                <label for="editExpenseName" class="block text-sm font-medium text-gray-700 mb-2">Expense Name</label>
-                <input type="text" id="editExpenseName" name="expense_name" required
-                       class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="expense_name" class="block text-sm font-medium text-gray-700 mb-1">Loss Name</label>
+                    <input type="text" id="expense_name" name="expense_name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input type="number" id="amount" name="amount" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="date" name="date" max="{{ today|date:'Y-m-d' }}" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200"></textarea>
+                </div>
             </div>
-            <div>
-                <label for="editAmount" class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                <input type="number" id="editAmount" name="amount" step="0.01" required
-                       class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
-            </div>
-            <div>
-                <label for="editDate" class="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input type="date" id="editDate" name="date" required max="{{ today|date:'Y-m-d' }}"
-                       class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
-            </div>
-            <div>
-                <label for="editDescription" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea id="editDescription" name="description" rows="4"
-                          class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"></textarea>
-            </div>
-            <button type="submit" class="w-full bg-indigo-600 text-white font-medium px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out">
-                Update Expense
+            <button type="submit" class="mt-4 w-full bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition duration-200">
+                Add Loss
             </button>
         </form>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div id="deleteExpenseModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+<!-- Edit Loss Modal -->
+<div id="editExpenseModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div class="flex justify-between items-center p-5 border-b border-gray-200">
-            <h3 class="text-xl font-bold text-gray-900">Confirm Delete</h3>
-            <button id="closeDeleteModalBtn" class="text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out">
+            <h3 class="text-xl font-bold text-gray-900">Edit Loss</h3>
+            <button onclick="closeEditExpenseModal()" class="text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
             </button>
         </div>
-        <div class="p-5">
-            <p class="text-gray-700 mb-6">Are you sure you want to delete this expense? This action cannot be undone.</p>
-            <div class="flex justify-end space-x-3">
-                <button id="cancelDeleteBtn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-150 ease-in-out">
-                    Cancel
-                </button>
-                <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-150 ease-in-out">
-                    Delete
-                </button>
+        <form id="editExpenseForm" class="p-5 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" id="editExpenseId" name="expense_id">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="editExpenseName" class="block text-sm font-medium text-gray-700 mb-1">Loss Name</label>
+                    <input type="text" id="editExpenseName" name="expense_name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="editExpenseAmount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input type="number" id="editExpenseAmount" name="amount" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200">
+                </div>
+                <div>
+                    <label for="editExpenseDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="editExpenseDate" name="date" max="{{ today|date:'Y-m-d' }}" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="editExpenseDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="editExpenseDescription" name="description" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200"></textarea>
+                </div>
             </div>
+            <button type="submit" class="mt-4 w-full bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition duration-200">
+                Update Loss
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Loss Modal -->
+<div id="deleteExpenseModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-gray-800">Delete Loss</h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-500">Are you sure you want to delete this loss? This action cannot be undone.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button id="confirmDeleteExpenseBtn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                Delete
+            </button>
+            <button id="cancelDeleteExpenseBtn" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                Cancel
+            </button>
         </div>
     </div>
 </div>
-<script src="{% static 'js/admin_lass_expenses.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle add expense form submission
+    const addForm = document.getElementById('addExpenseForm');
+    if (addForm) {
+        addForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                expense_name: formData.get('expense_name'),
+                amount: formData.get('amount'),
+                date: formData.get('date'),
+                description: formData.get('description') || ''
+            };
+
+            try {
+                const response = await fetch('/manage-admin-loss/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Add new expense to the list
+                    addExpenseToList(result.expense);
+                    // Update total losses
+                    updateTotalLosses();
+                    // Reset form
+                    this.reset();
+                    closeAddExpenseModal();
+                    customAlert('Loss added successfully');
+                } else {
+                    customAlert(result.message || 'Error adding loss');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                customAlert('An error occurred while adding the loss');
+            }
+        });
+    }
+
+    // Add event listeners to all edit buttons
+    const editButtons = document.querySelectorAll('.edit-expense-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            openEditExpenseModal({
+                id: this.dataset.expenseId,
+                name: this.dataset.expenseName,
+                amount: this.dataset.expenseAmount,
+                date: this.dataset.expenseDate,
+                description: this.dataset.expenseDescription || ''
+            });
+        });
+    });
+
+    // Add event listeners to all delete buttons with custom confirm modal
+    const deleteButtons = document.querySelectorAll('.delete-expense-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const expenseId = this.dataset.expenseId;
+            openDeleteExpenseModal(expenseId);
+        });
+    });
+
+    // Custom alert function
+    function customAlert(message) {
+        alert(message); // Placeholder using default alert
+    }
+
+    // Handle edit form submission
+    const editForm = document.getElementById('editExpenseForm');
+    if (editForm) {
+        editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const expenseId = formData.get('expense_id');
+            const data = {
+                expense_name: formData.get('expense_name'),
+                amount: formData.get('amount'),
+                date: formData.get('date'),
+                description: formData.get('description') || ''
+            };
+            try {
+                const response = await fetch(`/edit-admin-expense/${expenseId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Update the expense in the list
+                    updateExpenseInList(result.expense);
+                    // Update total losses
+                    updateTotalLosses();
+                    // Close modal
+                    closeEditExpenseModal();
+                    customAlert('Loss updated successfully');
+                } else {
+                    customAlert(result.message || 'Error updating loss');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                customAlert('An error occurred while updating the loss');
+            }
+        });
+    }
+
+    // Delete modal functions
+    let currentDeleteExpenseId = null;
+
+    function openDeleteExpenseModal(expenseId) {
+        currentDeleteExpenseId = expenseId;
+        const modal = document.getElementById('deleteExpenseModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function closeDeleteExpenseModal() {
+        currentDeleteExpenseId = null;
+        const modal = document.getElementById('deleteExpenseModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    // Handle delete modal buttons
+    const confirmDeleteBtn = document.getElementById('confirmDeleteExpenseBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (currentDeleteExpenseId) {
+                deleteExpense(currentDeleteExpenseId);
+                closeDeleteExpenseModal();
+            }
+        });
+    }
+
+    const cancelDeleteBtn = document.getElementById('cancelDeleteExpenseBtn');
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function() {
+            closeDeleteExpenseModal();
+        });
+    }
+
+    // Edit modal functions
+    function openEditExpenseModal(expense) {
+        const modal = document.getElementById('editExpenseModal');
+        if (!modal) {
+            console.error('Edit modal not found');
+            return;
+        }
+
+        // Set form values
+        document.getElementById('editExpenseId').value = expense.id;
+        document.getElementById('editExpenseName').value = expense.name;
+        document.getElementById('editExpenseAmount').value = expense.amount;
+        document.getElementById('editExpenseDate').value = expense.date;
+        document.getElementById('editExpenseDescription').value = expense.description;
+
+        // Show modal
+        modal.classList.remove('hidden');
+    }
+
+    function closeEditExpenseModal() {
+        const modal = document.getElementById('editExpenseModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    // Function to escape HTML
+    function escapeHtml(text) {
+        var map = {
+            '&': '&amp;',
+            '<': '<',
+            '>': '>',
+            '"': '"',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // Function to add new expense to the list
+    function addExpenseToList(expense) {
+        const tbody = document.querySelector('tbody');
+        if (!tbody) return;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-4 py-2 text-sm text-gray-700">${tbody.children.length + 1}</td>
+            <td class="px-4 py-2 text-sm font-medium text-gray-800">${escapeHtml(expense.name)}</td>
+            <td class="px-4 py-2 text-sm font-semibold text-red-600">₹${expense.amount}</td>
+            <td class="px-4 py-2 text-sm text-gray-500">${expense.date}</td>
+            <td class="px-4 py-2 text-sm text-gray-600">${escapeHtml(expense.description)}</td>
+            <td class="px-4 py-2 text-sm text-gray-500">Admin</td>
+            <td class="px-4 py-2 text-sm font-medium">
+                <button class="edit-expense-btn text-indigo-600 hover:text-indigo-900 mr-2" data-expense-id="${expense.id}" data-expense-name="${escapeHtml(expense.name)}" data-expense-amount="${expense.amount}" data-expense-date="${expense.date}" data-expense-description="${escapeHtml(expense.description)}">Edit</button>
+                <button class="delete-expense-btn text-red-600 hover:text-red-900" data-expense-id="${expense.id}">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+
+        // Re-attach event listeners to new buttons
+        attachEventListeners();
+    }
+
+    // Function to update expense in the list
+    function updateExpenseInList(expense) {
+        const row = document.querySelector(`[data-expense-id="${expense.id}"]`).closest('tr');
+        if (!row) return;
+
+        row.innerHTML = `
+            <td class="px-4 py-2 text-sm text-gray-700">${row.cells[0].textContent}</td>
+            <td class="px-4 py-2 text-sm font-medium text-gray-800">${escapeHtml(expense.name)}</td>
+            <td class="px-4 py-2 text-sm font-semibold text-red-600">₹${expense.amount}</td>
+            <td class="px-4 py-2 text-sm text-gray-500">${expense.date}</td>
+            <td class="px-4 py-2 text-sm text-gray-600">${escapeHtml(expense.description)}</td>
+            <td class="px-4 py-2 text-sm text-gray-500">Admin</td>
+            <td class="px-4 py-2 text-sm font-medium">
+                <button class="edit-expense-btn text-indigo-600 hover:text-indigo-900 mr-2" data-expense-id="${expense.id}" data-expense-name="${escapeHtml(expense.name)}" data-expense-amount="${expense.amount}" data-expense-date="${expense.date}" data-expense-description="${escapeHtml(expense.description)}">Edit</button>
+                <button class="delete-expense-btn text-red-600 hover:text-red-900" data-expense-id="${expense.id}">Delete</button>
+            </td>
+        `;
+
+        // Re-attach event listeners to updated buttons
+        attachEventListeners();
+    }
+
+    // Function to delete expense from the list
+    async function deleteExpense(expenseId) {
+        try {
+            const response = await fetch(`/delete-admin-expense/${expenseId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                // Remove the expense from the list
+                const row = document.querySelector(`[data-expense-id="${expenseId}"]`).closest('tr');
+                if (row) row.remove();
+                // Update total losses
+                updateTotalLosses();
+                customAlert('Loss deleted successfully');
+            } else {
+                customAlert(result.message || 'Error deleting loss');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            customAlert('An error occurred while deleting the loss');
+        }
+    }
+
+    // Function to update total losses
+    async function updateTotalLosses() {
+        try {
+            const response = await fetch('/manage-admin-loss/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const totalElement = doc.querySelector('.bg-red-50 p');
+                if (totalElement) {
+                    document.querySelector('.bg-red-50 p').innerText = totalElement.innerText;
+                }
+            }
+        } catch (error) {
+            console.error('Error updating total losses:', error);
+        }
+    }
+
+    // Function to attach event listeners to buttons
+    function attachEventListeners() {
+        // Re-attach edit buttons
+        const editButtons = document.querySelectorAll('.edit-expense-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                openEditExpenseModal({
+                    id: this.dataset.expenseId,
+                    name: this.dataset.expenseName,
+                    amount: this.dataset.expenseAmount,
+                    date: this.dataset.expenseDate,
+                    description: this.dataset.expenseDescription || ''
+                });
+            });
+        });
+
+        // Re-attach delete buttons
+        const deleteButtons = document.querySelectorAll('.delete-expense-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const expenseId = this.dataset.expenseId;
+                openDeleteExpenseModal(expenseId);
+            });
+        });
+    }
+
+    // Make close functions available globally
+    window.closeAddExpenseModal = function() {
+        const modal = document.getElementById('addExpenseModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    };
+
+    window.closeEditExpenseModal = closeEditExpenseModal;
+
+    // Open Add Expense Modal
+    var openBtn = document.getElementById('openAddExpenseModalBtn');
+    if (openBtn) {
+        openBtn.addEventListener('click', function() {
+            const modal = document.getElementById('addExpenseModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             try {
-                const response = await fetch('/manage-admin-profit/', {
+                const response = await fetch('/manage-admin-loss/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
