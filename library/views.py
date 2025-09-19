@@ -339,11 +339,17 @@ def manage_users(request, library_id):
         ).order_by('-check_in_time').first()
         user.is_checked_in = latest_attendance is not None and latest_attendance.check_out_time is None
 
+    # Pagination
+    paginator = Paginator(filtered_users, 50)  # Show 50 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'library/manage_users.html', {
         'library': library,
-        'users': filtered_users,
+        'users': page_obj,
         'search_query': search_query,
-        'status_filter': status_filter
+        'status_filter': status_filter,
+        'page_obj': page_obj
     })
 
 @csrf_exempt
@@ -1273,7 +1279,7 @@ def verify_payments(request, library_id):
             subscription=transaction.subscription
         ).first()
     # Pagination
-    paginator = Paginator(transactions, 25)
+    paginator = Paginator(transactions, 50)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
@@ -3686,25 +3692,24 @@ def check_institution_nfc_allocation(request):
 
 @login_required
 def library_receipt(request, user_id, transaction_id):
-    """Generate receipt for library transactions"""
+    """Generate receipt for a single library transaction"""
     User = get_user_model()
     try:
         user_obj = User.objects.get(id=user_id)
-        # Get all transactions for this user with the given transaction_id
-        all_transactions = Transaction.objects.filter(user=user_obj, transaction_id__icontains=transaction_id).order_by('-created_at')
-        if not all_transactions.exists():
+        # Get the single transaction for this user with the given transaction_id
+        try:
+            transaction = Transaction.objects.get(user=user_obj, transaction_id=transaction_id)
+        except Transaction.DoesNotExist:
             return render(request, 'library/receipt.html', {'error': 'Transaction not found'})
-        # Get the library from the first transaction
-        library = all_transactions.first().subscription.library if all_transactions.first().subscription.library else None
-        # Calculate total amount
-        total_amount = all_transactions.aggregate(total=Sum('amount'))['total']
-        if total_amount is None:
-            total_amount = 0
+        # Get the library from the transaction
+        library = transaction.subscription.library if transaction.subscription and transaction.subscription.library else None
+        # Get the amount
+        total_amount = transaction.amount if transaction.amount else 0
         # Convert amount to words
         amount_in_words = convert_amount_to_words(total_amount)
         context = {
             'user': user_obj,
-            'transactions': all_transactions,
+            'transactions': [transaction],
             'total_amount': total_amount,
             'amount_in_words': amount_in_words,
             'library_name': library.venue_name if library else 'Library',
