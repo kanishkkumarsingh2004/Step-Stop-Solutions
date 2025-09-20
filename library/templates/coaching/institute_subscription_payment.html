@@ -295,18 +295,14 @@
                                         <input id="mpp-trx" type="text"
                                             class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                             placeholder="Enter UPI transaction ID"
-                                            pattern="^\S+$"
-                                            title="No spaces allowed. Enter as one word or string."
+                                            title="Only letters, numbers, and hyphens (-) are allowed. No spaces or special characters."
+                                            autocomplete="off"
+                                            pattern="^[A-Za-z0-9-]+$"
                                             oninput="
-                                                if (/\s/.test(this.value)) {
-                                                    this.setCustomValidity('Spaces are not allowed in Transaction ID.');
-                                                    document.getElementById('mpp-trx-error').style.display = 'block';
-                                                } else {
-                                                    this.setCustomValidity('');
-                                                    document.getElementById('mpp-trx-error').style.display = 'none';
+                                                if (!/^[A-Za-z0-9-]*$/.test(this.value)) {
+                                                    this.value = this.value.replace(/[^A-Za-z0-9-]/g, '');
                                                 }
-                                            "
-                                        >
+                                            ">
                                         <p id="mpp-trx-error" class="mt-1 text-xs text-red-600 hidden">Spaces are not allowed in Transaction ID.</p>
                                         <p class="mt-1 text-xs text-gray-500">Required after you complete the UPI payment</p>
                                     </div>
