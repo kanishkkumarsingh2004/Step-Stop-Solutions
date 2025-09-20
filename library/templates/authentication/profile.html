@@ -10,6 +10,67 @@
 
         <!-- Profile Form Section -->
         <div class="px-6 py-8">
+            <!-- Profile Image Section -->
+            <div class="mb-8 flex items-center justify-center">
+                <div class="profile-image-container w-32 h-32 relative group">
+                    {% if user.profile_image_id %}
+                    <div class="w-32 h-32 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
+                        <img src="https://drive.google.com/thumbnail?id={{ user.profile_image_id }}&sz=s800" 
+                             alt="Profile picture" 
+                             class="w-full h-full object-cover">
+                        {% if request.user == user %}
+                        <!-- Image Actions Overlay -->
+                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button onclick="showEditImage()" 
+                                    class="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="deleteProfileImage()" 
+                                    class="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="w-32 h-32 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center cursor-pointer group-hover:bg-gray-200"
+                         onclick="{% if request.user == user %}showEditImage(){% endif %}">
+                        <span class="text-4xl text-gray-400">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if request.user == user %}
+                <!-- Profile Image Upload Section (Hidden by default) -->
+                <div id="imageUrlSection" class="hidden ml-6">
+                    <div class="flex flex-col space-y-2">
+                        <input type="text" id="profileImageUrl" 
+                               placeholder="Enter Google Drive image URL"
+                               value="{{ user.profile_image_url|default:'' }}"
+                               class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="flex space-x-2">
+                            <button onclick="updateProfileImage()" 
+                                    class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                Save Image
+                            </button>
+                            <button onclick="document.getElementById('imageUrlSection').classList.add('hidden')" 
+                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Basic Information -->
                 <div>
@@ -124,4 +185,77 @@
         </div>
     </div>
 </div>
+
+<script>
+function showEditImage() {
+    const imageSection = document.getElementById('imageUrlSection');
+    const profileImageUrl = document.getElementById('profileImageUrl');
+    imageSection.classList.remove('hidden');
+    profileImageUrl.focus();
+}
+
+function updateProfileImage() {
+    const imageUrl = document.getElementById('profileImageUrl').value;
+    
+    if (!imageUrl.trim()) {
+        alert('Please enter a valid image URL');
+        return;
+    }
+
+    fetch('{% url "update_profile_image" user.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            profile_image_url: imageUrl
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert(data.message || 'Error updating profile image');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating profile image');
+    });
+}
+
+function deleteProfileImage() {
+    if (!confirm('Are you sure you want to delete your profile image?')) {
+        return;
+    }
+
+    fetch('{% url "delete_profile_image" user.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert(data.message || 'Error deleting profile image');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting profile image');
+    });
+}
+
+function getCookie(name) {
+    let value = `; ${document.cookie}`;
+    let parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+</script>
 {% endblock %}

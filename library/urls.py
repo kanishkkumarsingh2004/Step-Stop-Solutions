@@ -205,5 +205,6 @@ urlpatterns = [
 
    path('library/receipt/<str:user_id>/<str:transaction_id>/', views.library_receipt, name='library_receipt'),
    path('user/<int:user_id>/update-profile-image/', views.update_profile_image, name='update_profile_image'),
+   path('user/<int:user_id>/delete-profile-image/', views.delete_profile_image, name='delete_profile_image'),
    path('update-role-number/', views.update_role_number, name='update_role_number'),
  ]

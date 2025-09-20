@@ -8,37 +8,22 @@
             <h2 class="text-xl font-semibold text-gray-800">Personal Information</h2>
             <!-- Profile Image Section -->
             <div class="mt-4 mb-6">
-                <div class="flex items-center">
+                <div class="flex justify-center">
                     <!-- Profile Image Display -->
-                    {% if user.profile_image_id %}
-                    <div class="w-32 h-32 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
-                        <img src="https://drive.google.com/thumbnail?id={{ user.profile_image_id }}&sz=s800" 
-
-                             alt="Profile picture" 
-                             class="w-full h-full object-cover">
-                    </div>
-                    {% else %}
-                    <div class="w-32 h-32 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
-                        <span class="text-4xl text-gray-400">
-                            <i class="bi bi-person"></i>
-                        </span>
-                    </div>
-                    {% endif %}
-
-                    <!-- Profile Image Upload -->
-                    <div class="ml-6">
-                        <label class="block text-sm font-medium text-gray-500 mb-2">Profile Image</label>
-                        <div class="flex space-x-2">
-                            <input type="text" id="profileImageUrl" 
-                                   placeholder="Enter Google Drive image URL"
-                                   value="{{ user.profile_image_url|default:'' }}"
-                                   class="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="updateProfileImage()" 
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                Update Image
-                            </button>
+                    <div class="relative">
+                        {% if user.profile_image_id %}
+                        <div class="w-40 h-40 rounded-full overflow-hidden bg-gray-100">
+                            <img src="https://drive.google.com/thumbnail?id={{ user.profile_image_id }}&sz=s800" 
+                                 alt="Profile picture" 
+                                 class="w-full h-full object-cover">
                         </div>
-                        <p id="imageUpdateMessage" class="mt-2 text-sm"></p>
+                        {% else %}
+                        <div class="w-40 h-40 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                            <span class="text-6xl text-gray-400">
+                                <i class="bi bi-person"></i>
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -144,9 +129,61 @@ function getCookie(name) {
     if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
+function showEditImage() {
+    const urlInput = document.getElementById('profileImageUrl');
+    const imageSection = document.getElementById('imageUrlSection');
+    urlInput.focus();
+    imageSection.classList.remove('hidden');
+    window.scrollTo({
+        top: imageSection.offsetTop - 100,
+        behavior: 'smooth'
+    });
+}
+
+function deleteProfileImage() {
+    if (!confirm('Are you sure you want to delete your profile image?')) {
+        return;
+    }
+
+    const messageEl = document.getElementById('imageUpdateMessage');
+    messageEl.textContent = 'Deleting...';
+    messageEl.className = 'mt-2 text-sm text-gray-600';
+
+    fetch('{% url "delete_profile_image" user.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            messageEl.textContent = data.message;
+            messageEl.className = 'mt-2 text-sm text-green-600';
+            // Reload the page to show the changes
+            location.reload();
+        } else {
+            messageEl.textContent = data.message;
+            messageEl.className = 'mt-2 text-sm text-red-600';
+        }
+    })
+    .catch(error => {
+        messageEl.textContent = 'Error deleting profile image';
+        messageEl.className = 'mt-2 text-sm text-red-600';
+        console.error('Error:', error);
+    });
+}
+
 function updateProfileImage() {
     const imageUrl = document.getElementById('profileImageUrl').value;
     const messageEl = document.getElementById('imageUpdateMessage');
+
+    if (!imageUrl.trim()) {
+        messageEl.textContent = 'Please enter a valid image URL';
+        messageEl.className = 'mt-2 text-sm text-red-600';
+        return;
+    }
 
     // Show loading state
     messageEl.textContent = 'Updating...';

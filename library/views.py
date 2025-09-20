@@ -1787,6 +1787,36 @@ def update_profile_image(request, user_id):
 
 @login_required
 @csrf_exempt
+def delete_profile_image(request, user_id):
+    """Handle deleting a user's profile image."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    try:
+        # Verify permissions
+        if request.user.id != user_id and not request.user.is_staff:
+            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+
+        # Get the user
+        user = get_object_or_404(CustomUser, id=user_id)
+
+        # Remove the profile image
+        user.profile_image_url = None
+        user.profile_image_id = None
+        user.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Profile image deleted successfully'
+        })
+
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@csrf_exempt
 def update_role_number(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
