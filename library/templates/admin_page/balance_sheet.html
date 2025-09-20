@@ -17,7 +17,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs sm:text-sm text-gray-500">Total Profits</p>
-                        <p class="text-xl sm:text-2xl font-bold text-green-600">₹{{ total_profits|floatformat:2 }}</p>
+                        <p class="text-xl sm:text-2xl font-bold text-green-600" id="total-profits">₹{{ total_profits|floatformat:2 }}</p>
                     </div>
                     <i class="bi bi-graph-up-arrow text-green-500 text-xl sm:text-2xl"></i>
                 </div>
@@ -28,7 +28,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs sm:text-sm text-gray-500">Total Losses</p>
-                        <p class="text-xl sm:text-2xl font-bold text-red-600">₹{{ total_losses|floatformat:2 }}</p>
+                        <p class="text-xl sm:text-2xl font-bold text-red-600" id="total-losses">₹{{ total_losses|floatformat:2 }}</p>
                     </div>
                     <i class="bi bi-graph-down-arrow text-red-500 text-xl sm:text-2xl"></i>
                 </div>
@@ -39,7 +39,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs sm:text-sm text-gray-500">Net Balance</p>
-                        <p class="text-xl sm:text-2xl font-bold {% if net_balance >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                        <p class="text-xl sm:text-2xl font-bold {% if net_balance >= 0 %}text-green-600{% else %}text-red-600{% endif %}" id="net-balance">
                             ₹{{ net_balance|floatformat:2 }}
                         </p>
                     </div>
@@ -51,6 +51,55 @@
         <!-- Combined Profit and Loss Table -->
         <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
             <h2 class="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Profit & Loss Transactions</h2>
+
+            <!-- Filters -->
+            <div class="mb-6 bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-800">Filters</h3>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Transaction Type</label>
+                        <div class="flex items-center">
+                            <input type="radio" id="filter-all" name="type-filter" value="all" class="mr-1" checked>
+                            <label for="filter-all" class="block text-sm text-gray-700">All Transactions</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="filter-profit" name="type-filter" value="profit" class="mr-1">
+                            <label for="filter-profit" class="block text-sm text-gray-700">Profits Only</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="filter-loss" name="type-filter" value="loss" class="mr-1">
+                            <label for="filter-loss" class="block text-sm text-gray-700">Losses Only</label>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="from-date" class="block text-sm font-medium text-gray-700">From Date</label>
+                        <input type="date" id="from-date" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="to-date" class="block text-sm font-medium text-gray-700">To Date</label>
+                        <input type="date" id="to-date" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="search" class="block text-sm font-medium text-gray-700">Search by Name</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input type="text" id="search" placeholder="Enter transaction name..." class="block w-full pl-10 border border-gray-300 rounded-md px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm sm:text-base">
                     <thead>
@@ -60,9 +109,9 @@
                             <th class="py-1 sm:py-2 text-right">Amount</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="expenses-table">
                         {% for Expens in Expenses %}
-                        <tr class="border-b hover:bg-gray-50">
+                        <tr class="border-b hover:bg-gray-50 expense-row" data-type="{{ Expens.type }}" data-date="{{ Expens.date|date:'Y-m-d' }}" data-name="{{ Expens.name|lower }}" data-amount="{{ Expens.amount }}">
                             <td class="py-1 sm:py-2">{{ Expens.date|date:"Y-m-d" }}</td>
                             <td class="py-1 sm:py-2">{{ Expens.name }}</td>
                             <td class="py-1 sm:py-2 text-right {% if Expens.type == 'Profit' %}text-green-600{% else %}text-red-600{% endif %}">₹{{ Expens.amount }}</td>
@@ -74,4 +123,87 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeRadios = document.querySelectorAll('input[name="type-filter"]');
+    const fromDate = document.getElementById('from-date');
+    const toDate = document.getElementById('to-date');
+    const search = document.getElementById('search');
+    const rows = document.querySelectorAll('.expense-row');
+
+    function filterRows() {
+        let selectedType = 'all';
+        typeRadios.forEach(radio => {
+            if (radio.checked) {
+                selectedType = radio.value;
+            }
+        });
+        const dateFilter = fromDate.value;
+        const toDateFilter = toDate.value;
+        const searchTerm = search.value.toLowerCase().trim();
+
+        let totalProfits = 0;
+        let totalLosses = 0;
+
+        rows.forEach(row => {
+            const type = row.dataset.type.toLowerCase();
+            const date = row.dataset.date;
+            const name = row.dataset.name;
+            const amount = parseFloat(row.dataset.amount);
+
+            let show = true;
+
+            // Type filter
+            if (selectedType === 'profit') {
+                show = type === 'profit';
+            } else if (selectedType === 'loss') {
+                show = type === 'loss';
+            } else {
+                // 'all' selected, show all
+            }
+
+            // Date filter
+            if (show && dateFilter) {
+                show = date >= dateFilter;
+            }
+            if (show && toDateFilter) {
+                show = show && date <= toDateFilter;
+            }
+
+            // Search filter
+            if (show && searchTerm) {
+                show = name.includes(searchTerm);
+            }
+
+            row.style.display = show ? '' : 'none';
+
+            // Calculate totals for visible rows
+            if (show) {
+                if (type === 'profit') {
+                    totalProfits += amount;
+                } else if (type === 'loss') {
+                    totalLosses += amount;
+                }
+            }
+        });
+
+        // Update totals
+        document.getElementById('total-profits').textContent = '₹' + totalProfits.toFixed(2);
+        document.getElementById('total-losses').textContent = '₹' + totalLosses.toFixed(2);
+        const netBalance = totalProfits - totalLosses;
+        const netBalanceElement = document.getElementById('net-balance');
+        netBalanceElement.textContent = '₹' + netBalance.toFixed(2);
+        // Update color for net balance
+        netBalanceElement.className = netBalanceElement.className.replace(/text-(green|red)-600/, netBalance >= 0 ? 'text-green-600' : 'text-red-600');
+    }
+
+    // Remove clearFilters and its event listener
+
+    typeRadios.forEach(radio => radio.addEventListener('change', filterRows));
+    fromDate.addEventListener('input', filterRows);
+    toDate.addEventListener('input', filterRows);
+    search.addEventListener('input', filterRows);
+});
+</script>
 {% endblock %}

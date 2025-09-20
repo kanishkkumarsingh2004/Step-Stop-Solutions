@@ -203,5 +203,5 @@ urlpatterns = [
    path('deallocate-institution-nfc/', views.deallocate_institution_nfc, name='deallocate_institution_nfc'),
    path('check_institution_nfc_allocation/', views.check_institution_nfc_allocation, name='check_institution_nfc_allocation'),
 
-   path('library/receipt/<int:user_id>/<str:transaction_id>/', views.library_receipt, name='library_receipt'),
+   path('library/receipt/<str:user_id>/<str:transaction_id>/', views.library_receipt, name='library_receipt'),
  ]
