@@ -466,7 +466,8 @@ def mark_attendance(request):
                     "action": "checkin",
                     "date": ist_time.date().isoformat(),
                     "time": ist_time.strftime("%H:%M:%S"),
-                    "available_seats": library.available_seats
+                    "available_seats": library.available_seats,
+                    "user_image_id": user.profile_image_id
                 })
             else:
                 # Check-out
@@ -481,7 +482,8 @@ def mark_attendance(request):
                     "action": "checkout",
                     "date": current_time.date().isoformat(),
                     "time": ist_time.strftime("%H:%M:%S"),
-                    "available_seats": library.available_seats
+                    "available_seats": library.available_seats,
+                    "user_image_id": user.profile_image_id
                 })
         except Library.DoesNotExist:
             return JsonResponse({"error": "Library not found"}, status=404)

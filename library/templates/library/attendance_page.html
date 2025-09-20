@@ -14,8 +14,13 @@
                 <input type="hidden" name="nfc_id" id="nfc_id">
                 <input type="hidden" value="{{ library.id }}" id="library_id">
             </form>
-            <div id="attendance-status" class="hidden text-center font-semibold space-y-2">
-                <!-- Messages will be dynamically inserted here -->
+            <div id="attendance-status" class="hidden text-center font-semibold space-y-4">
+                <div id="user-profile" class="flex flex-col items-center justify-center space-y-4">
+                    <!-- User profile image and info will be dynamically inserted here -->
+                </div>
+                <div id="status-message">
+                    <!-- Status message will be dynamically inserted here -->
+                </div>
             </div>
             <div id="nfc-error" class="hidden text-center text-red-600 p-4 rounded-lg bg-red-50">
                 <div class="flex items-center justify-center space-x-2">
