@@ -76,6 +76,9 @@
                         Name
                     </th>
                     <th scope="col" class="px-3 py-2 sm:px-4 sm:py-3 text-center font-medium text-gray-600 uppercase tracking-wider">
+                        Roll Number
+                    </th>
+                    <th scope="col" class="px-3 py-2 sm:px-4 sm:py-3 text-center font-medium text-gray-600 uppercase tracking-wider">
                         Active Subscription
                     </th>
                     <th scope="col" class="px-3 py-2 sm:px-4 sm:py-3 text-center font-medium text-gray-600 uppercase tracking-wider">
@@ -98,6 +101,22 @@
                     <td class="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         <div class="font-medium text-gray-800">{{ user.first_name }} {{ user.last_name }}</div>
                         <div class="text-xs text-gray-500">{{ user.mobile_number }}</div>
+                    </td>
+                    <td class="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
+                        <div class="flex items-center space-x-2 justify-center">
+                            <input type="text" 
+                                   id="roleNumber-{{ user.id }}" 
+                                   value="{{ user.role_numbers.first.role_number|default:'' }}"
+                                   class="w-24 p-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Enter roll">
+                            <button onclick="updateRoleNumber('{{ user.id }}')"
+                                    class="inline-flex items-center px-2 py-1.5 text-sm font-medium rounded-md bg-blue-100 text-blue-800 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="roleMessage-{{ user.id }}" class="mt-1 text-xs"></p>
                     </td>
                     <td class="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         <div class="text-gray-600">
@@ -236,6 +255,78 @@
 </div>
 <!-- Add this script at the bottom of the file -->
 <script>
+    // Function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function updateRoleNumber(userId) {
+        const roleNumber = document.getElementById(`roleNumber-${userId}`).value;
+        const messageEl = document.getElementById(`roleMessage-${userId}`);
+        const inputEl = document.getElementById(`roleNumber-${userId}`);
+
+        if (!roleNumber.trim()) {
+            messageEl.textContent = 'Please enter a roll number';
+            messageEl.className = 'mt-1 text-xs text-red-600';
+            return;
+        }
+
+        // Disable input and show loading state
+        inputEl.disabled = true;
+        messageEl.textContent = 'Updating...';
+        messageEl.className = 'mt-1 text-xs text-blue-600';
+
+        fetch('{% url "update_role_number" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                library_id: '{{ library.id }}',
+                role_number: roleNumber
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                messageEl.textContent = 'Updated successfully';
+                messageEl.className = 'mt-1 text-xs text-green-600';
+                // Keep the message for 3 seconds
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                }, 3000);
+                showToast('Roll number updated successfully', 'success');
+            } else {
+                messageEl.textContent = data.message || 'Update failed';
+                messageEl.className = 'mt-1 text-xs text-red-600';
+                showToast(data.message || 'Failed to update roll number', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            messageEl.textContent = 'Error updating roll number';
+            messageEl.className = 'mt-1 text-xs text-red-600';
+            showToast('Error updating roll number', 'error');
+        })
+        .finally(() => {
+            // Re-enable input after operation is complete
+            inputEl.disabled = false;
+        });
+    }
+
     function markAttendance(userId, buttonElement) {
         // Show loading state
         const textSpan = buttonElement.querySelector('.attendance-text');

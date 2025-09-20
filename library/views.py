@@ -1786,6 +1786,49 @@ def update_profile_image(request, user_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
+@login_required
+@csrf_exempt
+def update_library_user(request, user_id, library_id):
+    """Handle updating library user details."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    try:
+        # Get the user and library
+        user = get_object_or_404(CustomUser, id=user_id)
+        library = get_object_or_404(Library, id=library_id)
+
+        # Check permissions
+        if not (request.user.is_staff or request.user == library.owner or request.user in library.staff.all()):
+            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+
+        # Parse the request data
+        data = json.loads(request.body)
+        emergency_number = data.get('emergency_number')
+        category = data.get('category')
+
+        # Update user details
+        # Note: Add the fields to your CustomUser model if they don't exist
+        if hasattr(user, 'emergency_number'):
+            user.emergency_number = emergency_number
+        if hasattr(user, 'category'):
+            user.category = category
+        user.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'User details updated successfully',
+            'data': {
+                'emergency_number': emergency_number,
+                'category': category
+            }
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 @csrf_exempt
 def delete_profile_image(request, user_id):
     """Handle deleting a user's profile image."""
