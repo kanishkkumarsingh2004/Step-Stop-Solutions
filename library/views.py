@@ -44,7 +44,8 @@ from .models import (
     TimetableEntry,
     LibraryCardLog,
     InstitutionCardLog,
-    CoachingAttendance
+    CoachingAttendance,
+    UserRoleNumber
 )
 from .functions import convert_amount_to_words
 import json
@@ -1743,6 +1744,93 @@ def admin_full_info_library_details(request, library_id):
 def apply_for_vendor(request):
     """Redirect to the vendor type selection page"""
     return render(request, 'vender/vender_type.html')
+
+@login_required
+@csrf_exempt
+def update_profile_image(request, user_id):
+    """Handle updating a user's profile image URL."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    try:
+        # Verify permissions
+        if request.user.id != user_id and not request.user.is_staff:
+            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+
+        # Get the user
+        user = get_object_or_404(CustomUser, id=user_id)
+
+        # Parse the request data
+        data = json.loads(request.body)
+        image_url = data.get('profile_image_url')
+
+        if not image_url:
+            return JsonResponse({'status': 'error', 'message': 'Profile image URL is required'}, status=400)
+
+        # Update the user's profile image
+        user.profile_image_url = image_url
+        user.save()  # This will trigger the save method that extracts the Google Drive ID
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Profile image updated successfully',
+            'image_url': user.profile_image_url,
+            'image_id': user.profile_image_id
+        })
+
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@csrf_exempt
+def update_role_number(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        library_id = data.get('library_id')
+        role_number = data.get('role_number')
+
+        if not all([user_id, library_id, role_number]):
+            return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            library = Library.objects.get(id=library_id)
+        except (CustomUser.DoesNotExist, Library.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'User or Library not found'}, status=404)
+
+        # Check if user has permission to update role numbers for this library
+        if not (request.user.is_staff or request.user.is_superuser or 
+                library.owner == request.user or request.user in library.staff.all()):
+            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+
+        # Update or create the role number
+        role_number_obj, created = UserRoleNumber.objects.update_or_create(
+            user=user,
+            library=library,
+            defaults={
+                'role_number': role_number,
+                'assigned_by': request.user
+            }
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Role number updated successfully',
+            'role_number': role_number
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
 def manage_subscriptions(request, library_id):

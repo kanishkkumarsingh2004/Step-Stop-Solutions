@@ -1,22 +1,24 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from .models import (Library, 
-                     SubscriptionPlan, 
-                     CustomUser, 
-                     Expense, 
-                     Coupon, 
-                     Banner, 
-                     LibraryImage, 
-                     HomePageImageBanner, 
-                     Review, 
-                     Institution, 
-                     InstitutionCoupon, 
-                     InstitutionBanner, 
-                     InstitutionSubscriptionPlan, 
-                     InstitutionExpense, 
+from django.db import models
+from .models import (Library,
+                     SubscriptionPlan,
+                     CustomUser,
+                     Expense,
+                     Coupon,
+                     Banner,
+                     LibraryImage,
+                     HomePageImageBanner,
+                     Review,
+                     Institution,
+                     InstitutionCoupon,
+                     InstitutionBanner,
+                     InstitutionSubscriptionPlan,
+                     InstitutionExpense,
                      InstitutionStaff,
-                     InstallmentPayment)
+                     InstallmentPayment,
+                     UserRoleNumber)
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -498,5 +500,82 @@ class InstallmentPaymentForm(forms.ModelForm):
 
         if amount_paid and remaining_amount and amount_paid > remaining_amount:
             raise forms.ValidationError("Amount paid cannot exceed the remaining amount.")
+
+        return cleaned_data
+
+class UserRoleNumberForm(forms.ModelForm):
+    """Form for assigning role numbers to users in specific libraries."""
+
+    class Meta:
+        model = UserRoleNumber
+        fields = ['user', 'library', 'role_number']
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'library': forms.Select(attrs={'class': 'form-control'}),
+            'role_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter role number',
+                'required': True
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Get the current user to filter libraries they have access to
+        current_user = kwargs.pop('current_user', None)
+        super().__init__(*args, **kwargs)
+
+        if current_user:
+            # Filter libraries based on user's permissions
+            if current_user.is_staff or current_user.is_superuser:
+                # Staff and superusers can see all libraries
+                pass
+            else:
+                # Regular users can only assign roles in libraries they own or are staff of
+                self.fields['library'].queryset = Library.objects.filter(
+                    models.Q(owner=current_user) |
+                    models.Q(staff=current_user)
+                )
+
+    def clean_role_number(self):
+        role_number = self.cleaned_data.get('role_number')
+        library = self.cleaned_data.get('library')
+
+        if role_number and library:
+            # Check if this role number is already assigned in this library
+            if UserRoleNumber.objects.filter(
+                library=library,
+                role_number=role_number
+            ).exists():
+                # If this is an update to an existing instance, allow it
+                if self.instance and self.instance.pk:
+                    existing = UserRoleNumber.objects.get(
+                        library=library,
+                        role_number=role_number
+                    )
+                    if existing.pk != self.instance.pk:
+                        raise forms.ValidationError(
+                            f"Role number '{role_number}' is already assigned in this library."
+                        )
+                else:
+                    raise forms.ValidationError(
+                        f"Role number '{role_number}' is already assigned in this library."
+                    )
+
+        return role_number
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get('user')
+        library = cleaned_data.get('library')
+
+        if user and library:
+            # Check if user is already assigned a role in this library
+            if UserRoleNumber.objects.filter(user=user, library=library).exists():
+                # If this is an update to an existing instance, allow it
+                if not (self.instance and self.instance.pk and
+                       self.instance.user == user and self.instance.library == library):
+                    raise forms.ValidationError(
+                        f"This user already has a role assigned in {library.venue_name}."
+                    )
 
         return cleaned_data

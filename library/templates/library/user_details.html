@@ -6,6 +6,43 @@
         <!-- Personal Information Section -->
         <div class="px-6 py-5 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-800">Personal Information</h2>
+            <!-- Profile Image Section -->
+            <div class="mt-4 mb-6">
+                <div class="flex items-center">
+                    <!-- Profile Image Display -->
+                    {% if user.profile_image_id %}
+                    <div class="w-32 h-32 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
+                        <img src="https://drive.google.com/thumbnail?id={{ user.profile_image_id }}&sz=s800" 
+
+                             alt="Profile picture" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    {% else %}
+                    <div class="w-32 h-32 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                        <span class="text-4xl text-gray-400">
+                            <i class="bi bi-person"></i>
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Profile Image Upload -->
+                    <div class="ml-6">
+                        <label class="block text-sm font-medium text-gray-500 mb-2">Profile Image</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="profileImageUrl" 
+                                   placeholder="Enter Google Drive image URL"
+                                   value="{{ user.profile_image_url|default:'' }}"
+                                   class="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="updateProfileImage()" 
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                Update Image
+                            </button>
+                        </div>
+                        <p id="imageUpdateMessage" class="mt-2 text-sm"></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1">
                     <label class="block text-sm font-medium text-gray-500">Full Name</label>
@@ -42,6 +79,106 @@
                 <p class="text-base font-medium text-gray-900">{{ user.address }}</p>
             </div>
         </div>
+
+        <!-- Role Number Section -->
+        <div class="px-6 py-5">
+            <h2 class="text-xl font-semibold text-gray-800">Role Number</h2>
+            <div class="mt-4">
+                <div class="flex space-x-4">
+                    <input type="text" id="roleNumber" value="{{ user.role_numbers.first.role_number|default:'' }}" 
+                           class="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Enter role number">
+                    <button onclick="updateRoleNumber()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Update Role Number
+                    </button>
+                </div>
+                <p id="roleUpdateMessage" class="mt-2 text-sm"></p>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+function updateRoleNumber() {
+    const roleNumber = document.getElementById('roleNumber').value;
+    const messageEl = document.getElementById('roleUpdateMessage');
+
+    // Show loading state
+    messageEl.textContent = 'Updating...';
+    messageEl.className = 'mt-2 text-sm text-gray-600';
+
+    fetch('{% url "update_role_number" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            user_id: '{{ user.id }}',
+            library_id: '{{ library.id }}',
+            role_number: roleNumber
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            messageEl.textContent = data.message;
+            messageEl.className = 'mt-2 text-sm text-green-600';
+        } else {
+            messageEl.textContent = data.message;
+            messageEl.className = 'mt-2 text-sm text-red-600';
+        }
+    })
+    .catch(error => {
+        messageEl.textContent = 'Error updating role number';
+        messageEl.className = 'mt-2 text-sm text-red-600';
+        console.error('Error:', error);
+    });
+}
+
+// Helper function to get CSRF token from cookies
+function getCookie(name) {
+    let value = `; ${document.cookie}`;
+    let parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function updateProfileImage() {
+    const imageUrl = document.getElementById('profileImageUrl').value;
+    const messageEl = document.getElementById('imageUpdateMessage');
+
+    // Show loading state
+    messageEl.textContent = 'Updating...';
+    messageEl.className = 'mt-2 text-sm text-gray-600';
+
+    fetch('{% url "update_profile_image" user.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            profile_image_url: imageUrl
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            messageEl.textContent = data.message;
+            messageEl.className = 'mt-2 text-sm text-green-600';
+            // Reload the page to show the new image
+            location.reload();
+        } else {
+            messageEl.textContent = data.message;
+            messageEl.className = 'mt-2 text-sm text-red-600';
+        }
+    })
+    .catch(error => {
+        messageEl.textContent = 'Error updating profile image';
+        messageEl.className = 'mt-2 text-sm text-red-600';
+        console.error('Error:', error);
+    });
+}
+</script>
 {% endblock %} 

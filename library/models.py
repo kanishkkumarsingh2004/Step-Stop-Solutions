@@ -126,6 +126,27 @@ class CustomUser(AbstractUser):
     ssid = ShortUUIDField(length=5, max_length=5, unique=True, blank=True, null=True, alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz')
     accepted_terms = models.BooleanField(default=False)
     accepted_privacy_policy = models.BooleanField(default=False)
+    profile_image_url = models.URLField(max_length=1000, blank=True, null=True)
+    profile_image_id = models.CharField(max_length=100, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.profile_image_url:
+            self.profile_image_id = self.extract_drive_file_id(self.profile_image_url)
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def extract_drive_file_id(url):
+        patterns = [
+            r'/file/d/([^/]+)',
+            r'/open\?id=([^&]+)',
+            r'/uc\?id=([^&]+)',
+            r'/uc\?export=view&id=([^&]+)'
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return None
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -857,6 +878,22 @@ class LibraryCardLog(models.Model):
 
     def __str__(self):
         return f"Card {self.card_id} <-> {self.user.get_full_name()} @ {self.library.venue_name}"
+
+class UserRoleNumber(models.Model):
+    """Model to store role numbers for users in specific libraries."""
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='role_numbers')
+    library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='user_role_numbers')
+    role_number = models.CharField(max_length=50, help_text="Role number for this user in this library")
+    assigned_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='assigned_role_numbers')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'library', 'role_number')
+        ordering = ['-assigned_at']
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - Role {self.role_number} @ {self.library.venue_name}"
 
 
 class InstitutionStaff(models.Model):
