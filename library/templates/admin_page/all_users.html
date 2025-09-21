@@ -17,18 +17,23 @@
         <div class="block sm:hidden">
             <div class="space-y-4">
                 {% for user in page_obj.object_list %}
-                <div class="p-4 border rounded-lg"
-                     data-name="{{ user.get_full_name|lower }}"
-                     data-mobile="{{ user.mobile_number|lower }}"
-                     data-email="{{ user.email|lower }}"
-                     data-ssid="{{ user.ssid|lower|default:'' }}">
+                <div class="p-4 border rounded-lg">
                     <div class="space-y-2">
                         <div>
                             <span class="text-sm font-medium text-gray-500">Index:</span>
                             <span class="text-sm text-gray-900">{{ start_index|add:forloop.counter }}</span>
                         </div>
-                        <div>
+                        <div class="flex items-center gap-2">
                             <span class="text-sm font-medium text-gray-500">Name:</span>
+                            {% if user.profile_image_id %}
+                                <img class="w-10 h-10 rounded-full object-cover" 
+                                     src="https://drive.google.com/thumbnail?id={{ user.profile_image_id }}&sz=s200" 
+                                     alt="{{ user.get_full_name }}">
+                            {% else %}
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-600 font-semibold text-base">
+                                    {{ user.get_full_name|slice:":1" }}
+                                </span>
+                            {% endif %}
                             <span class="text-sm text-gray-900">{{ user.get_full_name }}</span>
                         </div>
                         <div>
@@ -75,8 +80,21 @@
                         data-ssid="{{ user.ssid|lower|default:'' }}">
                         <td class="px-4 py-3 text-sm sm:text-base text-gray-900 whitespace-nowrap">{{ start_index|add:forloop.counter }}</td>
                         <td class="px-4 py-3 text-sm sm:text-base text-gray-900 whitespace-nowrap">
-                            <div>{{ user.get_full_name }}</div>
-                            <div class="text-gray-600">{{ user.mobile_number }}</div>
+                            <div class="flex items-center gap-2">
+                                {% if user.profile_image_id %}
+                                    <img class="w-10 h-10 rounded-full object-cover" 
+                                         src="https://drive.google.com/thumbnail?id={{ user.profile_image_id }}&sz=s200" 
+                                         alt="{{ user.get_full_name }}">
+                                {% else %}
+                                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-600 font-semibold text-base">
+                                        {{ user.get_full_name|slice:":1" }}
+                                    </span>
+                                {% endif %}
+                                <div>
+                                    <div>{{ user.get_full_name }}</div>
+                                    <div class="text-gray-600">{{ user.mobile_number }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td class="px-4 py-3 text-sm sm:text-base text-gray-900 whitespace-nowrap">{{ user.email }}</td>
                         <td class="px-4 py-3 text-sm sm:text-base text-gray-900 whitespace-nowrap">{{ user.ssid }}</td>
@@ -141,60 +159,4 @@
         {% endif %}
     </div>
 </div>
-<!-- Add the no results message div -->
-<div id="noResults" class="hidden">
-    <div class="text-center py-8 text-gray-500">
-        No users found matching your search.
-    </div>
-</div>
-
-<script>
-function filterUsers() {
-    const searchValue = document.getElementById('searchInput').value.toLowerCase();
-    const rows = document.querySelectorAll('.user-row');
-    let hasVisibleRows = false;
-    const noResultsDiv = document.getElementById('noResults');
-    
-    rows.forEach(row => {
-        const name = row.getAttribute('data-name');
-        const mobile = row.getAttribute('data-mobile');
-        const email = row.getAttribute('data-email');
-        const ssid = row.getAttribute('data-ssid');
-        
-        if (name.includes(searchValue) || 
-            mobile.includes(searchValue) || 
-            email.includes(searchValue) || 
-            ssid.includes(searchValue)) {
-            row.classList.remove('hidden');
-            hasVisibleRows = true;
-        } else {
-            row.classList.add('hidden');
-        }
-    });
-
-    // Update mobile view as well
-    const mobileCards = document.querySelectorAll('.block.sm\\:hidden .p-4.border.rounded-lg');
-    mobileCards.forEach(card => {
-        const name = card.querySelector('.text-gray-900').textContent.toLowerCase();
-        const mobile = card.querySelector('div:nth-child(4) .text-gray-900').textContent.toLowerCase();
-        const email = card.querySelector('div:nth-child(3) .text-gray-900').textContent.toLowerCase();
-        
-        if (name.includes(searchValue) || 
-            mobile.includes(searchValue) || 
-            email.includes(searchValue)) {
-            card.classList.remove('hidden');
-            hasVisibleRows = true;
-        } else {
-            card.classList.add('hidden');
-        }
-    });
-
-    // Show/hide no results message
-    if (!hasVisibleRows) {
-        noResultsDiv.classList.remove('hidden');
-    } else {
-        noResultsDiv.classList.add('hidden');
-    }
-}
-</script>
 {% endblock %}
