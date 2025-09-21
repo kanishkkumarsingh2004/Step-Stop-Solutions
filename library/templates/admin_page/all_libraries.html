@@ -1,11 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block extra_js %}
-<script src="{% static 'js/library_subscription.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{% endblock %}
-
 {% block content %}
 <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
     {% csrf_token %}
@@ -106,103 +101,92 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const toastMessage = document.getElementById('toast-message');
-    const toastText = document.getElementById('toast-text');
 
-    function showToast(message, isError = false) {
-        toastText.textContent = message;
-        toastMessage.classList.remove('translate-y-[-100%]', 'opacity-0');
-        toastMessage.classList.add('translate-y-0', 'opacity-100');
-        
-        if (isError) {
-            toastMessage.classList.remove('bg-green-500');
-            toastMessage.classList.add('bg-red-500');
-        } else {
-            toastMessage.classList.remove('bg-red-500');
-            toastMessage.classList.add('bg-green-500');
-        }
-
-        setTimeout(() => {
-            toastMessage.classList.remove('translate-y-0', 'opacity-100');
-            toastMessage.classList.add('translate-y-[-100%]', 'opacity-0');
-        }, 3000);
-    }
-    
+    // Store original values for all date inputs
     document.querySelectorAll('.subscription-date').forEach(input => {
-        // Store initial values when page loads
         input.setAttribute('data-original-value', input.value);
 
-        input.addEventListener('blur', async function() {
-            const libraryId = this.dataset.libraryId;
-            const field = this.dataset.field;
-            const value = this.value;
+        input.addEventListener('change', function() {
             const originalValue = this.getAttribute('data-original-value');
-            
-            if (value === originalValue) {
-                return; // No change, don't make an API call
+            const newValue = this.value;
+            const field = this.dataset.field;
+            const fieldName = field === 'start' ? 'Start Date' : 'End Date';
+
+            if (newValue === originalValue) {
+                return;
             }
 
-            try {
-                // Show loading state
-                input.disabled = true;
-                
-                const response = await fetch('/update_library_subscription/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({
-                        library_id: libraryId,
-                        field: field,
-                        value: value
-                    })
-                });
+            // Show confirmation dialog before making the change
+            Swal.fire({
+                title: `Change ${fieldName}?`,
+                text: `Are you sure you want to change the ${fieldName.toLowerCase()} from "${originalValue || 'empty'}" to "${newValue || 'empty'}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, change it',
+                cancelButtonText: 'Cancel'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // Proceed with update
+                    this.disabled = true;
+                    try {
+                        const response = await fetch('/update_library_subscription/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify({
+                                library_id: this.dataset.libraryId,
+                                field: field,
+                                value: newValue
+                            })
+                        });
 
-                const data = await response.json();
+                        const data = await response.json();
 
-                if (data.success) {
-                    // Update was successful
-                    this.setAttribute('data-original-value', value);
-                    
-                    const fieldName = field === 'start' ? 'Start Date' : 'End Date';
-                    // Show success message using SweetAlert2
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Date Updated!',
-                        text: `${fieldName} has been successfully updated`,
-                        showConfirmButton: false,
-                        timer: 1500,
-                        position: 'top-end',
-                        toast: true,
-                        background: '#a7f3d0',
-                        iconColor: '#059669'
-                    });
+                        if (data.success) {
+                            this.setAttribute('data-original-value', newValue);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Date Updated!',
+                                text: `${fieldName} has been successfully updated`,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                position: 'top-end',
+                                toast: true,
+                                background: '#a7f3d0',
+                                iconColor: '#059669'
+                            });
+                        } else {
+                            throw new Error(data.error || 'Update failed');
+                        }
+                    } catch (error) {
+                        this.value = originalValue || '';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: `Error updating date: ${error.message}`,
+                            showConfirmButton: true,
+                            position: 'top-end',
+                            toast: true,
+                            background: '#fee2e2',
+                            iconColor: '#dc2626'
+                        });
+                    } finally {
+                        this.disabled = false;
+                    }
                 } else {
-                    throw new Error(data.error || 'Update failed');
+                    // Revert to original value if cancelled
+                    this.value = originalValue || '';
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                // Revert to original value on error
-                this.value = originalValue || '';
-                // Show error message using SweetAlert2
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: `Error updating date: ${error.message}`,
-                    showConfirmButton: true,
-                    position: 'top-end',
-                    toast: true,
-                    background: '#fee2e2',
-                    iconColor: '#dc2626'
-                });
-            } finally {
-                // Remove loading state
-                input.disabled = false;
-            }
+            });
         });
     });
 });
