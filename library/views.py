@@ -613,7 +613,7 @@ def all_attendance(request, vendor_id):
         else:
             attendance.duration = "00h:00m:00s"
             attendance.duration_color = 0
-    paginator = Paginator(attendances, 25)  # Show 25 attendances per page
+    paginator = Paginator(attendances, 250)  # Show 25 attendances per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     return render(request, 'library/all_attendence.html', {
@@ -1837,9 +1837,6 @@ def update_profile_image(request, user_id):
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
     try:
-        # Verify permissions
-        if request.user.id != user_id and not request.user.is_staff:
-            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
 
         # Get the user
         user = get_object_or_404(CustomUser, id=user_id)
