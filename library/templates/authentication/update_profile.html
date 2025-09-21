@@ -58,6 +58,10 @@
                         <input type="text" name="gender" id="id_gender" value="{{ user.get_gender_display }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
                     </div>
                     <div>
+                        <label for="id_guardian_name" class="block text-sm font-medium text-gray-700 mb-1">Guardian Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="guardian_name" id="id_guardian_name" value="{{ user.guardian_name }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" placeholder="Enter guardian name" required>
+                    </div>
+                    <div>
                         <label for="id_dob" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth <span class="text-red-500">*</span></label>
                         <input type="text" name="dob" id="id_dob" value="{{ user.dob|date:'Y-m-d' }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed" readonly>
                     </div>
@@ -71,7 +75,7 @@
                     </div>
                     <div>
                         <label for="id_pincode" class="block text-sm font-medium text-gray-700 mb-1">Pin Code <span class="text-red-500">*</span></label>
-                        <input type="text" name="pincode" id="id_pincode" value="{{ user.pincode }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" placeholder="Enter your pin code" required>
+                        <input type="text" name="pincode" id="id_pincode" value="{{ user.pincode }}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200" placeholder="Enter your pin code" required maxlength="6" pattern="\d{6}">
                     </div>
                     <div>
                         <label for="id_district" class="block text-sm font-medium text-gray-700 mb-1">District</label>
@@ -111,44 +115,58 @@
 </div>
 
 <script>
-    function calculateAge() {
-        const dobInput = document.getElementById('id_dob');
-        const ageInput = document.getElementById('id_age');
-        const dob = new Date(dobInput.value);
-        const today = new Date();
-        let age = today.getFullYear() - dob.getFullYear();
-        const monthDiff = today.getMonth() - dob.getMonth();
-        
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-            age--;
-        }
-        ageInput.value = age;
-    }
+    // Remove calculateAge and ageInput as not used in this form
 
-    async function fetchLocationDetails() {
-        const pincode = document.getElementById('id_pincode').value;
-        if (pincode.length === 6) {
-            try {
-                const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
-                const data = await response.json();
-                
-                if (data[0].Status === 'Success') {
-                    const postOffice = data[0].PostOffice[0];
-                    document.getElementById('id_district').value = postOffice.District;
-                    document.getElementById('id_city').value = postOffice.Name;
-                    document.getElementById('id_state').value = postOffice.State;
+    // Fetch location details from pincode automatically when 6 digits are entered
+    document.addEventListener('DOMContentLoaded', function() {
+        const pincodeInput = document.getElementById('id_pincode');
+        const districtInput = document.getElementById('id_district');
+        const cityInput = document.getElementById('id_city');
+        const stateInput = document.getElementById('id_state');
+
+        async function fetchLocationDetails(pincode) {
+            if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+                try {
+                    const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+                    const data = await response.json();
+                    if (data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+                        const postOffice = data[0].PostOffice[0];
+                        districtInput.value = postOffice.District || '';
+                        cityInput.value = postOffice.Name || '';
+                        stateInput.value = postOffice.State || '';
+                    } else {
+                        districtInput.value = '';
+                        cityInput.value = '';
+                        stateInput.value = '';
+                    }
+                } catch (error) {
+                    districtInput.value = '';
+                    cityInput.value = '';
+                    stateInput.value = '';
+                    console.error('Error fetching location details:', error);
                 }
-            } catch (error) {
-                console.error('Error fetching location details:', error);
+            } else {
+                districtInput.value = '';
+                cityInput.value = '';
+                stateInput.value = '';
             }
         }
-    }
-    
-    // Calculate age on page load if DOB is already set
-    document.addEventListener('DOMContentLoaded', function() {
-        const dobInput = document.getElementById('id_dob');
-        if (dobInput.value) {
-            calculateAge();
+
+        // Listen for input on pincode field
+        pincodeInput.addEventListener('input', function() {
+            const pincode = pincodeInput.value.trim();
+            if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+                fetchLocationDetails(pincode);
+            } else {
+                districtInput.value = '';
+                cityInput.value = '';
+                stateInput.value = '';
+            }
+        });
+
+        // If pincode is already filled on page load, fetch location details
+        if (pincodeInput.value && pincodeInput.value.length === 6 && /^\d{6}$/.test(pincodeInput.value)) {
+            fetchLocationDetails(pincodeInput.value);
         }
     });
 </script>

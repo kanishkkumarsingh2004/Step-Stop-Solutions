@@ -2206,21 +2206,6 @@ def delete_expense(request, library_id, expense_id):
 @login_required
 def user_profile(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
-    return render(request, 'authentication/profile.html', {'user': user})
-
-@login_required
-def update_profile(request, user_id):
-    user = get_object_or_404(CustomUser, id=user_id)
-    if request.method == 'POST':
-        # Only update allowed fields
-        user.emergency_number = request.POST.get('emergency_number')
-        user.address = request.POST.get('address')
-        user.pincode = request.POST.get('pincode')
-        user.category = request.POST.get('category')
-        user.save()
-        messages.success(request, 'Profile updated successfully!')
-        return redirect('user_profile', user_id=user.id)
-    return render(request, 'authentication/update_profile.html', {'user': user})
 
 @login_required
 def create_coupon(request, library_id):
