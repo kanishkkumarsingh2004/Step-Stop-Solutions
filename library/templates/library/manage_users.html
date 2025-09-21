@@ -100,11 +100,14 @@
                 <tr class="hover:bg-gray-50 transition-colors duration-150">
                     <td class="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         <div class="flex items-center space-x-2 justify-center">
-                            <input type="text" 
+                            <input type="number" 
                                    id="roleNumber-{{ user.id }}" 
                                    value="{{ user.role_numbers.first.role_number|default:'' }}"
                                    class="w-12 p-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="Enter roll">
+                                   placeholder="Enter roll"
+                                   min="1"
+                                   oninput="validateRoleNumber(this)"
+                                   onkeydown="return event.keyCode !== 189">
                             <button onclick="updateRoleNumber('{{ user.id }}')"
                                     class="inline-flex items-center px-2 py-1.5 text-sm font-medium rounded-md bg-blue-100 text-blue-800 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,16 +293,30 @@
         return cookieValue;
     }
 
+    function validateRoleNumber(input) {
+        // Remove any negative signs
+        input.value = input.value.replace(/-/g, '');
+        
+        // Remove leading zeros
+        if (input.value.length > 1) {
+            input.value = input.value.replace(/^0+/, '');
+        }
+        
+        // Remove any decimal points and everything after them
+        if (input.value.includes('.')) {
+            input.value = input.value.split('.')[0];
+        }
+        
+        // If the value is '0', clear it
+        if (input.value === '0') {
+            input.value = '';
+        }
+    }
+
     function updateRoleNumber(userId) {
         const roleNumber = document.getElementById(`roleNumber-${userId}`).value;
         const messageEl = document.getElementById(`roleMessage-${userId}`);
         const inputEl = document.getElementById(`roleNumber-${userId}`);
-
-        if (!roleNumber.trim()) {
-            messageEl.textContent = 'Please enter a roll number';
-            messageEl.className = 'mt-1 text-xs text-red-600';
-            return;
-        }
 
         // Disable input and show loading state
         inputEl.disabled = true;
@@ -321,13 +338,17 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                messageEl.textContent = 'Updated successfully';
+                // Clear input if role number was removed
+                if (!data.role_number) {
+                    inputEl.value = '';
+                }
+                messageEl.textContent = data.message;
                 messageEl.className = 'mt-1 text-xs text-green-600';
                 // Keep the message for 3 seconds
                 setTimeout(() => {
                     messageEl.textContent = '';
                 }, 3000);
-                showToast('Roll number updated successfully', 'success');
+                showToast(data.message, 'success');
             } else {
                 messageEl.textContent = data.message || 'Update failed';
                 messageEl.className = 'mt-1 text-xs text-red-600';

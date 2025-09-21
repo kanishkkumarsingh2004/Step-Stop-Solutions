@@ -29,6 +29,7 @@ class CustomUserCreationForm(UserCreationForm):
     last_name = forms.CharField(max_length=30, required=True)
     mobile_number = forms.CharField(max_length=15, required=True)
     emergency_number = forms.CharField(max_length=15, required=True)
+    guardian_name = forms.CharField(max_length=100, required=True, help_text="Father's/Guardian's name")
     gender = forms.ChoiceField(choices=User.GENDER_CHOICES, required=True)
     address = forms.CharField(widget=forms.Textarea, required=True)
     email = forms.EmailField(required=True)
@@ -45,7 +46,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'first_name', 'last_name', 'mobile_number', 'emergency_number', 'gender', 'address', 'password1', 'password2', 'category', 'dob', 'pincode', 'district', 'city', 'state', 'age', 'education', 'terms', 'privacy']
+        fields = ['email', 'first_name', 'last_name', 'guardian_name', 'mobile_number', 'emergency_number', 'gender', 'address', 'password1', 'password2', 'category', 'dob', 'pincode', 'district', 'city', 'state', 'age', 'education', 'terms', 'privacy']
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -122,12 +123,85 @@ class ExpenseForm(forms.ModelForm):
         return cleaned_data
 
 class UserProfileForm(forms.ModelForm):
+    pincode = forms.CharField(
+        max_length=6,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full rounded-lg border-2 border-gray-200 p-2 focus:border-blue-500 focus:outline-none',
+            'placeholder': 'Enter 6-digit pincode'
+        })
+    )
+    district = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={
+            'readonly': 'readonly',
+            'class': 'w-full rounded-lg border-2 border-gray-200 p-2 bg-gray-50'
+        })
+    )
+    city = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={
+            'readonly': 'readonly',
+            'class': 'w-full rounded-lg border-2 border-gray-200 p-2 bg-gray-50'
+        })
+    )
+    state = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={
+            'readonly': 'readonly',
+            'class': 'w-full rounded-lg border-2 border-gray-200 p-2 bg-gray-50'
+        })
+    )
+
     class Meta:
         model = CustomUser
-        fields = ['mobile_number', 'emergency_number', 'category', 'address']
+        fields = ['mobile_number', 'emergency_number', 'guardian_name', 'category', 'address', 'pincode', 'district', 'city', 'state']
         widgets = {
-            'address': forms.Textarea(attrs={'rows': 3}),
+            'mobile_number': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border-2 border-gray-200 p-2 focus:border-blue-500 focus:outline-none',
+                'placeholder': 'Enter mobile number'
+            }),
+            'emergency_number': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border-2 border-gray-200 p-2 focus:border-blue-500 focus:outline-none',
+                'placeholder': 'Enter emergency contact number'
+            }),
+            'guardian_name': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border-2 border-gray-200 p-2 focus:border-blue-500 focus:outline-none',
+                'placeholder': "Father's/Guardian's name"
+            }),
+            'category': forms.Select(attrs={
+                'class': 'w-full rounded-lg border-2 border-gray-200 p-2 focus:border-blue-500 focus:outline-none'
+            }),
+            'address': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'w-full rounded-lg border-2 border-gray-200 p-2 focus:border-blue-500 focus:outline-none',
+                'placeholder': 'Enter your complete address'
+            }),
         }
+        
+    def clean_pincode(self):
+        pincode = self.cleaned_data.get('pincode')
+        if not pincode.isdigit():
+            raise forms.ValidationError('Pincode must contain only digits')
+        if len(pincode) != 6:
+            raise forms.ValidationError('Pincode must be 6 digits long')
+        return pincode
+
+    def clean_mobile_number(self):
+        mobile = self.cleaned_data.get('mobile_number')
+        if not mobile.isdigit():
+            raise forms.ValidationError('Mobile number must contain only digits')
+        if len(mobile) != 10:
+            raise forms.ValidationError('Mobile number must be 10 digits long')
+        return mobile
+
+    def clean_emergency_number(self):
+        number = self.cleaned_data.get('emergency_number')
+        if not number.isdigit():
+            raise forms.ValidationError('Emergency number must contain only digits')
+        if len(number) != 10:
+            raise forms.ValidationError('Emergency number must be 10 digits long')
+        return number
 
 class CouponForm(forms.ModelForm):
     class Meta:
@@ -160,7 +234,7 @@ class BannerForm(forms.ModelForm):
         fields = ['google_drive_link']
         widgets = {
             'google_drive_link': forms.URLInput(attrs={
-                'pattern': 'https://drive\.google\.com/.*',
+                'pattern': r'https://drive\.google\.com/.*',
                 'placeholder': 'Enter Google Drive link',
                 'required': True
             })

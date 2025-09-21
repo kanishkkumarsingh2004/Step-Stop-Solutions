@@ -10,7 +10,22 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <!-- Profile Image Section -->
+        <div class="flex justify-center pt-8 pb-4">
+            {% if user.profile_image_id %}
+                <img src="https://drive.google.com/thumbnail?id={{ user.profile_image_id }}&sz=s800" 
+                     alt="Profile Picture" 
+                     class="h-32 w-32 rounded-full object-cover border-4 border-blue-500 shadow-lg">
+            {% else %}
+                <div class="h-32 w-32 rounded-full border-4 border-blue-500 shadow-lg flex items-center justify-center bg-gray-100">
+                    <svg class="h-20 w-20 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+            {% endif %}
+        </div>
+        
         <!-- Personal Information Section -->
         <div class="px-6 py-5 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-800">Personal Information</h2>
@@ -24,6 +39,10 @@
                 <div class="space-y-1">
                     <label class="block text-sm font-medium text-gray-500">Email Address</label>
                     <p class="text-base font-medium text-gray-900">{{ user.email }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-500">Father's/Guardian's Name</label>
+                    <p class="text-base font-medium text-gray-900">{{ user.guardian_name }}</p>
                 </div>
                 <div class="space-y-1">
                     <label class="block text-sm font-medium text-gray-500">Emergency Contact</label>
@@ -104,11 +123,30 @@
             <h2 class="text-xl font-semibold text-gray-800">Associated Libraries</h2>
             <div class="mt-4">
                 {% if user.library.all %}
-                    <ul class="list-disc list-inside space-y-1">
-                        {% for lib in user.library.all %}
-                            <li class="text-base font-medium text-gray-900">{{ lib.venue_name }}</li>
-                        {% endfor %}
-                    </ul>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Library Name</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for lib in user.library.all %}
+                                <tr>
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ lib.venue_name }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">{{ lib.owner.get_full_name }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">
+                                        <span id="status-{{ lib.id }}" class="px-2 py-1 text-xs font-medium rounded">
+                                            Active
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 {% else %}
                     <p class="text-base font-medium text-gray-900">No associated libraries</p>
                 {% endif %}

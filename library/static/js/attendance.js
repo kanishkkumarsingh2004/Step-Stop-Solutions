@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isCheckin = data.action === "checkin";
                 // Create the profile image HTML
                 const profileHtml = data.user_image_id ? `
-                    <img src="https://drive.google.com/thumbnail?id=${data.user_image_id}&sz=s200" 
+                    <img src="https://drive.google.com/thumbnail?id=${data.user_image_id}&sz=s800" 
                          alt="${data.message}"
                          class="w-32 h-32 rounded-full object-cover border-4 ${isCheckin ? "border-green-500" : "border-red-500"} shadow-lg transform transition-all duration-300 hover:scale-105">`
                     : `
@@ -152,12 +152,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         ${profileHtml}
                         <div class="text-center space-y-3">
                             <p class="text-3xl font-bold ${isCheckin ? "text-green-600" : "text-red-600"}">
-                                ${isCheckin ? "Welcome!" : "Goodbye!"}
+                                ${isCheckin ? "Welcome to the Library! Please keep Silence!" : "Goodbye! See you again!"}
                             </p>
                             <p class="text-xl text-gray-800">${data.message}</p>
-                            <div class="text-sm text-gray-600 bg-gray-50 py-2 px-4 rounded-lg inline-block">
-                                <p class="font-medium">Date: ${data.date}</p>
-                                <p class="font-medium">Time: ${data.time}</p>
+                            <div class="text-xl text-gray-600  ${isCheckin ? "bg-green-100" : "bg-red-100"} bg-gray-50 py-2 px-4 rounded-lg inline-block">
+                                <p class="font-bold">Date: ${data.date}</p>
+                                <p class="font-bold">Time: ${data.time}</p>
                             </div>
                         </div>
                     </div>

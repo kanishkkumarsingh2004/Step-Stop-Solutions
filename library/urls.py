@@ -111,6 +111,7 @@ urlpatterns = [
    path('admin-dashboard/all-libraries/', views.all_libraries, name='all_libraries'),
    path('admin-dashboard/user-details/<int:user_id>/', views.user_details, name='user_details'),
    path('admin-dashboard/library-full-details/<int:library_id>/', views.admin_full_info_library_details, name='admin_full_info_library_details'),
+   path('admin-dashboard/library/<int:library_id>/update-subscription/', views.update_library_subscription, name='update_library_subscription'),
    
    # Vendor Type Selection
    path('vendor-type/', views.vender_type, name='vender_type'),
@@ -207,4 +208,5 @@ urlpatterns = [
    path('user/<int:user_id>/update-profile-image/', views.update_profile_image, name='update_profile_image'),
    path('user/<int:user_id>/delete-profile-image/', views.delete_profile_image, name='delete_profile_image'),
    path('update-role-number/', views.update_role_number, name='update_role_number'),
+   path('update_library_subscription/', views.update_library_subscription, name='update_library_subscription'),
  ]

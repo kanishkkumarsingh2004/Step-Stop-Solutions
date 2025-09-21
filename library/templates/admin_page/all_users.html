@@ -2,13 +2,26 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">All Users</h1>
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">All Users</h1>
+        <div class="w-full sm:w-96">
+            <input type="text" 
+                   id="searchInput" 
+                   placeholder="Search by name, mobile, email, or SSID..." 
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                   onkeyup="filterUsers()">
+        </div>
+    </div>
     <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
         <!-- Mobile View -->
         <div class="block sm:hidden">
             <div class="space-y-4">
                 {% for user in page_obj.object_list %}
-                <div class="p-4 border rounded-lg">
+                <div class="p-4 border rounded-lg"
+                     data-name="{{ user.get_full_name|lower }}"
+                     data-mobile="{{ user.mobile_number|lower }}"
+                     data-email="{{ user.email|lower }}"
+                     data-ssid="{{ user.ssid|lower|default:'' }}">
                     <div class="space-y-2">
                         <div>
                             <span class="text-sm font-medium text-gray-500">Index:</span>
@@ -55,7 +68,11 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for user in page_obj.object_list %}
-                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                    <tr class="hover:bg-gray-50 transition-colors duration-200 user-row"
+                        data-name="{{ user.get_full_name|lower }}"
+                        data-mobile="{{ user.mobile_number|lower }}"
+                        data-email="{{ user.email|lower }}"
+                        data-ssid="{{ user.ssid|lower|default:'' }}">
                         <td class="px-4 py-3 text-sm sm:text-base text-gray-900 whitespace-nowrap">{{ start_index|add:forloop.counter }}</td>
                         <td class="px-4 py-3 text-sm sm:text-base text-gray-900 whitespace-nowrap">
                             <div>{{ user.get_full_name }}</div>
@@ -124,4 +141,60 @@
         {% endif %}
     </div>
 </div>
+<!-- Add the no results message div -->
+<div id="noResults" class="hidden">
+    <div class="text-center py-8 text-gray-500">
+        No users found matching your search.
+    </div>
+</div>
+
+<script>
+function filterUsers() {
+    const searchValue = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.user-row');
+    let hasVisibleRows = false;
+    const noResultsDiv = document.getElementById('noResults');
+    
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name');
+        const mobile = row.getAttribute('data-mobile');
+        const email = row.getAttribute('data-email');
+        const ssid = row.getAttribute('data-ssid');
+        
+        if (name.includes(searchValue) || 
+            mobile.includes(searchValue) || 
+            email.includes(searchValue) || 
+            ssid.includes(searchValue)) {
+            row.classList.remove('hidden');
+            hasVisibleRows = true;
+        } else {
+            row.classList.add('hidden');
+        }
+    });
+
+    // Update mobile view as well
+    const mobileCards = document.querySelectorAll('.block.sm\\:hidden .p-4.border.rounded-lg');
+    mobileCards.forEach(card => {
+        const name = card.querySelector('.text-gray-900').textContent.toLowerCase();
+        const mobile = card.querySelector('div:nth-child(4) .text-gray-900').textContent.toLowerCase();
+        const email = card.querySelector('div:nth-child(3) .text-gray-900').textContent.toLowerCase();
+        
+        if (name.includes(searchValue) || 
+            mobile.includes(searchValue) || 
+            email.includes(searchValue)) {
+            card.classList.remove('hidden');
+            hasVisibleRows = true;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+
+    // Show/hide no results message
+    if (!hasVisibleRows) {
+        noResultsDiv.classList.remove('hidden');
+    } else {
+        noResultsDiv.classList.add('hidden');
+    }
+}
+</script>
 {% endblock %}

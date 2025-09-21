@@ -20,7 +20,7 @@ from django.utils.dateparse import parse_date
 from django.core.exceptions import ValidationError
 logger = logging.getLogger(__name__)
 from datetime import date
-from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm
+from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm, UserProfileForm
 from .models import (
     CustomUser,
     SubscriptionPlan,
@@ -254,6 +254,7 @@ def user_signup(request):
             user = form.save(commit=False)
             user.username = form.cleaned_data['email']
             user.dob = form.cleaned_data['dob']
+            user.guardian_name = form.cleaned_data['guardian_name']
             user.accepted_terms = form.cleaned_data['terms']
             user.accepted_privacy_policy = form.cleaned_data['privacy']
             user.save()
@@ -570,15 +571,22 @@ def payment_confirmation(request, transaction_id):
 def all_attendance(request, vendor_id):
     # Get the library/vendor
     library = get_object_or_404(Library, id=vendor_id)
-    # Get all attendance records for this library
-    attendances = LibraryAttendance.objects.filter(library=library).order_by('-check_in_time')
+    # Get all attendance records for this library with user role numbers
+    attendances = LibraryAttendance.objects.select_related('user').filter(library=library).order_by('-check_in_time')
+    # Get role numbers for all users
+    user_ids = [a.user_id for a in attendances]
+    role_numbers = {ur.user_id: ur.role_number for ur in UserRoleNumber.objects.filter(user_id__in=user_ids, library=library)}
+    # Attach role numbers to attendance records
+    for attendance in attendances:
+        attendance.role_number = role_numbers.get(attendance.user_id, '-')
     # This ensures page_obj is always defined
     # Add search functionality
     search_query = request.GET.get('search')
     if search_query:
         attendances = attendances.filter(
             Q(user__first_name__icontains=search_query) |
-            Q(user__last_name__icontains=search_query)
+            Q(user__last_name__icontains=search_query) |
+            Q(user__role_numbers__role_number__icontains=search_query, user__role_numbers__library=library)
         )
     # Calculate duration for each attendance
     for attendance in attendances:
@@ -798,10 +806,16 @@ def expense_dashboard(request, library_id):
     # Get date filters from request
     from_date = request.GET.get('from_date')
     to_date = request.GET.get('to_date')    
-    # Base querysets
+    # Base querysets with date filtering
     transactions = Transaction.objects.filter(subscription__library=library)
     expenses = Expense.objects.filter(library=library)
-    # Calculate totals
+
+    # Apply date filters if provided
+    if from_date and to_date:
+        transactions = transactions.filter(created_at__range=[from_date, to_date])
+        expenses = expenses.filter(date__range=[from_date, to_date])
+
+    # Calculate totals from filtered data
     total_earnings = transactions.aggregate(total=Sum('amount'))['total'] or 0
     valid_amount = transactions.filter(status='valid').aggregate(total=Sum('amount'))['total'] or 0
     invalid_amount = transactions.filter(status='invalid').aggregate(total=Sum('amount'))['total'] or 0
@@ -815,6 +829,18 @@ def expense_dashboard(request, library_id):
         transactions = transactions.filter(created_at__range=[from_date, to_date])
         expenses = expenses.filter(date__range=[from_date, to_date])
         valid_transection = valid_transection.filter(created_at__range=[adjusted_from_date, adjusted_to_date])
+
+    # Get role numbers for all users in valid transactions
+    user_ids = [t.user_id for t in valid_transection]
+    role_numbers = {ur.user_id: ur.role_number for ur in UserRoleNumber.objects.filter(
+        user_id__in=user_ids, 
+        library=library
+    )}
+
+    # Attach role numbers to transactions
+    for transaction in valid_transection:
+        transaction.role_number = role_numbers.get(transaction.user_id, '-')
+
     context = {
         'library': library,
         'total_earnings': total_earnings,
@@ -1743,6 +1769,62 @@ def admin_full_info_library_details(request, library_id):
     except Library.DoesNotExist:
         raise Http404("Library not found")
 
+@login_required
+@csrf_exempt
+def update_library_subscription(request):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        library_id = data.get('library_id')
+        
+        if not library_id:
+            return JsonResponse({'success': False, 'error': 'Library ID is required'}, status=400)
+            
+        library = Library.objects.get(id=library_id)
+        
+        field = data.get('field')
+        value = data.get('value')
+        
+        if not field or not value:
+            return JsonResponse({'success': False, 'error': 'Field and value are required'}, status=400)
+            
+        try:
+            date_value = parse_date(value)
+            if not date_value:
+                return JsonResponse({'success': False, 'error': 'Invalid date format'}, status=400)
+            
+            if field == 'start':
+                library.subscription_start_date = date_value
+            elif field == 'end':
+                library.subscription_end_date = date_value
+            else:
+                return JsonResponse({'success': False, 'error': 'Invalid field name'}, status=400)
+                
+            library.save()
+            return JsonResponse({
+                'success': True,
+                'data': {
+                    'field': field,
+                    'value': value,
+                    'library_id': library_id
+                }
+            })
+            
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Invalid date format'}, status=400)
+            
+    except Library.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Library not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 def apply_for_vendor(request):
     """Redirect to the vendor type selection page"""
     return render(request, 'vender/vender_type.html')
@@ -1861,6 +1943,36 @@ def delete_profile_image(request, user_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
+def update_profile(request, user_id):
+    # Get the user to be updated
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    # Check if the logged-in user has permission to edit this profile
+    if request.user.id != user_id and not request.user.is_staff:
+        messages.error(request, 'You do not have permission to edit this profile.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=user)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, 'Profile updated successfully!')
+                return redirect('dashboard')
+            except Exception as e:
+                messages.error(request, f'Error updating profile: {str(e)}')
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
+    else:
+        form = UserProfileForm(instance=user)
+
+    return render(request, 'authentication/update_profile.html', {
+        'form': form,
+        'user': user
+    })
+
+@login_required
 @csrf_exempt
 def update_role_number(request):
     if request.method != 'POST':
@@ -1872,9 +1984,11 @@ def update_role_number(request):
         library_id = data.get('library_id')
         role_number = data.get('role_number')
 
-        if not all([user_id, library_id, role_number]):
+        if not all([user_id, library_id]):
             return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
-
+            
+        # role_number can be None or empty string - that's valid for removal
+        
         try:
             user = CustomUser.objects.get(id=user_id)
             library = Library.objects.get(id=library_id)
@@ -1886,15 +2000,24 @@ def update_role_number(request):
                 library.owner == request.user or request.user in library.staff.all()):
             return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
 
-        # Update or create the role number
-        role_number_obj, created = UserRoleNumber.objects.update_or_create(
-            user=user,
-            library=library,
-            defaults={
-                'role_number': role_number,
-                'assigned_by': request.user
-            }
-        )
+        if not role_number.strip():
+            # If role number is empty, delete any existing role number for this user/library
+            UserRoleNumber.objects.filter(user=user, library=library).delete()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Role number removed successfully',
+                'role_number': None
+            })
+        else:
+            # Update or create the role number
+            role_number_obj, created = UserRoleNumber.objects.update_or_create(
+                user=user,
+                library=library,
+                defaults={
+                    'role_number': role_number,
+                    'assigned_by': request.user
+                }
+            )
 
         return JsonResponse({
             'status': 'success',

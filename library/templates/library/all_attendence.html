@@ -21,6 +21,9 @@
             <table class="min-w-full divide-y divide-gray-100">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th scope="col" class="px-2 sm:px-3 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-7">
+                            Roll No.
+                        </th>
                         <th scope="col" class="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             User
                         </th>
@@ -38,6 +41,9 @@
                 <tbody class="bg-white divide-y divide-gray-100">
                     {% for attendance in attendances %}
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-2 sm:px-3 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-800 text-center w-20">
+                            {{ attendance.user.role_numbers.get.role_number|default:"-" }}
+                        </td>
                         <td class="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-800 text-center">
                             {{ attendance.user.get_full_name }}
                         </td>
