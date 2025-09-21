@@ -1917,10 +1917,6 @@ def delete_profile_image(request, user_id):
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
     try:
-        # Verify permissions
-        if request.user.id != user_id and not request.user.is_staff:
-            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
-
         # Get the user
         user = get_object_or_404(CustomUser, id=user_id)
 
