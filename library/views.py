@@ -2199,6 +2199,8 @@ def delete_expense(request, library_id, expense_id):
 @login_required
 def user_profile(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
+    context = {'user':user}
+    return render(request, 'authentication/profile.html', context) 
 
 @login_required
 def create_coupon(request, library_id):
