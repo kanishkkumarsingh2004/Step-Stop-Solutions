@@ -983,10 +983,8 @@ def library_dashboard(request, library_id):
     library = get_object_or_404(Library, id=library_id)
     total_seats = library.capacity if library else 0
     available_seats = library.available_seats if library else 0
-    # Get unique users who have active subscriptions
     active_users = UserSubscription.objects.filter(
-        subscription__library=library,
-        end_date__gte=timezone.now().date()
+        subscription__library=library
     ).values('user').distinct().count()
     # Get total active subscriptions
     active_subscriptions_count = UserSubscription.objects.filter(

@@ -80,7 +80,7 @@
             </table>
         </div>
         
-        <!-- Add pagination controls -->
+        <!-- Add pagination controls with only 5 page numbers shown: current, 2 before, 2 after -->
         <div class="mt-6 flex justify-center">
             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                 {% if attendances.has_previous %}
@@ -89,19 +89,61 @@
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 {% endif %}
-                
-                {% for num in attendances.paginator.page_range %}
-                    {% if attendances.number == num %}
-                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
-                            {{ num }}
-                        </span>
+                {% comment %}
+                    Show only 5 page numbers: current, 2 before, 2 after.
+                    If total pages <= 5, show all pages.
+                    If total pages > 5, show a window of 5 pages centered on current.
+                {% endcomment %}
+                {% with total_pages=attendances.paginator.num_pages current=attendances.number %}
+                    {% if total_pages <= 5 %}
+                        {% for num in attendances.paginator.page_range %}
+                            {% if current == num %}
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                    {{ num }}
+                                </span>
+                            {% else %}
+                                <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
                     {% else %}
-                        <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            {{ num }}
-                        </a>
+                        {% with left=current|add:"-2" right=current|add:"2" %}
+                            {# Clamp left and right to valid page numbers #}
+                            {% if left < 1 %}
+                                {% with right=right|add:"1"|add:"-"|add:left left=1 %}
+                                    {% if right > total_pages %}
+                                        {% with right=total_pages %}
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if right > total_pages %}
+                                {% with left=left|add:total_pages|add:"-"|add:right right=total_pages %}
+                                    {% if left < 1 %}
+                                        {% with left=1 %}
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {# Now, render the page numbers from left to right #}
+                            {% for num in attendances.paginator.page_range %}
+                                {% if num >= left and num <= right %}
+                                    {% if current == num %}
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                            {{ num }}
+                                        </span>
+                                    {% else %}
+                                        <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            {{ num }}
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
                     {% endif %}
-                {% endfor %}
-                
+                {% endwith %}
+
                 {% if attendances.has_next %}
                     <a href="?page={{ attendances.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                         <span class="sr-only">Next</span>
