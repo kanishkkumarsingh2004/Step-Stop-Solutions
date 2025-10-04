@@ -5,47 +5,46 @@ from django.urls import reverse_lazy
 
 urlpatterns = [
    # Authentication
-   path('', views.home, name='home'),
-   path('login/', views.user_login, name='login'),
-   path('signup/', views.user_signup, name='signup'),
-   path('logout/', views.user_logout, name='logout'),
+    path('', views.home, name='home'),
+    path('login/', views.user_login, name='login'),
+    path('signup/', views.user_signup, name='signup'),
+    path('logout/', views.user_logout, name='logout'),
    
    # Dashboards
-   path('dashboard/', views.dashboard, name='dashboard'),
-   path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
-   path('library/<int:library_id>/dashboard/', views.library_dashboard, name='library_dashboard'),
-   path('library/<int:library_id>/active-subscriptions/', views.active_library_subscriptions, name='active_library_subscriptions'),
-   path('library/<int:library_id>/edit/', views.edit_library_profile, name='edit_library_profile'),
-      
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('library/<int:library_id>/dashboard/', views.library_dashboard, name='library_dashboard'),
+    path('library/<int:library_id>/active-subscriptions/', views.active_library_subscriptions, name='active_library_subscriptions'),
+    path('library/<int:library_id>/edit/', views.edit_library_profile, name='edit_library_profile'),
+
    # User Management
-   path('vendor/<int:library_id>/manage-users/', views.manage_users, name='manage_users'),    
+    path('vendor/<int:library_id>/manage-users/', views.manage_users, name='manage_users'),    
    # Library Management
-   path('register-library/', views.register_library, name='register_library'),
-   path('registered-lib/', views.register_venders_shop, name='register_lib'),
-   path('registered-institute/', views.register_institute, name='register_institute'),
-   path('manage-libraries/', views.manage_libraries, name='manage_libraries'),
-   path('toggle-library-approval/<int:library_id>/', views.toggle_library_approval, name='toggle_library_approval'),
-   path('admin-dashboard/manage_institutions/', views.manage_institutions, name='manage_institutions'),
+    path('register-library/', views.register_library, name='register_library'),
+    path('registered-lib/', views.register_venders_shop, name='register_lib'),
+    path('registered-institute/', views.register_institute, name='register_institute'),
+    path('manage-libraries/', views.manage_libraries, name='manage_libraries'),
+    path('toggle-library-approval/<int:library_id>/', views.toggle_library_approval, name='toggle_library_approval'),
+    path('admin-dashboard/manage_institutions/', views.manage_institutions, name='manage_institutions'),
 
    # Library Details
-   path('library-details/<int:library_id>/', views.public_library_details, name='library_details'),
-   path('admin-dashboard/library-details/<int:library_id>/', views.admin_library_details, name='admin_library_details'),
+    path('library-details/<int:library_id>/', views.public_library_details, name='library_details'),
+    path('admin-dashboard/library-details/<int:library_id>/', views.admin_library_details, name='admin_library_details'),
    
    # Subscriptions
-   path('library/<int:library_id>/subscription/', views.subscription_page, name='subscription_page'),
-   path('my-subscriptions/', views.user_subscriptions, name='user_subscriptions'),
-   path('subscription/<int:subscription_id>/details/', views.subscription_details, name='subscription_details'),
-   path('library/<int:library_id>/create-subscription/', views.create_subscription, name='create_subscription'),
+    path('library/<int:library_id>/subscription/', views.subscription_page, name='subscription_page'),
+    path('my-subscriptions/', views.user_subscriptions, name='user_subscriptions'),
+    path('subscription/<int:subscription_id>/details/', views.subscription_details, name='subscription_details'),
+    path('library/<int:library_id>/create-subscription/', views.create_subscription, name='create_subscription'),
    
    # Payments
-   path('payment/<int:plan_id>/', views.payment_page, name='payment'),
-   path('confirm-payment/<int:plan_id>/', views.confirm_payment, name='confirm_payment'),
-   path('payment-confirmation/<str:transaction_id>/', views.payment_confirmation, name='payment_confirmation'),
-   path('library/<int:library_id>/verify-payments/', views.verify_payments, name='verify_payments'),
-   path('verify-payment/<int:transaction_id>/', views.verify_single_payment, name='verify_single_payment'),
-   path('transactions/<int:transaction_id>/update-status/', views.update_transaction_status, name='update_transaction_status'),
-   path('subscription/<int:subscription_id>/update-start-date/', views.update_subscription_start_date, name='update_subscription_start_date'),
-   path('subscription/<int:subscription_id>/update-end-date/', views.update_subscription_end_date, name='update_subscription_end_date'),
+    path('payment/<int:plan_id>/', views.payment_page, name='payment'),
+    path('confirm-payment/<int:plan_id>/', views.confirm_payment, name='confirm_payment'),
+    path('payment-confirmation/<str:transaction_id>/', views.payment_confirmation, name='payment_confirmation'),
+    path('library/<int:library_id>/verify-payments/', views.verify_payments, name='verify_payments'),
+    path('verify-payment/<int:transaction_id>/', views.verify_single_payment, name='verify_single_payment'),
+    path('transactions/<int:transaction_id>/update-status/', views.update_transaction_status, name='update_transaction_status'),
+    path('update_subscription_date/<int:subscription_id>/', views.update_subscription_date, name='update_subscription_date'),
    
    # Enrollment
    path('library/<int:library_id>/enroll/', views.enroll_library, name='enroll_library'),

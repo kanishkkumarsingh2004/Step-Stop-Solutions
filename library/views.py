@@ -1340,70 +1340,63 @@ def verify_single_payment(request, transaction_id):
     messages.error(request, "Invalid request method")
     return redirect('verify_payments', library_id=transaction.subscription.library.id)
 
+import logging
+logger = logging.getLogger(__name__)
+
 @login_required
+@require_POST
+@csrf_exempt
 def update_transaction_status(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
-    if request.method == 'POST':
+    logger.info(f'Request body: {request.body}')
+    try:
+        transaction = get_object_or_404(Transaction, id=transaction_id)
         new_status = request.POST.get('status')
+
         if new_status in dict(Transaction.STATUS_CHOICES).keys():
             transaction.status = new_status
             transaction.save()
-            messages.success(request, f"Transaction status updated to {new_status}")
+            return JsonResponse({'status': 'success', 'message': f'Transaction status updated to {new_status}'})
         else:
-            messages.error(request, "Invalid status selected")
-    return redirect('verify_payments', library_id=transaction.subscription.library.id)
+            return JsonResponse({'status': 'error', 'message': 'Invalid status selected'}, status=400)
 
-@login_required
-def update_subscription_start_date(request, subscription_id):
-    if request.method == 'POST':
-        new_start_date = request.POST.get('start_date')
-        if not new_start_date:
-            messages.error(request, "New start date is required.")
-            return redirect('dashboard')
-        try:
-            subscription = UserSubscription.objects.get(id=subscription_id)
-            subscription.start_date = new_start_date
-            subscription.save()
-            messages.success(request, "Subscription start date updated successfully.")
-        except UserSubscription.DoesNotExist:
-            messages.error(request, "Subscription not found.")
-        except Exception as e:
-            messages.error(request, f"Error updating start date: {str(e)}")
-        return redirect('verify_payments', library_id=subscription.subscription.library.id)
-    else:
-        messages.error(request, "Invalid request method.")
-        return redirect('dashboard')
+    except Transaction.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Transaction not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-@login_required
-def update_subscription_end_date(request, subscription_id):
-    if request.method == 'POST':
-        new_end_date_str = request.POST.get('end_date')
-        if not new_end_date_str:
-            messages.error(request, "New end date is required.")
-            return redirect('dashboard')
-        new_end_date = parse_date(new_end_date_str)
-        if not new_end_date:
-            messages.error(request, "Invalid date format for end date.")
-            return redirect('dashboard')
-        try:
-            subscription = get_object_or_404(UserSubscription, id=subscription_id)
-            if subscription.start_date and new_end_date < subscription.start_date:
-                messages.error(request, "End date cannot be earlier than start date.")
-                return redirect('verify_payments', library_id=subscription.subscription.library.id)
-            subscription.end_date = new_end_date
-            subscription.save()
-            messages.success(request, "Subscription end date updated successfully.")
-            logger.info(f"Subscription {subscription_id} end date updated to {new_end_date} by user {request.user.id}")
-        except ValidationError as ve:
-            messages.error(request, f"Validation error: {ve.message}")
-            logger.error(f"Validation error updating subscription end date: {ve}", exc_info=True)
-        except Exception as e:
-            messages.error(request, f"Error updating end date: {str(e)}")
-            logger.error(f"Error updating subscription end date: {e}", exc_info=True)
-        return redirect('verify_payments', library_id=subscription.subscription.library.id)
-    else:
-        messages.error(request, "Invalid request method.")
-        return redirect('dashboard')
+@require_POST
+@csrf_exempt
+def update_subscription_date(request, subscription_id):
+    try:
+        data = json.loads(request.body)
+        date_type = data.get('date_type')
+        new_date_str = data.get('new_date')
+
+        if not all([date_type, new_date_str]):
+            return JsonResponse({'status': 'error', 'message': 'Missing data'}, status=400)
+
+        new_date = parse_date(new_date_str)
+        if not new_date:
+            return JsonResponse({'status': 'error', 'message': 'Invalid date format'}, status=400)
+
+        subscription = get_object_or_404(UserSubscription, id=subscription_id)
+
+        if date_type == 'start':
+            subscription.start_date = new_date
+        elif date_type == 'end':
+            if subscription.start_date and new_date < subscription.start_date:
+                return JsonResponse({'status': 'error', 'message': 'End date cannot be earlier than start date.'}, status=400)
+            subscription.end_date = new_date
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid date type'}, status=400)
+
+        subscription.save()
+        return JsonResponse({'status': 'success', 'message': f'Subscription {date_type} date updated successfully.'})
+
+    except UserSubscription.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Subscription not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
 def edit_library_profile(request, library_id):

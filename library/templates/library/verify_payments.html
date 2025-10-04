@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
+<div id="toast-container" class="fixed top-5 right-5 z-50"></div>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
     <div class="mb-8 md:mb-10">
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 animate-fade-in">
@@ -71,15 +73,12 @@
                     </div>
                     <div class="bg-white/60 p-3 rounded-lg">
                         <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Status</div>
-                        <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="mt-1">
-                            {% csrf_token %}
-                            <select name="status" onchange="this.form.submit()"
-                                    class="w-full text-xs font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-2 py-1 transition-all duration-200">
-                                <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %} class="text-yellow-600">⏳ Pending</option>
-                                <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %} class="text-green-600">✅ Valid</option>
-                                <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %} class="text-red-600">❌ Invalid</option>
-                            </select>
-                        </form>
+                        <select name="status" data-transaction-id="{{ transaction.id }}"
+                                class="w-full text-xs font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-2 py-1 transition-all duration-200 status-select">
+                            <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %} class="text-yellow-600">⏳ Pending</option>
+                            <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %} class="text-green-600">✅ Valid</option>
+                            <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %} class="text-red-600">❌ Invalid</option>
+                        </select>
                     </div>
                 </div>
 
@@ -87,25 +86,15 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-white/60 p-3 rounded-lg">
                             <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</div>
-                            <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="mt-2">
-                                {% csrf_token %}
-                                <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}"
-                                       class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                                <button type="submit" class="w-full mt-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium py-1.5 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md">
-                                    Update Start Date
-                                </button>
-                            </form>
+                            <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}"
+                                   data-subscription-id="{{ transaction.user_subscription.id }}" data-date-type="start"
+                                   class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white date-input">
                         </div>
                         <div class="bg-white/60 p-3 rounded-lg">
                             <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">End Date</div>
-                            <form method="post" action="{% url 'update_subscription_end_date' transaction.user_subscription.id %}" class="mt-2">
-                                {% csrf_token %}
-                                <input type="date" name="end_date" value="{{ transaction.user_subscription.end_date|date:'Y-m-d' }}"
-                                       class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                                <button type="submit" class="w-full mt-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-xs font-medium py-1.5 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-sm hover:shadow-md">
-                                    Update End Date
-                                </button>
-                            </form>
+                            <input type="date" name="end_date" value="{{ transaction.user_subscription.end_date|date:'Y-m-d' }}"
+                                   data-subscription-id="{{ transaction.user_subscription.id }}" data-date-type="end"
+                                   class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white date-input">
                         </div>
                     </div>
                     {% else %}
@@ -162,40 +151,27 @@
                             <td class="px-6 py-4 text-sm text-slate-900">{{ transaction.subscription.name }}</td>
                             <td class="px-6 py-4 text-sm font-bold text-green-600">₹{{ transaction.amount }}</td>
                             <td class="px-6 py-4">
-                                <form method="POST" action="{% url 'update_transaction_status' transaction.id %}" class="inline">
-                                    {% csrf_token %}
-                                    <select name="status" onchange="this.form.submit()"
-                                            class="text-xs font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-3 py-1 transition-all duration-200 shadow-sm hover:shadow-md">
-                                        <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %} class="text-yellow-600">⏳ Pending</option>
-                                        <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %} class="text-green-600">✅ Valid</option>
-                                        <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %} class="text-red-600">❌ Invalid</option>
-                                    </select>
-                                </form>
+                                <select name="status" data-transaction-id="{{ transaction.id }}"
+                                        class="text-xs font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-3 py-1 transition-all duration-200 shadow-sm hover:shadow-md status-select">
+                                    <option value="pending" {% if transaction.status == 'pending' %}selected{% endif %} class="text-yellow-600">⏳ Pending</option>
+                                    <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %} class="text-green-600">✅ Valid</option>
+                                    <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %} class="text-red-600">❌ Invalid</option>
+                                </select>
                             </td>
                             <td class="px-6 py-4">
                                 {% if transaction.user_subscription %}
-                                    <form method="post" action="{% url 'update_subscription_start_date' transaction.user_subscription.id %}" class="space-y-2">
-                                        {% csrf_token %}
-                                        <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}"
-                                               class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200">
-                                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md">
-                                            Update
-                                        </button>
-                                    </form>
+                                    <input type="date" name="start_date" value="{{ transaction.user_subscription.start_date|date:'Y-m-d' }}"
+                                           data-subscription-id="{{ transaction.user_subscription.id }}" data-date-type="start"
+                                           class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white date-input">
                                 {% else %}
                                     <span class="text-xs text-slate-500 italic">Not set</span>
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4">
                                 {% if transaction.user_subscription %}
-                                    <form method="post" action="{% url 'update_subscription_end_date' transaction.user_subscription.id %}" class="space-y-2">
-                                        {% csrf_token %}
-                                        <input type="date" name="end_date" value="{{ transaction.user_subscription.end_date|date:'Y-m-d' }}"
-                                               class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200">
-                                        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-xs font-medium py-1 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-sm hover:shadow-md">
-                                            Update
-                                        </button>
-                                    </form>
+                                    <input type="date" name="end_date" value="{{ transaction.user_subscription.end_date|date:'Y-m-d' }}"
+                                           data-subscription-id="{{ transaction.user_subscription.id }}" data-date-type="end"
+                                           class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white date-input">
                                 {% else %}
                                     <span class="text-xs text-slate-500 italic">Not set</span>
                                 {% endif %}
@@ -263,4 +239,5 @@
         {% endif %}
     </div>
 </div>
+<script src="{% static 'js/payment_verifications.js' %}"></script>
 {% endblock %}
