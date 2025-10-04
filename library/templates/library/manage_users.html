@@ -166,7 +166,7 @@
                         {% endif %}
                     </td>
                     <td class="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
-                        <div class="text-gray-600">{{ user.nfc_id }}</div>
+                        <div class="text-gray-600">******{{ user.nfc_id|slice:"-4:" }}</div>
                     </td>
                     <!-- <td class="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         <span class="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-semibold
