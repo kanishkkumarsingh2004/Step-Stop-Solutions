@@ -14,8 +14,9 @@ urlpatterns = [
    path('dashboard/', views.dashboard, name='dashboard'),
    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
    path('library/<int:library_id>/dashboard/', views.library_dashboard, name='library_dashboard'),
+   path('library/<int:library_id>/active-subscriptions/', views.active_library_subscriptions, name='active_library_subscriptions'),
    path('library/<int:library_id>/edit/', views.edit_library_profile, name='edit_library_profile'),
-   
+      
    # User Management
    path('vendor/<int:library_id>/manage-users/', views.manage_users, name='manage_users'),    
    # Library Management

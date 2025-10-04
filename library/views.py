@@ -613,7 +613,7 @@ def all_attendance(request, vendor_id):
         else:
             attendance.duration = "00h:00m:00s"
             attendance.duration_color = 0
-    paginator = Paginator(attendances, 25)  # Show 25 attendances per page
+    paginator = Paginator(attendances, 250)  # Show 250 attendances per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     return render(request, 'library/all_attendence.html', {
@@ -1756,6 +1756,47 @@ def user_details(request, user_id):
     return render(request, 'admin_page/user_details.html', {
         'user': user,
     })
+
+@login_required
+def active_library_subscriptions(request, library_id):
+    library = get_object_or_404(Library, id=library_id)
+    if not (request.user.is_staff or request.user == library.owner):
+        messages.error(request, "You do not have permission to view this page.")
+        return redirect('home')
+
+    active_subscriptions_list = UserSubscription.objects.filter(
+        subscription__library=library,
+        status='valid'
+    ).select_related('user', 'subscription')
+
+    enriched_subscriptions = []
+    for sub in active_subscriptions_list:
+        days_left = (sub.end_date - date.today()).days
+        role_number_obj = UserRoleNumber.objects.filter(user=sub.user, library=library).first()
+        role_number = role_number_obj.role_number if role_number_obj else 'N/A'
+        mobile_number = sub.user.mobile_number
+        masked_mobile = 'x' * 6 + mobile_number[-4:] if len(mobile_number) > 6 else mobile_number
+
+        enriched_subscriptions.append({
+            'sub': sub,
+            'days_left': days_left,
+            'role_number': role_number,
+            'masked_mobile': masked_mobile,
+        })
+
+    # Sort by days_left in ascending order
+    enriched_subscriptions.sort(key=lambda x: x['days_left'])
+
+    paginator = Paginator(enriched_subscriptions, 100)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'library': library,
+        'page_obj': page_obj,
+    }
+    return render(request, 'library/active_subscriptions.html', context)
+
 
 @login_required
 def admin_full_info_library_details(request, library_id):
