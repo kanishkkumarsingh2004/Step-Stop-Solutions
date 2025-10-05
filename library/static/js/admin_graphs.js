@@ -188,4 +188,41 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    // Initialize Cumulative Balance Chart
+    const cumulativeBalanceContainer = document.getElementById('cumulativeBalanceData');
+    const balanceLabels = cumulativeBalanceContainer.dataset.labels.split(',').filter(Boolean);
+    const balanceValues = cumulativeBalanceContainer.dataset.balance.split(',').filter(Boolean).map(Number);
+    const cumulativeBalanceCtx = document.getElementById('cumulativeBalanceChart').getContext('2d');
+    new Chart(cumulativeBalanceCtx, {
+        type: 'line',
+        data: {
+            labels: balanceLabels,
+            datasets: [{
+                label: 'Cumulative Balance',
+                data: balanceValues,
+                fill: false,
+                borderColor: 'rgba(255, 206, 86, 1)', // Yellow
+                backgroundColor: 'rgba(255, 206, 86, 0.2)', // Yellow with transparency
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date' }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Cumulative Balance' }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { enabled: true }
+            }
+        }
+    });
 });

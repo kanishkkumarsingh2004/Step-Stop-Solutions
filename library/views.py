@@ -1756,29 +1756,43 @@ def active_library_subscriptions(request, library_id):
     if not (request.user.is_staff or request.user == library.owner):
         messages.error(request, "You do not have permission to view this page.")
         return redirect('home')
-
-    active_subscriptions_list = UserSubscription.objects.filter(
-        subscription__library=library,
-        status='valid'
+    # Get all subscriptions for this library, regardless of status
+    subscriptions_list = UserSubscription.objects.filter(
+        subscription__library=library
     ).select_related('user', 'subscription')
-
+    # For each user, for each plan, keep only the latest subscription (by end_date, then by id)
+    latest_subs = {}
+    for sub in subscriptions_list:
+        key = (sub.user_id, sub.subscription_id)
+        if key not in latest_subs:
+            latest_subs[key] = sub
+        else:
+            # If this sub is later than the stored one, replace
+            current = latest_subs[key]
+            if (sub.end_date, sub.id) > (current.end_date, current.id):
+                latest_subs[key] = sub
+    # Now, flatten to a list
+    filtered_subscriptions = list(latest_subs.values())
     enriched_subscriptions = []
-    for sub in active_subscriptions_list:
-        days_left = (sub.end_date - date.today()).days
+    today = date.today()
+    for sub in filtered_subscriptions:
+        days_left = (sub.end_date - today).days
+        is_expired = sub.end_date < today
         role_number_obj = UserRoleNumber.objects.filter(user=sub.user, library=library).first()
         role_number = role_number_obj.role_number if role_number_obj else 'N/A'
         mobile_number = sub.user.mobile_number
         masked_mobile = 'x' * 6 + mobile_number[-4:] if len(mobile_number) > 6 else mobile_number
-
         enriched_subscriptions.append({
             'sub': sub,
             'days_left': days_left,
             'role_number': role_number,
             'masked_mobile': masked_mobile,
+            'is_expired': is_expired,
         })
-
-    # Sort by days_left in ascending order
-    enriched_subscriptions.sort(key=lambda x: x['days_left'])
+    # Sort by days_left ascending (soonest expiry first)
+    enriched_subscriptions.sort(
+        key=lambda x: x['days_left']
+    )
 
     paginator = Paginator(enriched_subscriptions, 100)
     page_number = request.GET.get('page')
@@ -3273,14 +3287,20 @@ def admin_graphs(request):
     dates = []
     cumulative_profit = []
     cumulative_loss = []
+    cumulative_balance = [] # New list for the balance
     profit_sum = 0
     loss_sum = 0
+    balance = 0 # New variable for balance
     for date in sorted(date_sums.keys()):
         dates.append(date.strftime('%Y-%m-%d'))
         profit_sum += date_sums[date]['profit']
         loss_sum += date_sums[date]['loss']
         cumulative_profit.append(float(profit_sum))
         cumulative_loss.append(float(loss_sum))
+        
+        # Calculate balance
+        balance = profit_sum - loss_sum
+        cumulative_balance.append(float(balance)) # Append balance
 
     return render(request, 'admin_page/admin_graphs.html', {
         'libraries': libraries,
@@ -3289,7 +3309,8 @@ def admin_graphs(request):
         'subscription_data': subscription_data,
         'expense_dates': dates,
         'cumulative_profit': cumulative_profit,
-        'cumulative_loss': cumulative_loss
+        'cumulative_loss': cumulative_loss,
+        'cumulative_balance': cumulative_balance, # Pass the new list to the template
     })
 
 @login_required
@@ -3967,31 +3988,76 @@ def check_institution_nfc_allocation(request):
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-@login_required
+from collections import namedtuple
+
 def library_receipt(request, user_id, transaction_id):
     """Generate receipt for a single library transaction"""
     User = get_user_model()
     try:
         user_obj = User.objects.get(id=user_id)
+
+        # Handle special cash transaction format
+        if transaction_id.startswith('Cash-'):
+            parts = transaction_id.split('-')
+            if len(parts) == 3:
+                payment_method, name, duration_str = parts
+                try:
+                    duration = int(duration_str)
+                    user_subscription = UserSubscription.objects.filter(user=user_obj).order_by('-start_date').first()
+                    if user_subscription:
+                        library = user_subscription.subscription.library
+                        amount = user_subscription.subscription.normal_price
+                        
+                        Transaction = namedtuple('Transaction', ['created_at', 'subscription', 'transaction_id', 'amount'])
+                        transaction = Transaction(
+                            created_at=timezone.now(),
+                            subscription=user_subscription.subscription,
+                            transaction_id=transaction_id,
+                            amount=amount
+                        )
+
+                        context = {
+                            'library': library,
+                            'user': user_obj,
+                            'transaction': transaction,
+                            'total_amount': amount,
+                            'amount_in_words': convert_amount_to_words(amount),
+                            'user_subscription': user_subscription,
+                        }
+                        return render(request, 'library/receipt.html', context)
+                    else:
+                        return render(request, 'library/receipt.html', {'error': 'No subscription found for this user'})
+                except ValueError:
+                    pass  # Fall through to standard transaction lookup
+
         # Get the single transaction for this user with the given transaction_id
         try:
             transaction = Transaction.objects.get(user=user_obj, transaction_id=transaction_id)
         except Transaction.DoesNotExist:
             return render(request, 'library/receipt.html', {'error': 'Transaction not found'})
+
         # Get the library from the transaction
         library = transaction.subscription.library if transaction.subscription and transaction.subscription.library else None
+
         # Get the amount
         total_amount = transaction.amount if transaction.amount else 0
+
         # Convert amount to words
         amount_in_words = convert_amount_to_words(total_amount)
+
+        user_subscription = UserSubscription.objects.filter(user=user_obj, subscription=transaction.subscription).order_by('-start_date').first()
+
         context = {
+            'library': library,
             'user': user_obj,
-            'transactions': [transaction],
+            'transaction': transaction,
             'total_amount': total_amount,
             'amount_in_words': amount_in_words,
-            'library_name': library.venue_name if library else 'Library',
-            'library_address': library.venue_location if library else '',
+            'user_subscription': user_subscription,
         }
         return render(request, 'library/receipt.html', context)
+
     except User.DoesNotExist:
         return render(request, 'library/receipt.html', {'error': 'User not found'})
+    except Exception as e:
+        return render(request, 'library/receipt.html', {'error': str(e)})
