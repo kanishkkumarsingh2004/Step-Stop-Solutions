@@ -4008,8 +4008,8 @@ def library_receipt(request, user_id, transaction_id):
                         library = user_subscription.subscription.library
                         amount = user_subscription.subscription.normal_price
                         
-                        Transaction = namedtuple('Transaction', ['created_at', 'subscription', 'transaction_id', 'amount'])
-                        transaction = Transaction(
+                        TransactionTuple = namedtuple('TransactionTuple', ['created_at', 'subscription', 'transaction_id', 'amount'])
+                        transaction = TransactionTuple(
                             created_at=timezone.now(),
                             subscription=user_subscription.subscription,
                             transaction_id=transaction_id,
