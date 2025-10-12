@@ -25,10 +25,14 @@ def register_gym_form(request):
             gym.business_type = 'Gym'
             gym.save()
             messages.success(request, "Gym registered successfully!")
-            return redirect('dashboard')
+            return redirect('gym_registration_success')
     else:
         form = GymRegistrationForm()
     return render(request, 'gym/register_gym.html', {'form': form})
+
+@login_required
+def gym_registration_success(request):
+    return render(request, 'gym/gym_registration_success.html')
 
 def allocate_card_to_gym_page(request):
     if request.method == 'POST':

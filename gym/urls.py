@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('register-gym/', views.register_gym_form, name='register_gym_form'),
+    path('registration-success/', views.gym_registration_success, name='gym_registration_success'),
     path('allocate-card/', views.allocate_card_to_gym_page, name='allocate_card_to_gym_page'),
     path('card-count/', views.gym_card_count, name='gym_card_count'),
     path('manage-cards/', views.manage_gym_cards, name='manage_gym_cards'),
