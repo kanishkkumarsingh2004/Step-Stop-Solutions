@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-12">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <!-- Top-Level Heading for Form -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Gym Registration Form</h1>
+        <!-- Error Messages -->
+        {% if form.errors %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-8" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">Please correct the following errors:</span>
+            <ul class="mt-2 list-disc list-inside">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+
+            <!-- Owner Information Section -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-8 border-b pb-2">Owner Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="first_name" placeholder="Enter your first name" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="last_name" placeholder="Enter your last name" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Owner Address <span class="text-red-500">*</span></label>
+                        <textarea name="address" placeholder="Enter your full address" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" rows="3" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" placeholder="Enter your email" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mobile Number <span class="text-red-500">*</span></label>
+                        <input type="tel" name="mobile_number" placeholder="Enter your mobile number" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gym Information Section -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Gym Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Gym Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="venue_name" placeholder="Enter your Gym's name" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Gym Description <span class="text-red-500">*</span></label>
+                        <textarea name="description" placeholder="Describe your gym's services and features" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" rows="3" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Opening Time <span class="text-red-500">*</span></label>
+                        <input type="time" name="opening_time" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Closing Time <span class="text-red-500">*</span></label>
+                        <input type="time" name="closing_time" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600">Live Duration: <span id="liveDuration" class="font-medium text-blue-600">Calculating...</span></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Gym Capacity <span class="text-red-500">*</span></label>
+                        <input type="number" name="capacity" placeholder="Enter maximum capacity" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Information Section -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Gym Location Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Gym Address <span class="text-red-500">*</span></label>
+                        <textarea name="venue_location" placeholder="Your Gym's full address" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" rows="3" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pincode <span class="text-red-500">*</span></label>
+                        <input type="text" name="pincode" placeholder="Enter pincode" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" required onblur="fetchLocationDetails()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">District <span class="text-red-500">*</span></label>
+                        <input type="text" name="district" placeholder="Enter district" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" readonly required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">City <span class="text-red-500">*</span></label>
+                        <input type="text" name="city" placeholder="Enter city" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" readonly required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">State <span class="text-red-500">*</span></label>
+                        <input type="text" name="state" placeholder="Enter state" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" readonly required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information Section -->
+            <div class="space-y-6 mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Additional Information</h2>
+                <div class="grid grid-cols-1 gap-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Social Media Links</label>
+                        <textarea name="social_media_links" placeholder="Enter comma-separated social media links" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" rows="2"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Equipment Available</label>
+                        <textarea name="equipment_available" placeholder="List available equipment (e.g., dumbbells, treadmills)" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" rows="3"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                        <textarea name="additional_services" placeholder="Describe any Amenities services offered" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-10">
+                <button type="submit" class="w-full bg-green-600 text-white px-8 py-4 rounded-xl hover:bg-green-700 transition-all duration-300 font-semibold text-lg">
+                    Register Gym
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function fetchLocationDetails() {
+        const pincode = document.querySelector('input[name="pincode"]').value;
+        if (pincode.length === 6 && /^\d+$/.test(pincode)) {
+            document.querySelector('input[name="district"]').value = 'Loading...';
+            document.querySelector('input[name="city"]').value = 'Loading...';
+            document.querySelector('input[name="state"]').value = 'Loading...';
+
+            fetch(`https://api.postalpincode.in/pincode/${pincode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data[0].Status === 'Success') {
+                        const postOffice = data[0].PostOffice[0];
+                        document.querySelector('input[name="district"]').value = postOffice.District;
+                        document.querySelector('input[name="city"]').value = postOffice.Block || postOffice.District;
+                        document.querySelector('input[name="state"]').value = postOffice.State;
+                    } else {
+                        document.querySelector('input[name="pincode"]').value = '';
+                        document.querySelector('input[name="district"]').value = '';
+                        document.querySelector('input[name="city"]').value = '';
+                        document.querySelector('input[name="state"]').value = '';
+                        alert('Invalid Pincode. Please enter a valid pincode.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching location details:', error);
+                    document.querySelector('input[name="pincode"]').value = '';
+                    document.querySelector('input[name="district"]').value = '';
+                    document.querySelector('input[name="city"]').value = '';
+                    document.querySelector('input[name="state"]').value = '';
+                    alert('Failed to fetch location details. Please check your internet connection and try again.');
+                });
+        } else if (pincode.length > 0) {
+            document.querySelector('input[name="pincode"]').value = '';
+            document.querySelector('input[name="district"]').value = '';
+            document.querySelector('input[name="city"]').value = '';
+            document.querySelector('input[name="state"]').value = '';
+            alert('Please enter a valid 6-digit pincode.');
+        }
+    }
+
+    const pincodeInput = document.querySelector('input[name="pincode"]');
+    pincodeInput.addEventListener('blur', fetchLocationDetails);
+    pincodeInput.addEventListener('input', function(e) {
+        if (e.target.value.length === 6) {
+            fetchLocationDetails();
+        }
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const openingTime = document.querySelector('input[name="opening_time"]');
+        const closingTime = document.querySelector('input[name="closing_time"]');
+        const liveDuration = document.getElementById('liveDuration');
+
+        function calculateDuration() {
+            if (openingTime.value && closingTime.value) {
+                const [openHour, openMinute] = openingTime.value.split(':').map(Number);
+                const [closeHour, closeMinute] = closingTime.value.split(':').map(Number);
+
+                if (openHour === closeHour && openMinute === closeMinute) {
+                    // Same time, assume 24 hours open
+                    liveDuration.textContent = '24 hours 0 minutes';
+                    return;
+                }
+
+                let totalHours = closeHour - openHour;
+                let totalMinutes = closeMinute - openMinute;
+
+                if (totalMinutes < 0) {
+                    totalHours--;
+                    totalMinutes += 60;
+                }
+
+                if (totalHours < 0) {
+                    totalHours += 24;
+                }
+
+                liveDuration.textContent = `${totalHours} hours ${totalMinutes} minutes`;
+            } else {
+                liveDuration.textContent = 'Please enter both times';
+            }
+        }
+
+        openingTime.addEventListener('change', calculateDuration);
+        closingTime.addEventListener('change', calculateDuration);
+    });
+    </script>
+{% endblock %}

@@ -99,6 +99,15 @@
                                             {% endif %}
                                         {% endfor %}
                                     {% endif %}
+                                    {% if user.owned_gyms.all %}
+                                        {% for gym in user.owned_gyms.all %}
+                                            {% if gym.is_approved %}
+                                                <a href="{% url 'gym_dashboard' gym.id %}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                                    Gym Dashboard ({{ gym.venue_name }})
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -172,6 +181,14 @@
                         <a href="{% url 'library_dashboard' library.id %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
                             <i class="bi bi-shop text-xl mr-3"></i>
                             <span>Library Dashboard ({{ library.venue_name }})</span>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% for gym in user.owned_gyms.all %}
+                    {% if gym.is_approved %}
+                        <a href="{% url 'gym_dashboard' gym.id %}" class="flex items-center text-gray-300 hover:text-white px-6 py-4 rounded-xl text-lg font-medium transition-colors duration-200 bg-gray-800 hover:bg-gray-700">
+                            <i class="bi bi-house text-xl mr-3"></i>
+                            <span>Gym Dashboard ({{ gym.venue_name }})</span>
                         </a>
                     {% endif %}
                 {% endfor %}

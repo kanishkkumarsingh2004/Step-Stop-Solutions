@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Manage Gyms</h1>
+
+    <!-- Filters and Search -->
+    <div class="mb-4 flex flex-col sm:flex-row gap-2">
+        <div class="flex gap-2">
+            <a href="?status=approved" class="px-3 py-1 text-sm rounded-lg {% if status == 'approved' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                Approved
+            </a>
+            <a href="?status=unapproved" class="px-3 py-1 text-sm rounded-lg {% if status == 'unapproved' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                Pending
+            </a>
+            <a href="?" class="px-3 py-1 text-sm rounded-lg bg-gray-100 text-gray-800">
+                All
+            </a>
+        </div>
+        <form method="get" class="flex-grow">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search by name, owner, city or pincode" class="w-full px-3 py-1 text-sm border rounded-lg">
+        </form>
+    </div>
+
+    <!-- Gyms Table -->
+    <div class="bg-white p-2 sm:p-4 rounded-lg shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue Name</th>
+                        <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                        <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for gym in gyms %}
+                    <tr>
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">{{ gym.venue_name }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">{{ gym.owner.get_full_name }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">{{ gym.city }}, {{ gym.pincode }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">
+                            <span class="px-2 py-1 text-2xs sm:text-xs font-semibold rounded-full {% if gym.is_approved %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if gym.is_approved %}Approved{% else %}Pending{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
+                            <a href="{% url 'toggle_gym_approval' gym.id %}" class="text-blue-600 hover:text-blue-900 text-xs">
+                                {% if gym.is_approved %}Unapprove{% else %}Approve{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

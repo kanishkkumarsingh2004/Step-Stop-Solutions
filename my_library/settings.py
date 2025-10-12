@@ -21,6 +21,7 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'jazzmin',
     'library',
+    'gym',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -109,6 +109,10 @@
                         <span>Manage Institutions</span>
                         <i class="bi bi-bank2 text-indigo-500 text-lg"></i>
                     </a>
+                    <a href="{% url 'manage_gyms' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Manage Gyms</span>
+                        <i class="bi bi-person-badge text-cyan-500 text-lg"></i>
+                    </a>
                 </div>
             </div>
 
@@ -174,6 +178,28 @@
                     <a href="{% url 'coaching:manage_institution_cards' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
                         <span>Manage Institute Cards</span>
                         <i class="bi bi-calculator text-blue-600 text-lg"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Gym Card Actions -->
+            <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+                <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                    <i class="bi bi-person-badge text-cyan-500 text-lg sm:text-xl"></i>
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-700">Gym Card Actions</h2>
+                </div>
+                <div class="space-y-2">
+                    <a href="{% url 'allocate_card_to_gym_page' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Allocate Card to Gym</span>
+                        <i class="bi bi-share text-purple-600 text-lg"></i>
+                    </a>
+                    <a href="{% url 'gym_card_count' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Gym Card Count</span>
+                        <i class="bi bi-calculator text-indigo-600 text-lg"></i>
+                    </a>
+                    <a href="{% url 'manage_gym_cards' %}" class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                        <span>Manage Gym Cards</span>
+                        <i class="bi bi-credit-card-2-front text-blue-600 text-lg"></i>
                     </a>
                 </div>
             </div>

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Gym Cards</h1>
+
+    <div class="bg-white rounded-lg shadow-md p-6 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Card ID</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Gym</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for card in gym_cards %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ card.card_id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ card.user.get_full_name|default:"N/A" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ card.gym.venue_name|default:"N/A" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                        {% if card.is_active %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Active
+                            </span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                Inactive
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                        <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                        <a href="#" class="text-red-600 hover:text-red-900 ml-4">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

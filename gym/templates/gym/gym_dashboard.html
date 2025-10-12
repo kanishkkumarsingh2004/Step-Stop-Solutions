@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:shadow-3xl">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-200">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                    {{ gym.venue_name }} Details
+                </h1>
+                <div class="flex items-center space-x-4">
+                    <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm bg-green-100 text-green-800">
+                        Gym
+                    </span>
+                    <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm
+                        {% if gym.is_approved %}bg-green-100 text-green-800
+                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        {% if gym.is_approved %}Approved{% else %}Pending Approval{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="p-6 sm:p-10 space-y-8 sm:space-y-10">
+            <!-- Gym Information Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Owner Information Card -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">👤 Owner Information</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Full Name</p>
+                                <p class="text-gray-800 font-medium">{{ gym.owner.get_full_name }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Contact</p>
+                                <p class="text-gray-800 font-medium">{{ gym.mobile_number }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Email</p>
+                            <p class="text-gray-800 font-medium">{{ gym.email }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Business Hours</p>
+                            <p class="text-gray-800 font-medium">{{ gym.opening_time }} - {{ gym.closing_time }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Description</p>
+                            <p class="text-gray-800 font-medium">{{ gym.description }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services Card -->
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">✨ Services</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Equipment</p>
+                            <p class="text-gray-800 font-medium">{{ gym.equipment_available }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Additional Services</p>
+                            <p class="text-gray-800 font-medium">{{ gym.additional_services }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Social Media</p>
+                            <p class="text-gray-800 font-medium">{{ gym.social_media_links }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Venue Information -->
+            <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">📍 Venue Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-sm text-gray-500">Location</p>
+                        <p class="text-gray-800 font-medium">{{ gym.venue_location }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">City</p>
+                        <p class="text-gray-800 font-medium">{{ gym.city }}, {{ gym.state }} - {{ gym.pincode }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Capacity</p>
+                        <p class="text-gray-800 font-medium">{{ gym.capacity }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Available Seats</p>
+                        <p class="text-gray-800 font-medium">{{ gym.available_seats }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

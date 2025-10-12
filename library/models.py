@@ -497,6 +497,7 @@ class AdminCard(models.Model):
     card_id = models.CharField(max_length=100, unique=True)
     library = models.ForeignKey(Library, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True)
+    gym = models.ForeignKey('gym.Gym', on_delete=models.CASCADE, related_name='admin_cards', null=True, blank=True) # Add this line
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

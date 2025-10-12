@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gym Card Allocation Counts</h1>
+
+    <div class="bg-white rounded-lg shadow-md p-6 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Gym Name</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Name</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Allocated Cards</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Users with Cards</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for gym in gyms %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ gym.venue_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ gym.owner.get_full_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ gym.allocated_cards_count }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{{ gym.total_users_with_cards }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
