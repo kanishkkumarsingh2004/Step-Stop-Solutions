@@ -2,6 +2,9 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+    <div id="toast" class="fixed top-4 left-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg hidden">
+        Dates updated successfully!
+    </div>
     <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Manage Gyms</h1>
 
     <!-- Filters and Search -->
@@ -31,6 +34,8 @@
                         <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue Name</th>
                         <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
                         <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription Start Date</th>
+                        <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription End Date</th>
                         <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th scope="col" class="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -41,6 +46,12 @@
                         <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">{{ gym.venue_name }}</td>
                         <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">{{ gym.owner.get_full_name }}</td>
                         <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">{{ gym.city }}, {{ gym.pincode }}</td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">
+                            <input type="date" id="start_date_{{ gym.id }}" value="{% if gym.subscription_start_date %}{{ gym.subscription_start_date|date:'Y-m-d' }}{% endif %}" class="subscription-date border rounded px-2 py-1 text-xs" data-gym-id="{{ gym.id }}">
+                        </td>
+                        <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">
+                            <input type="date" id="end_date_{{ gym.id }}" value="{% if gym.subscription_end_date %}{{ gym.subscription_end_date|date:'Y-m-d' }}{% endif %}" class="subscription-date border rounded px-2 py-1 text-xs" data-gym-id="{{ gym.id }}">
+                        </td>
                         <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs">
                             <span class="px-2 py-1 text-2xs sm:text-xs font-semibold rounded-full {% if gym.is_approved %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
                                 {% if gym.is_approved %}Approved{% else %}Pending{% endif %}
@@ -58,4 +69,54 @@
         </div>
     </div>
 </div>
+
+<script>
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+function updateDates(gymId) {
+    const startDate = document.getElementById(`start_date_${gymId}`).value;
+    const endDate = document.getElementById(`end_date_${gymId}`).value;
+    if (!startDate || !endDate) {
+        showToast('Please select both start and end dates.');
+        return;
+    }
+    fetch('{% url "update_gym_subscription_dates" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            gym_id: gymId,
+            start_date: startDate,
+            end_date: endDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Dates updated successfully!');
+        } else {
+            showToast('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while updating dates.');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.subscription-date').forEach(input => {
+        input.addEventListener('change', function() {
+            const gymId = this.getAttribute('data-gym-id');
+            updateDates(gymId);
+        });
+    });
+});
+</script>
 {% endblock %}

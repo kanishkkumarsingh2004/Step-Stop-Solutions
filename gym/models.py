@@ -46,7 +46,7 @@ class Gym(models.Model):
         return f"{self.first_name} {self.last_name}"
 
     def save(self, *args, **kwargs):
-        if not self.pk and self.available_seats == 0:
+        if not self.pk:
             self.available_seats = self.capacity
         super().save(*args, **kwargs)
 

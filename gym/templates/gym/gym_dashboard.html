@@ -1,103 +1,212 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:shadow-3xl">
-        <!-- Header Section -->
-        <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-6 sm:px-10 py-6 sm:py-8 border-b border-blue-200">
-            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-                    {{ gym.venue_name }} Details
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
+    <!-- Dashboard Header -->
+    <div class="text-center mb-2 sm:mb-3">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 animate-fade-in">
+            <span class="text-gray-800">Dashboard</span>
+        </h1>
+    </div>
+
+    <!-- Header Section -->
+    <div class="mb-4 md:mb-8 bg-gradient-to-r from-blue-50 to-green-50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 text-left">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+            <!-- Text content -->
+            <div class="text-center md:text-left">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 animate-fade-in">
+                    <div class="text-blue-600 block mb-2">
+                        <span class="font-medium text-gray-500">Gym's Name:</span> 
+                        {{ gym.venue_name }}
+                    </div>
+                    <div class="text-green-600 block">
+                        <span class="font-medium text-gray-500">Owner's Name:</span> 
+                        {{ gym.first_name }} {{ gym.last_name }} 
+                    </div>
                 </h1>
-                <div class="flex items-center space-x-4">
-                    <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm bg-green-100 text-green-800">
-                        Gym
+                <p class="text-sm sm:text-base text-gray-600 leading-relaxed flex items-center justify-center md:justify-start">
+                    <i class="bi bi-gear-fill text-blue-500 mr-2 animate-spin-slow"></i>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600">
+                        Manage your gym operations efficiently
                     </span>
-                    <span class="px-4 py-2 text-sm font-semibold rounded-full shadow-sm
-                        {% if gym.is_approved %}bg-green-100 text-green-800
-                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                        {% if gym.is_approved %}Approved{% else %}Pending Approval{% endif %}
-                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <!-- Gym Details Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-building text-orange-500 text-lg sm:text-xl"></i>
+                <h2 class="text-sm sm:text-base md:text-lg font-semibold text-gray-700">Gym Details</h2>
+            </div>
+            <div class="space-y-1 sm:space-y-2">
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Capacity</span>
+                    <span class="font-semibold text-blue-600 text-sm sm:text-base md:text-lg">{{ gym.capacity }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Email</span>
+                    <span class="font-semibold text-green-600 text-sm sm:text-base md:text-lg">{{ gym.email|slice:":35" }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Mobile</span>
+                    <span class="font-semibold text-purple-600 text-sm sm:text-base md:text-lg">{{ gym.mobile_number }}</span>
+                </div>
+                <div class="flex items-center justify-between p-1.5 sm:p-2 md:p-3 bg-gray-50 rounded-md sm:rounded-lg">
+                    <span class="text-xs sm:text-sm text-gray-600">Address</span>
+                    <span class="font-semibold text-indigo-600 text-sm sm:text-base md:text-lg">{{ gym.venue_location|slice:":35" }}...</span>
                 </div>
             </div>
         </div>
-
-        <!-- Main Content Section -->
-        <div class="p-6 sm:p-10 space-y-8 sm:space-y-10">
-            <!-- Gym Information Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Owner Information Card -->
-                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">👤 Owner Information</h2>
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <p class="text-sm text-gray-500">Full Name</p>
-                                <p class="text-gray-800 font-medium">{{ gym.owner.get_full_name }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Contact</p>
-                                <p class="text-gray-800 font-medium">{{ gym.mobile_number }}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Email</p>
-                            <p class="text-gray-800 font-medium">{{ gym.email }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Business Hours</p>
-                            <p class="text-gray-800 font-medium">{{ gym.opening_time }} - {{ gym.closing_time }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Description</p>
-                            <p class="text-gray-800 font-medium">{{ gym.description }}</p>
-                        </div>
-                    </div>
+        
+        <!-- Statistics Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-bar-chart-line-fill text-green-500 text-lg sm:text-xl"></i>
+                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Statistics</h2>
+            </div>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <span class="text-xs sm:text-sm text-gray-600">Total Users Joined</span>
+                    <span class="font-semibold text-blue-600 text-base sm:text-lg">{{ gym.users.count }}</span>
                 </div>
-
-                <!-- Services Card -->
-                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transform hover:scale-[1.02] transition-transform duration-200 ease-in-out">
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">✨ Services</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <p class="text-sm text-gray-500">Equipment</p>
-                            <p class="text-gray-800 font-medium">{{ gym.equipment_available }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Additional Services</p>
-                            <p class="text-gray-800 font-medium">{{ gym.additional_services }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Social Media</p>
-                            <p class="text-gray-800 font-medium">{{ gym.social_media_links }}</p>
-                        </div>
-                    </div>
+                <div class="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <span class="text-xs sm:text-sm text-gray-600">Available Seats</span>
+                    <span class="font-semibold text-green-600 text-base sm:text-lg">{{ gym.available_seats }}</span>
                 </div>
             </div>
+        </div>
+        
+        <!-- Quick Actions Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center space-x-2 mb-2 sm:mb-3">
+                <i class="bi bi-lightning-fill text-yellow-500 text-lg sm:text-xl"></i>
+                <h2 class="text-base sm:text-lg font-semibold text-gray-700">Quick Actions</h2>
+            </div>
+            <div class="space-y-2">
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Operating Hours</span>
+                    <span class="text-green-500">{{ gym.opening_time }} - {{ gym.closing_time }}</span>
+                </div>
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span>Equipment</span>
+                    <span class="text-purple-500">{{ gym.equipment_available|truncatechars:20 }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- UPI Payment Details Card -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-3 sm:p-4">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                    </svg>
+                    <h2 class="text-base sm:text-lg font-semibold text-gray-700">UPI Data</h2>
+                </div>
+                <button type="button" onclick="toggleEditForm()" class="p-1.5 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <i class="bi bi-pencil-square text-red-500 text-sm sm:text-base"></i>
+                </button>
+            </div>
 
-            <!-- Venue Information -->
-            <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">📍 Venue Information</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <p class="text-sm text-gray-500">Location</p>
-                        <p class="text-gray-800 font-medium">{{ gym.venue_location }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">City</p>
-                        <p class="text-gray-800 font-medium">{{ gym.city }}, {{ gym.state }} - {{ gym.pincode }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Capacity</p>
-                        <p class="text-gray-800 font-medium">{{ gym.capacity }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Available Seats</p>
-                        <p class="text-gray-800 font-medium">{{ gym.available_seats }}</p>
-                    </div>
+            <!-- Display UPI Data -->
+            <div id="upiDataDisplay" class="space-y-2">
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span class="text-gray-600">UPI ID:</span>
+                    <span class="font-medium" data-field="upi_id">{{ gym.upi_id|default:"Not set" }}</span>
+                </div>
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span class="text-gray-600">Recipient Name:</span>
+                    <span class="font-medium" data-field="recipient_name">{{ gym.recipient_name|default:"Not set" }}</span>
+                </div>
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-between text-xs sm:text-sm">
+                    <span class="text-gray-600">Thank You Message:</span>
+                    <span class="font-medium" data-field="thank_you_message">{{ gym.thank_you_message|default:"Not set" }}</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Edit UPI Details Modal -->
+<div id="editForm" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg sm:rounded-xl shadow-md p-6 w-full max-w-md">
+        <form id="upiForm" method="post" action="{% url 'gym_dashboard' gym.id %}">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg flex flex-col space-y-2">
+                    <label class="text-gray-600">UPI ID:</label>
+                    {{ form.upi_id }}
+                </div>
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg flex flex-col space-y-2">
+                    <label class="text-gray-600">Recipient Name:</label>
+                    {{ form.recipient_name }}
+                </div>
+                <div class="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg flex flex-col space-y-2">
+                    <label class="text-gray-600">Thank You Message:</label>
+                    {{ form.thank_you_message }}
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="toggleEditForm()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors duration-200">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleEditForm() {
+    const form = document.getElementById('editForm');
+    form.classList.toggle('hidden');
+}
+</script>
+
+<script>
+// Handle UPI form submission via AJAX
+document.getElementById('upiForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the displayed values
+            document.querySelector('[data-field="upi_id"]').textContent = data.upi_id || 'Not set';
+            document.querySelector('[data-field="recipient_name"]').textContent = data.recipient_name || 'Not set';
+            document.querySelector('[data-field="thank_you_message"]').textContent = data.thank_you_message || 'Not set';
+
+            // Close modal
+            toggleEditForm();
+
+            // Show success message
+            alert('UPI details updated successfully!');
+        } else {
+            // Handle errors
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating UPI details.');
+    });
+});
+</script>
 {% endblock %}

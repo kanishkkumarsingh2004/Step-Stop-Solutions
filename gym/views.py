@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Gym, GymCard
-from .forms import GymForm, GymRegistrationForm
+from .forms import GymForm, GymRegistrationForm, GymUPIForm
 from library.models import AdminCard, CustomUser
 from django.contrib import messages
 from django.db import transaction
@@ -180,9 +180,56 @@ def toggle_gym_approval(request, gym_id):
     return redirect('manage_gyms')
 
 @login_required
+@csrf_exempt
+def update_gym_subscription_dates(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            gym_id = data.get("gym_id")
+            start_date = data.get("start_date")
+            end_date = data.get("end_date")
+            if not gym_id or not start_date or not end_date:
+                return JsonResponse({'error': 'Gym ID, start date, and end date are required'}, status=400)
+            gym = Gym.objects.get(id=gym_id)
+            gym.subscription_start_date = start_date
+            gym.subscription_end_date = end_date
+            gym.save()
+            return JsonResponse({'success': True, 'message': 'Subscription dates updated successfully'})
+        except Gym.DoesNotExist:
+            return JsonResponse({'error': 'Gym not found'}, status=404)
+        except Exception as e:
+            logger.error(f"Error in update_gym_subscription_dates: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
 def gym_dashboard(request, gym_id):
     gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+
+    if request.method == 'POST':
+        form = GymUPIForm(request.POST, instance=gym)
+        if form.is_valid():
+            form.save()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'success',
+                    'upi_id': gym.upi_id,
+                    'recipient_name': gym.recipient_name,
+                    'thank_you_message': gym.thank_you_message
+                })
+            messages.success(request, "UPI details updated successfully!")
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'error',
+                    'message': ' '.join([f"{field}: {', '.join(errors)}" for field, errors in form.errors.items()])
+                })
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = GymUPIForm(instance=gym)
+
     context = {
         'gym': gym,
+        'form': form,
     }
     return render(request, 'gym/gym_dashboard.html', context)

@@ -10,5 +10,6 @@ urlpatterns = [
     path('deallocate-nfc/', views.deallocate_gym_nfc, name='deallocate_gym_nfc'),
     path('manage-gyms/', views.manage_gyms, name='manage_gyms'),
     path('toggle-gym-approval/<str:gym_id>/', views.toggle_gym_approval, name='toggle_gym_approval'),
+    path('update-subscription-dates/', views.update_gym_subscription_dates, name='update_gym_subscription_dates'),
     path('gym-dashboard/<str:gym_id>/', views.gym_dashboard, name='gym_dashboard'),
 ]
