@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-xl p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Subscribe to {{ gym.venue_name }}</h1>
+            <p class="text-gray-600 mt-2">Plan: {{ plan.name }} - ₹{{ plan.discount_price|default:plan.normal_price }}</p>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Start Date
+                    </label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.start_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        End Date
+                    </label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.end_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.start_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Start Time
+                    </label>
+                    {{ form.start_time }}
+                    {% if form.start_time.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.start_time.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.end_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        End Time
+                    </label>
+                    {{ form.end_time }}
+                    {% if form.end_time.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.end_time.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 pt-6">
+                <a href="{% url 'gym_dashboard' gym.id %}" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
+                    Subscribe
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

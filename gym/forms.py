@@ -1,5 +1,5 @@
 from django import forms
-from .models import Gym, GymCard
+from .models import Gym, GymCard, GymSubscriptionPlan, GymUserSubscription, GymTransaction
 
 class GymForm(forms.ModelForm):
     class Meta:
@@ -46,3 +46,18 @@ class GymUPIForm(forms.ModelForm):
             'recipient_name': forms.TextInput(attrs={'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'}),
             'thank_you_message': forms.Textarea(attrs={'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out', 'rows': 3}),
         }
+
+class GymSubscriptionPlanForm(forms.ModelForm):
+    class Meta:
+        model = GymSubscriptionPlan
+        fields = ['name', 'duration_in_months', 'duration_in_hours', 'normal_price', 'discount_price']
+
+class GymUserSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = GymUserSubscription
+        fields = ['user', 'subscription', 'start_date', 'end_date', 'start_time', 'end_time']
+
+class GymTransactionForm(forms.ModelForm):
+    class Meta:
+        model = GymTransaction
+        fields = ['user', 'subscription', 'transaction_id', 'amount', 'status']

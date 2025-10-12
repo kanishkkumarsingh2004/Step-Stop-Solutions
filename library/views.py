@@ -580,6 +580,16 @@ def all_attendance(request, vendor_id):
     for attendance in attendances:
         attendance.role_number = role_numbers.get(attendance.user_id, '-')
     # This ensures page_obj is always defined
+    # Add date filtering
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    if from_date or to_date:
+        date_filters = {}
+        if from_date:
+            date_filters['check_in_time__date__gte'] = from_date
+        if to_date:
+            date_filters['check_in_time__date__lte'] = to_date
+        attendances = attendances.filter(**date_filters)
     # Add search functionality
     search_query = request.GET.get('search')
     if search_query:
@@ -618,7 +628,9 @@ def all_attendance(request, vendor_id):
     page_obj = paginator.get_page(page_number)
     return render(request, 'library/all_attendence.html', {
         'attendances': page_obj,
-        'library': library
+        'library': library,
+        'from_date': from_date,
+        'to_date': to_date
     })
 @login_required
 def user_attendance(request):

@@ -1,6 +1,7 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Gym, GymCard
-from .forms import GymForm, GymRegistrationForm, GymUPIForm
+from .models import Gym, GymCard, GymAttendance, GymSubscriptionPlan, GymUserSubscription, GymTransaction
+from .forms import GymForm, GymRegistrationForm, GymUPIForm, GymSubscriptionPlanForm, GymUserSubscriptionForm, GymTransactionForm
 from library.models import AdminCard, CustomUser
 from django.contrib import messages
 from django.db import transaction
@@ -9,6 +10,7 @@ from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied
+from django.utils import timezone
 import json
 import logging
 
@@ -204,7 +206,7 @@ def update_gym_subscription_dates(request):
 
 @login_required
 def gym_dashboard(request, gym_id):
-    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    gym = Gym.objects.annotate(users_count=Count('users')).get(id=gym_id, owner=request.user)
 
     if request.method == 'POST':
         form = GymUPIForm(request.POST, instance=gym)
@@ -233,3 +235,242 @@ def gym_dashboard(request, gym_id):
         'form': form,
     }
     return render(request, 'gym/gym_dashboard.html', context)
+
+@login_required
+def create_gym_subscription_plan(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    if request.method == 'POST':
+        form = GymSubscriptionPlanForm(request.POST)
+        if form.is_valid():
+            plan = form.save(commit=False)
+            plan.user = request.user
+            plan.gym = gym
+            plan.save()
+            messages.success(request, 'Subscription plan created successfully!')
+            return redirect('gym_dashboard', gym_id=gym_id)
+    else:
+        form = GymSubscriptionPlanForm()
+    return render(request, 'gym/create_subscription_plan.html', {'form': form, 'gym': gym})
+
+@login_required
+def subscribe_to_gym(request, gym_id, plan_id):
+    gym = get_object_or_404(Gym, id=gym_id)
+    plan = get_object_or_404(GymSubscriptionPlan, id=plan_id, gym=gym)
+    if request.method == 'POST':
+        form = GymUserSubscriptionForm(request.POST)
+        if form.is_valid():
+            subscription = form.save(commit=False)
+            subscription.user = request.user
+            subscription.subscription = plan
+            subscription.save()
+            messages.success(request, 'Subscribed successfully!')
+            return redirect('gym_dashboard', gym_id=gym_id)
+    else:
+        form = GymUserSubscriptionForm()
+    return render(request, 'gym/subscribe_to_gym.html', {'form': form, 'gym': gym, 'plan': plan})
+
+@login_required
+def gym_user_subscriptions(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    subscriptions = GymUserSubscription.objects.filter(subscription__gym=gym)
+    return render(request, 'gym/user_subscriptions.html', {'subscriptions': subscriptions, 'gym': gym})
+
+@login_required
+def manage_gym_users(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    users = gym.users.all()
+    return render(request, 'gym/manage_users.html', {'gym': gym, 'users': users})
+
+@login_required
+def nfc_add_gym_user_page(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    # Filter users who have valid subscriptions to this gym and do not have a card allocated
+    subscribed_users = GymUserSubscription.objects.filter(
+        subscription__gym=gym,
+        status='valid'
+    ).select_related('user').values_list('user', flat=True).distinct()
+    all_users = CustomUser.objects.filter(id__in=subscribed_users).exclude(gymcard__gym=gym)
+    if request.method == 'POST':
+        card_id = request.POST.get('card_id')
+        user_id = request.POST.get('user_id')
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            card, created = GymCard.objects.get_or_create(card_id=card_id, gym=gym)
+            card.user = user
+            card.is_active = True
+            card.save()
+            gym.users.add(user)
+            messages.success(request, f'User {user.get_full_name()} added to gym with card {card_id}')
+            return redirect('manage_gym_users', gym_id=gym_id)
+        except CustomUser.DoesNotExist:
+            messages.error(request, 'User not found')
+    return render(request, 'gym/nfc_add_user.html', {'gym': gym, 'all_users': all_users})
+
+@csrf_exempt
+@login_required
+def check_gym_nfc_allocation(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get('nfc_serial')
+            gym_id = data.get('gym_id')
+            if not nfc_serial or not isinstance(nfc_serial, str):
+                return JsonResponse({'error': 'NFC serial must be a string'}, status=400)
+            if not gym_id:
+                return JsonResponse({'error': 'Gym ID is required'}, status=400)
+            try:
+                gym = Gym.objects.get(id=gym_id)
+            except Gym.DoesNotExist:
+                return JsonResponse({'error': 'Gym not found'}, status=404)
+            # Check if NFC card is allocated to this gym
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+                if card.gym != gym:
+                    return JsonResponse({'error': 'This card is not allocated to this gym'}, status=400)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'Invalid card ID'}, status=400)
+            # Check if card is already assigned to a user in GymCard
+            try:
+                gym_card = GymCard.objects.get(card_id=nfc_serial, gym=gym)
+                user = gym_card.user
+                if user:
+                    return JsonResponse({
+                        'allocated': True,
+                        'user_full_name': user.get_full_name(),
+                        'user_mobile': user.mobile_number,
+                        'nfcid': nfc_serial,
+                        'timestamp': timezone.now().isoformat()
+                    })
+                else:
+                    return JsonResponse({'allocated': False})
+            except GymCard.DoesNotExist:
+                return JsonResponse({'allocated': False})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            logger.error(f"Error in check_gym_nfc_allocation: {str(e)}")
+            return JsonResponse({'error': 'Internal server error'}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+@login_required
+def allocate_gym_card(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            nfc_serial = data.get('nfc_serial')
+            user_id = data.get('user_id')
+            gym_id = data.get('gym_id')
+            if not nfc_serial or not user_id or not gym_id:
+                return JsonResponse({'error': 'NFC serial, user ID, and gym ID are required'}, status=400)
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return JsonResponse({'error': 'User not found'}, status=404)
+            try:
+                gym = Gym.objects.get(id=gym_id)
+            except Gym.DoesNotExist:
+                return JsonResponse({'error': 'Gym not found'}, status=404)
+            try:
+                card = AdminCard.objects.get(card_id=nfc_serial)
+                if card.gym != gym:
+                    return JsonResponse({'error': 'This card is not allocated to this gym'}, status=400)
+            except AdminCard.DoesNotExist:
+                return JsonResponse({'error': 'Invalid card ID'}, status=400)
+            # Check if user already has a card in this gym
+            if GymCard.objects.filter(user=user, gym=gym).exists():
+                return JsonResponse({'error': 'This user already has a card allocated in this gym'}, status=400)
+            # Check if card is already allocated to another user
+            if GymCard.objects.filter(card_id=nfc_serial, gym=gym, user__isnull=False).exists():
+                return JsonResponse({'error': 'This card is already allocated to another user'}, status=400)
+            # Allocate
+            gym_card, created = GymCard.objects.get_or_create(card_id=nfc_serial, gym=gym)
+            gym_card.user = user
+            gym_card.is_active = True
+            gym_card.save()
+            gym.users.add(user)
+            return JsonResponse({'success': True, 'message': 'User allocated successfully'})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            logger.error(f"Error in allocate_gym_card: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+def gym_attendance_page(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    return render(request, 'gym/attendance.html', {'gym': gym})
+
+@login_required
+def gym_all_attendance(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    attendances = GymAttendance.objects.filter(gym=gym).order_by('-date', '-check_in_time')
+    return render(request, 'gym/all_attendance.html', {'gym': gym, 'attendances': attendances})
+
+@login_required
+def mark_gym_attendance(request, gym_id):
+    if request.method == 'POST':
+        nfc_serial = request.POST.get('nfc_id')
+        errors = []
+
+        try:
+            gym = Gym.objects.get(id=gym_id)
+        except Gym.DoesNotExist:
+            errors.append('Gym not found')
+            return JsonResponse({'errors': errors}, status=400)
+
+        if not gym.is_approved:
+            errors.append('Gym is not approved')
+
+        try:
+            card = GymCard.objects.get(card_id=nfc_serial, gym=gym)
+        except GymCard.DoesNotExist:
+            errors.append('Invalid card or not allocated to this gym')
+            return JsonResponse({'errors': errors}, status=400)
+
+        if not card.is_active:
+            errors.append('Card is not active')
+
+        user = card.user
+        if not user:
+            errors.append('No user associated with this card')
+            return JsonResponse({'errors': errors}, status=400)
+
+        # Check subscription
+        if not GymUserSubscription.objects.filter(user=user, subscription__gym=gym, status='valid').exists():
+            errors.append('User does not have a valid subscription')
+
+        # Check time
+        now = timezone.now()
+        if now.time() < gym.opening_time or now.time() > gym.closing_time:
+            errors.append('Gym is closed')
+
+        if errors:
+            return JsonResponse({'errors': errors}, status=400)
+
+        today = now.date()
+        attendance, created = GymAttendance.objects.get_or_create(
+            user=user, gym=gym, date=today
+        )
+        if created or not attendance.check_in_time:
+            # Check in
+            attendance.check_in_time = now
+            attendance.save()
+            return JsonResponse({
+                'action': 'checkin',
+                'message': f'Welcome {user.get_full_name()}!',
+                'date': today.strftime('%Y-%m-%d'),
+                'time': attendance.check_in_time.strftime('%H:%M:%S')
+            })
+        elif not attendance.check_out_time:
+            # Check out
+            attendance.check_out_time = now
+            attendance.save()
+            return JsonResponse({
+                'action': 'checkout',
+                'message': f'Goodbye {user.get_full_name()}!',
+                'date': today.strftime('%Y-%m-%d'),
+                'time': attendance.check_out_time.strftime('%H:%M:%S')
+            })
+        else:
+            return JsonResponse({'errors': ['Already checked out for today']}, status=400)
+    return JsonResponse({'errors': ['Invalid request']}, status=400)
