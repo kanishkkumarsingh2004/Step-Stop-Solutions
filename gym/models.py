@@ -79,7 +79,6 @@ class GymAttendance(models.Model):
 class GymSubscriptionPlan(models.Model):
     user = models.ForeignKey('library.CustomUser', on_delete=models.CASCADE, help_text="The vendor who created this subscription plan")
     name = models.CharField(max_length=255, help_text="Name of the subscription plan")
-    start_date = models.DateField(help_text="The date when the subscription plan was created")
     duration_in_months = models.IntegerField(help_text="Duration of the subscription plan in months")
     duration_in_hours = models.IntegerField(default=0, help_text="Duration of the subscription plan in hours (if applicable)")
     normal_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="The normal price of the subscription plan")

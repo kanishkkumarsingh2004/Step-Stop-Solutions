@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+  <div class="mb-6">
+    <h2 class="text-3xl font-bold text-gray-800 text-center">Gym Analytics Dashboard</h2>
+    <p class="text-gray-500 text-center mt-2">Track your gym's recent attendance and revenue trends.</p>
+  </div>
+  
+  <div class="flex flex-col md:flex-row gap-8 justify-center items-stretch">
+    <!-- Attendance Card -->
+    <div class="flex-1 bg-white rounded-xl shadow-lg p-6 flex flex-col items-center">
+      <h4 class="font-semibold text-lg mb-4 text-blue-600 flex items-center gap-2">
+        <i class="bi bi-clipboard-check"></i> Attendance (Last 14 Days)
+      </h4>
+      <canvas id="attendanceChart" class="w-full" style="min-height:260px; max-height:340px"></canvas>
+      <!-- Data Table for Attendance -->
+      <div class="w-full mt-4">
+        <table class="min-w-full border text-sm text-center">
+          <thead>
+            <tr>
+              <th class="border px-2 py-1 bg-gray-50 text-gray-700">Date</th>
+              <th class="border px-2 py-1 bg-gray-50 text-gray-700">Attendance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {# Work around lack of zip filter by using indexed iteration #}
+            {% for i in attendance_labels|length|make_list %}
+              {% with idx=forloop.counter0 %}
+              <tr>
+                <td class="border px-2 py-1">{{ attendance_labels.idx }}</td>
+                <td class="border px-2 py-1">{{ attendance_counts.idx }}</td>
+              </tr>
+              {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Revenue Card -->
+    <div class="flex-1 bg-white rounded-xl shadow-lg p-6 flex flex-col items-center">
+      <h4 class="font-semibold text-lg mb-4 text-pink-600 flex items-center gap-2">
+        <i class="bi bi-graph-up-arrow"></i> Revenue (Last 6 Months)
+      </h4>
+      <canvas id="revenueChart" class="w-full" style="min-height:260px; max-height:340px"></canvas>
+      <!-- Data Table for Revenue -->
+      <div class="w-full mt-4">
+        <table class="min-w-full border text-sm text-center">
+          <thead>
+            <tr>
+              <th class="border px-2 py-1 bg-gray-50 text-gray-700">Month</th>
+              <th class="border px-2 py-1 bg-gray-50 text-gray-700">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {# Work around lack of zip filter by using indexed iteration #}
+            {% for i in month_labels|length|make_list %}
+              {% with idx=forloop.counter0 %}
+              <tr>
+                <td class="border px-2 py-1">{{ month_labels.idx }}</td>
+                <td class="border px-2 py-1">${{ monthly_revenue.idx|floatformat:2 }}</td>
+              </tr>
+              {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Attendance Data (parsed safely from Django context)
+const attendanceLabels = JSON.parse('{{ attendance_labels|safe|escapejs }}');
+const attendanceCounts = JSON.parse('{{ attendance_counts|safe|escapejs }}');
+
+// Revenue Data
+const monthLabels = JSON.parse('{{ month_labels|safe|escapejs }}');
+const monthlyRevenue = JSON.parse('{{ monthly_revenue|safe|escapejs }}');
+
+// Attendance Chart
+const ctxAttendance = document.getElementById('attendanceChart').getContext('2d');
+const attendanceChart = new Chart(ctxAttendance, {
+    type: 'line',
+    data: {
+        labels: attendanceLabels,
+        datasets: [{
+            label: 'Attendance',
+            data: attendanceCounts,
+            borderColor: 'rgba(59, 130, 246, 1)',
+            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            title: { display: false }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#4B5563', font: { size: 12, weight: "bold" } },
+                grid: { color: '#F3F4F6' }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: '#4B5563', precision:0 },
+                grid: { color: '#E5E7EB' }
+            }
+        }
+    }
+});
+
+// Revenue Chart
+const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(ctxRevenue, {
+    type: 'bar',
+    data: {
+        labels: monthLabels,
+        datasets: [{
+            label: 'Revenue',
+            data: monthlyRevenue,
+            backgroundColor: 'rgba(244, 63, 94, 0.2)',
+            borderColor: 'rgba(244, 63, 94, 1)',
+            borderWidth: 2,
+            borderRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            title: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const value = context.parsed.y ?? context.parsed;
+                        return ` $${value}`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#4B5563', font: { size: 12, weight: "bold" } },
+                grid: { color: '#F3F4F6' }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: '#4B5563',
+                    callback: function(value) { return '$' + value; },
+                    precision: 0,
+                },
+                grid: { color: '#E5E7EB' }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

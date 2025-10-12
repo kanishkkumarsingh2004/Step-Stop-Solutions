@@ -13,7 +13,9 @@ from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 import json
 import logging
-
+from datetime import timedelta
+from django.db.models.functions import TruncMonth
+from collections import OrderedDict
 logger = logging.getLogger(__name__)
 
 @login_required
@@ -239,6 +241,7 @@ def gym_dashboard(request, gym_id):
 @login_required
 def create_gym_subscription_plan(request, gym_id):
     gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    plans = GymSubscriptionPlan.objects.filter(gym=gym).order_by('-id')
     if request.method == 'POST':
         form = GymSubscriptionPlanForm(request.POST)
         if form.is_valid():
@@ -247,10 +250,10 @@ def create_gym_subscription_plan(request, gym_id):
             plan.gym = gym
             plan.save()
             messages.success(request, 'Subscription plan created successfully!')
-            return redirect('gym_dashboard', gym_id=gym_id)
+            return redirect('create_gym_subscription_plan', gym_id=gym_id)
     else:
         form = GymSubscriptionPlanForm()
-    return render(request, 'gym/create_subscription_plan.html', {'form': form, 'gym': gym})
+    return render(request, 'gym/create_subscription_plan.html', {'form': form, 'gym': gym, 'plans': plans})
 
 @login_required
 def subscribe_to_gym(request, gym_id, plan_id):
@@ -563,3 +566,113 @@ def gym_balance_sheet(request, gym_id):
         'recent_expenses': recent_expenses,
     }
     return render(request, 'gym/balance_sheet.html', context)
+
+def browse_gyms(request):
+    query = request.GET.get('q', '').strip()
+    gyms = Gym.objects.filter(is_approved=True)
+    if query:
+        gyms = gyms.filter(
+            models.Q(venue_name__icontains=query) |
+            models.Q(address__icontains=query) |
+            models.Q(city__icontains=query) |
+            models.Q(state__icontains=query) |
+            models.Q(district__icontains=query) |
+            models.Q(business_type__icontains=query) |
+            models.Q(description__icontains=query)
+        )
+    gyms = gyms.order_by('venue_name')
+    return render(request, 'gym/browse_gyms.html', {'gyms': gyms})
+
+@login_required
+def gym_graph(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+
+    # --- Get all transactions for this gym (from models.py) ---
+    all_transactions = GymTransaction.objects.filter(subscription__gym=gym)
+    all_expenses = GymExpense.objects.filter(gym=gym)
+    all_attendance = GymAttendance.objects.filter(gym=gym)
+
+    # Attendance per day (last 14 days)
+    
+    today = timezone.now().date()
+    days_range = [today - timedelta(days=i) for i in range(13, -1, -1)]
+    attendance_labels = [d.strftime('%b %d') for d in days_range]
+    attendance_counts = [
+        all_attendance.filter(date=d).count() for d in days_range
+    ]
+
+    # Revenue per month (last 6 months) using all transactions (valid only)
+    
+
+    monthly_revenue_qs = (
+        all_transactions.filter(
+            status='valid',
+            created_at__gte=today - timedelta(days=180)
+        )
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(revenue=models.Sum('amount'))
+        .order_by('month')
+    )
+
+    months_labels_full = []
+    months_map = OrderedDict()
+    for i in range(5, -1, -1):
+        dt = (today.replace(day=1) - timedelta(days=i*30))
+        label = dt.strftime('%b %Y')
+        months_labels_full.append(label)
+        months_map[dt.replace(day=1)] = 0
+    for item in monthly_revenue_qs:
+        key = item['month'].replace(day=1)
+        if key in months_map:
+            months_map[key] = float(item['revenue'] or 0)
+    month_labels = months_labels_full
+    monthly_revenue = list(months_map.values())
+
+    context = {
+        'gym': gym,
+        'attendance_labels': attendance_labels,
+        'attendance_counts': attendance_counts,
+        'month_labels': month_labels,
+        'monthly_revenue': monthly_revenue,
+        'all_transactions': all_transactions,
+        'all_expenses': all_expenses,
+        'all_attendance': all_attendance,
+    }
+    return render(request, 'gym/charts.html', context)
+
+
+def gym_details(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, is_approved=True)
+    # Gather reviews and compute average rating, if relevant
+    reviews = gym.reviews.select_related('user').all() if hasattr(gym, 'reviews') else []
+    average_rating = getattr(gym, 'average_rating', None)
+    # Prepare extra details if needed, e.g., subscription plans
+    subscription_plans = gym.subscriptionplan_set.all() if hasattr(gym, 'subscriptionplan_set') else []
+
+    # Parse social media links into a list of dicts: [{"url": ..., "display": ...}]
+    # Expecting gym.social_media_links as comma separated list of URLs (optionally with "name|url" format)
+    social_links = []
+    if gym.social_media_links:
+        for raw_item in gym.social_media_links.split(','):
+            s = raw_item.strip()
+            if not s:
+                continue
+            if "|" in s:
+                display, url = [x.strip() for x in s.split("|", 1)]
+            else:
+                url = s
+                display = url
+            social_links.append({
+                "url": url,
+                "display": display,
+            })
+
+    context = {
+        'gym': gym,
+        'reviews': reviews,
+        'average_rating': average_rating,
+        'subscription_plans': subscription_plans,
+        'social_links': social_links,
+    }
+    return render(request, 'gym/gym_details.html', context)

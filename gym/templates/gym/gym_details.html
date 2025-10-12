@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div class="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-2xl overflow-hidden">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-blue-100 to-blue-200 px-4 sm:px-6 py-4 sm:py-6 border-b border-blue-200">
+            <div class="flex flex-col items-center space-y-3 sm:space-y-0 sm:flex-row sm:justify-between">
+                <!-- Gym Venue Name -->
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left">
+                    {{ gym.venue_name }}
+                </h1>
+
+                <!-- Centered Image -->
+                <div class="flex justify-center">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg shadow-md flex items-center justify-center overflow-hidden border-2 sm:border-4 border-white/20 ring-1 sm:ring-2 ring-blue-200/50">
+                        {% if gym.logo %}
+                            <img src="{{ gym.logo.url }}" alt="{{ gym.venue_name }} logo" class="w-full h-full object-cover">
+                        {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 40 40" class="w-full h-full text-gray-300">
+                                <circle cx="20" cy="20" r="19" fill="#f3f4f6" stroke="#cbd5e1" stroke-width="2"/>
+                                <circle cx="20" cy="16" r="6" fill="#d1d5db"/>
+                                <ellipse cx="20" cy="29" rx="9" ry="6" fill="#d1d5db"/>
+                            </svg>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Badge -->
+                <span class="px-3 py-1 text-xs sm:text-sm font-semibold rounded-full shadow-sm bg-blue-100 text-blue-800">
+                    {{ gym.business_type|default:"Gym" }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="p-4 sm:p-6 space-y-6 sm:space-y-8">
+            <!-- About Gym -->
+            <div class="flex flex-col space-y-6 sm:space-y-0 sm:flex-row sm:gap-6">
+                <div class="bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-2xl p-4 sm:p-6 shadow-md w-full">
+                    <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">About Us</h2>
+                    <p class="text-gray-600 leading-relaxed text-sm sm:text-base">
+                        {{ gym.description|default:"No description available." }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Details Grid: Address, Owner, Contact, Timings, Capacity, etc. -->
+            <div class="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <!-- Address Card -->
+                <div class="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-2 sm:mb-3 text-base sm:text-lg">📍 Address</h3>
+                    <p class="text-gray-600 text-xs sm:text-sm leading-relaxed">{{ gym.venue_location }}</p>
+                    <p class="text-gray-500 text-xs mt-1">{{ gym.city }}, {{ gym.district }}, {{ gym.state }} - {{ gym.pincode }}</p>
+                </div>
+                <!-- Owner Card -->
+                <div class="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-2 sm:mb-3 text-base sm:text-lg">👤 Owner</h3>
+                    <p class="text-gray-600 text-xs sm:text-sm">{{ gym.owner.get_full_name|default:"N/A" }}</p>
+                </div>
+                <!-- Contact Card -->
+                <div class="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-2 sm:mb-3 text-base sm:text-lg">📞 Contact</h3>
+                    {% if gym.mobile_number or gym.email %}
+                        {% if gym.mobile_number %}
+                            <p class="text-gray-600 text-xs sm:text-sm">Phone: {{ gym.mobile_number }}</p>
+                        {% endif %}
+                        {% if gym.email %}
+                            <p class="text-gray-600 text-xs sm:text-sm">Email: {{ gym.email }}</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-gray-400 text-xs sm:text-sm">No contact information.</p>
+                    {% endif %}
+                </div>
+                <!-- Timings Card -->
+                <div class="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-2 sm:mb-3 text-base sm:text-lg">⏰ Timings</h3>
+                    <div class="text-gray-600 text-xs sm:text-sm">
+                        {{ gym.opening_time|default:"--:--" }} - {{ gym.closing_time|default:"--:--" }}
+                    </div>
+                    <div class="text-gray-500 text-xs mt-2">Capacity: {{ gym.capacity }}</div>
+                </div>
+                <!-- Equipment Card -->
+                <div class="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-2 sm:mb-3 text-base sm:text-lg">🏋️ Equipment Available</h3>
+                    <p class="text-gray-600 text-xs sm:text-sm">
+                        {{ gym.equipment_available|default:"Not specified." }}
+                    </p>
+                </div>
+                <!-- Additional Services Card -->
+                <div class="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-2 sm:mb-3 text-base sm:text-lg">🛎️ Additional Services</h3>
+                    <p class="text-gray-600 text-xs sm:text-sm">
+                        {{ gym.additional_services|default:"None" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Subscription Plans -->
+            {% if subscription_plans %}
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 mb-2">💸 Subscription Plans</h2>
+                <ul class="divide-y divide-gray-100">
+                    {% for plan in subscription_plans %}
+                        <li class="py-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <span class="font-semibold text-gray-800">{{ plan.name }}</span>
+                                <span class="text-blue-700 font-bold mt-2 sm:mt-0">
+                                    {% if plan.has_discount %}
+                                        <span class="line-through text-gray-400 mr-2">₹{{ plan.normal_price|floatformat:2 }}</span>
+                                        <span>₹{{ plan.discount_price|floatformat:2 }}</span>
+                                    {% else %}
+                                        ₹{{ plan.normal_price|floatformat:2 }}
+                                    {% endif %}
+                                </span>
+                                <span class="text-xs text-gray-500 ml-4">Duration: {{ plan.duration_in_months }} months{% if plan.duration_in_hours and plan.duration_in_hours > 0 %}, {{ plan.duration_in_hours }} hours{% endif %}</span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Reviews Section -->
+            <div class="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-5 gap-3 sm:gap-0">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">🌟 Reviews</h2>
+                    {% if average_rating %}
+                    <div class="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-full">
+                        <div class="text-yellow-400 text-sm sm:text-base flex">
+                            {% for i in "12345" %}
+                                {% if i|add:0 <= average_rating|floatformat:0|add:0 %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="text-xs sm:text-sm text-gray-600">
+                            {{ average_rating|floatformat:1 }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="space-y-4">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                                <div class="flex items-center space-x-2">
+                                    <div class="text-yellow-400 text-sm sm:text-base flex">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                                <i class="bi bi-star-fill"></i>
+                                            {% else %}
+                                                <i class="bi bi-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="text-xs sm:text-sm text-gray-600">{{ review.user.get_full_name }}</span>
+                                </div>
+                                <span class="text-xs sm:text-sm text-gray-500">{{ review.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            {% if review.comment %}
+                                <p class="mt-2 text-xs sm:text-sm text-gray-700">{{ review.comment }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-sm sm:text-base text-gray-600">No reviews yet. Be the first to review!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- UPI/Payment & Social Section -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <!-- Payment Details -->
+                <div class="bg-gray-50 rounded-xl p-4 shadow border border-gray-100">
+                    <h3 class="text-base font-semibold text-gray-700 mb-2">💳 Payment Information</h3>
+                    {% if gym.upi_id %}
+                        <p class="text-gray-700 text-xs sm:text-sm">UPI ID: <b>{{ gym.upi_id }}</b></p>
+                        {% if gym.recipient_name %}
+                        <p class="text-gray-500 text-xs mt-1">Recipient: {{ gym.recipient_name }}</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-gray-400 text-xs sm:text-sm">No payment information available.</p>
+                    {% endif %}
+                    {% if gym.thank_you_message %}
+                        <p class="mt-2 text-green-600 text-xs italic">{{ gym.thank_you_message }}</p>
+                    {% endif %}
+                </div>
+                <!-- Social Media Section -->
+                <div class="bg-gray-50 rounded-xl p-4 shadow border border-gray-100">
+                    <h3 class="text-base font-semibold text-gray-700 mb-2">🔗 Social Media Links</h3>
+                    {% if social_links %}
+                        <ul class="list-disc list-inside text-xs sm:text-sm text-blue-600">
+                            {% for link in social_links %}
+                                <li>
+                                    <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="hover:underline hover:text-blue-800">
+                                        {{ link.display }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-gray-400 text-xs sm:text-sm">No social media links provided.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-2 mb-4 ml-4 sm:ml-6 sm:mb-8">
+                <a href="#"
+                   class="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 border border-transparent text-sm sm:text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transform transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl">
+                    <svg class="w-5 h-5 mr-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <span class="font-semibold">Explore Subscription Plans</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

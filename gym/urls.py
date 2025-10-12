@@ -27,4 +27,7 @@ urlpatterns = [
     path('edit-expense/<str:gym_id>/<int:expense_id>/', views.edit_gym_expense, name='edit_gym_expense'),
     path('delete-expense/<str:gym_id>/<int:expense_id>/', views.delete_gym_expense, name='delete_gym_expense'),
     path('balance-sheet/<str:gym_id>/', views.gym_balance_sheet, name='gym_balance_sheet'),
+    path('browse/', views.browse_gyms, name='browse_gyms'),
+    path('graph/<str:gym_id>/', views.gym_graph, name='gym_graph'),
+    path('details/<str:gym_id>/', views.gym_details, name='gym_details'),
 ]
