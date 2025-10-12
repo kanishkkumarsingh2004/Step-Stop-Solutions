@@ -1,10 +1,10 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Gym, GymCard, GymAttendance, GymSubscriptionPlan, GymUserSubscription, GymTransaction
-from .forms import GymForm, GymRegistrationForm, GymUPIForm, GymSubscriptionPlanForm, GymUserSubscriptionForm, GymTransactionForm
+from .models import Gym, GymCard, GymAttendance, GymSubscriptionPlan, GymUserSubscription, GymTransaction, GymExpense
+from .forms import GymForm, GymRegistrationForm, GymUPIForm, GymSubscriptionPlanForm, GymUserSubscriptionForm, GymTransactionForm, GymExpenseForm
 from library.models import AdminCard, CustomUser
 from django.contrib import messages
-from django.db import transaction
+from django.db import models, transaction
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.http import JsonResponse
@@ -474,3 +474,92 @@ def mark_gym_attendance(request, gym_id):
         else:
             return JsonResponse({'errors': ['Already checked out for today']}, status=400)
     return JsonResponse({'errors': ['Invalid request']}, status=400)
+
+@login_required
+def gym_expense_dashboard(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    expenses = GymExpense.objects.filter(gym=gym).order_by('-date')
+    total_expenses = expenses.aggregate(total=models.Sum('amount'))['total'] or 0
+    return render(request, 'gym/expense_dashboard.html', {
+        'gym': gym,
+        'expenses': expenses,
+        'total_expenses': total_expenses
+    })
+
+@login_required
+def add_gym_expense(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    if request.method == 'POST':
+        form = GymExpenseForm(request.POST)
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.gym = gym
+            expense.save()
+            messages.success(request, 'Expense added successfully!')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Expense added successfully!'})
+            return redirect('gym_expense_dashboard', gym_id=gym_id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': form.errors})
+    else:
+        form = GymExpenseForm()
+    return render(request, 'gym/add_expense.html', {'form': form, 'gym': gym})
+
+@login_required
+def edit_gym_expense(request, gym_id, expense_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    expense = get_object_or_404(GymExpense, id=expense_id, gym=gym)
+    if request.method == 'POST':
+        form = GymExpenseForm(request.POST, instance=expense)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Expense updated successfully!')
+            return redirect('gym_expense_dashboard', gym_id=gym_id)
+    else:
+        form = GymExpenseForm(instance=expense)
+    return render(request, 'gym/edit_expense.html', {'form': form, 'gym': gym, 'expense': expense})
+
+@login_required
+def delete_gym_expense(request, gym_id, expense_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    expense = get_object_or_404(GymExpense, id=expense_id, gym=gym)
+    if request.method == 'POST':
+        expense.delete()
+        messages.success(request, 'Expense deleted successfully!')
+        return redirect('gym_expense_dashboard', gym_id=gym_id)
+    return render(request, 'gym/delete_expense.html', {'gym': gym, 'expense': expense})
+
+@login_required
+def gym_balance_sheet(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+
+    # Calculate total income from valid transactions
+    total_income = GymTransaction.objects.filter(
+        subscription__gym=gym,
+        status='valid'
+    ).aggregate(total=models.Sum('amount'))['total'] or 0
+
+    # Calculate total expenses
+    total_expenses = GymExpense.objects.filter(gym=gym).aggregate(total=models.Sum('amount'))['total'] or 0
+
+    # Calculate balance
+    balance = total_income - total_expenses
+
+    # Get recent transactions and expenses for display
+    recent_transactions = GymTransaction.objects.filter(
+        subscription__gym=gym,
+        status='valid'
+    ).order_by('-created_at')[:10]
+
+    recent_expenses = GymExpense.objects.filter(gym=gym).order_by('-date')[:10]
+
+    context = {
+        'gym': gym,
+        'total_income': total_income,
+        'total_expenses': total_expenses,
+        'balance': balance,
+        'recent_transactions': recent_transactions,
+        'recent_expenses': recent_expenses,
+    }
+    return render(request, 'gym/balance_sheet.html', context)

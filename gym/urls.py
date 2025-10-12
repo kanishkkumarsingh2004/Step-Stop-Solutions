@@ -22,4 +22,9 @@ urlpatterns = [
     path('attendance/<str:gym_id>/', views.gym_attendance_page, name='gym_attendance_page'),
     path('all-attendance/<str:gym_id>/', views.gym_all_attendance, name='gym_all_attendance'),
     path('mark-attendance/<str:gym_id>/', views.mark_gym_attendance, name='mark_gym_attendance'),
+    path('expenses/<str:gym_id>/', views.gym_expense_dashboard, name='gym_expense_dashboard'),
+    path('add-expense/<str:gym_id>/', views.add_gym_expense, name='add_gym_expense'),
+    path('edit-expense/<str:gym_id>/<int:expense_id>/', views.edit_gym_expense, name='edit_gym_expense'),
+    path('delete-expense/<str:gym_id>/<int:expense_id>/', views.delete_gym_expense, name='delete_gym_expense'),
+    path('balance-sheet/<str:gym_id>/', views.gym_balance_sheet, name='gym_balance_sheet'),
 ]

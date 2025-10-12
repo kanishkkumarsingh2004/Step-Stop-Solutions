@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 md:py-8">
+    <!-- Header -->
+    <div class="mb-4 md:mb-8 bg-gradient-to-r from-green-50 to-blue-50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+            <div class="text-center md:text-left">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3">
+                    <span class="text-green-600">{{ gym.venue_name }}</span> - Expense Dashboard
+                </h1>
+                <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
+                    Manage and track all expenses for your gym
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <button onclick="openAddExpenseModal()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200">
+                    <i class="bi bi-plus-circle mr-2"></i>Add Expense
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100">
+                    <i class="bi bi-cash text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-600">Total Expenses</p>
+                    <p class="text-2xl font-bold text-green-600">₹{{ total_expenses }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100">
+                    <i class="bi bi-receipt text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-600">Total Records</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ expenses|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100">
+                    <i class="bi bi-bar-chart-line text-purple-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <a href="{% url 'gym_balance_sheet' gym.id %}" class="text-purple-600 hover:text-purple-800">
+                        <p class="text-sm">View Balance Sheet</p>
+                        <p class="text-lg font-bold">Click Here</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">Expense Records</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expense Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for expense in expenses %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ expense.expense_name }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ expense.expense_description|truncatechars:50|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">₹{{ expense.amount }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ expense.date|date:"d M Y" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ expense.get_payment_mode_display }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="{% url 'edit_gym_expense' gym.id expense.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <a href="{% url 'delete_gym_expense' gym.id expense.id %}" class="text-red-600 hover:text-red-900">
+                                <i class="bi bi-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            No expenses recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-6">
+        <a href="{% url 'gym_dashboard' gym.id %}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200">
+            <i class="bi bi-arrow-left mr-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div id="addExpenseModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Add New Expense</h3>
+                <button onclick="closeAddExpenseModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="bi bi-x-lg text-xl"></i>
+                </button>
+            </div>
+
+            <form id="addExpenseForm" method="post" class="space-y-4">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Expense Name -->
+                    <div>
+                        <label for="id_expense_name" class="block text-sm font-medium text-gray-700 mb-1">
+                            Expense Name *
+                        </label>
+                        <input type="text" name="expense_name" id="id_expense_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+
+                    <!-- Amount -->
+                    <div>
+                        <label for="id_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                            Amount (₹) *
+                        </label>
+                        <input type="number" name="amount" id="id_amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label for="id_date" class="block text-sm font-medium text-gray-700 mb-1">
+                            Date *
+                        </label>
+                        <input type="date" name="date" id="id_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+
+                    <!-- Payment Mode -->
+                    <div>
+                        <label for="id_payment_mode" class="block text-sm font-medium text-gray-700 mb-1">
+                            Payment Mode *
+                        </label>
+                        <select name="payment_mode" id="id_payment_mode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                            <option value="CASH">Cash</option>
+                            <option value="UPI">UPI</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Transaction ID (conditional) -->
+                <div id="transaction_id_field_modal" class="hidden">
+                    <label for="id_transaction_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        Transaction ID *
+                    </label>
+                    <input type="text" name="transaction_id" id="id_transaction_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="id_expense_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                    </label>
+                    <textarea name="expense_description" id="id_expense_description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeAddExpenseModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors duration-200">
+                        <i class="bi bi-plus-circle mr-2"></i>Add Expense
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAddExpenseModal() {
+    document.getElementById('addExpenseModal').classList.remove('hidden');
+}
+
+function closeAddExpenseModal() {
+    document.getElementById('addExpenseModal').classList.add('hidden');
+    document.getElementById('addExpenseForm').reset();
+}
+
+// Handle payment mode change for transaction ID field
+document.getElementById('id_payment_mode').addEventListener('change', function() {
+    const transactionField = document.getElementById('transaction_id_field_modal');
+    if (this.value === 'UPI') {
+        transactionField.classList.remove('hidden');
+        document.getElementById('id_transaction_id').required = true;
+    } else {
+        transactionField.classList.add('hidden');
+        document.getElementById('id_transaction_id').required = false;
+    }
+});
+
+// Handle form submission with AJAX
+document.getElementById('addExpenseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "add_gym_expense" gym.id %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeAddExpenseModal();
+            location.reload(); // Refresh the page to show new expense
+        } else {
+            // Handle errors
+            alert('Error adding expense. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding expense. Please try again.');
+    });
+});
+
+// Close modal when clicking outside
+document.getElementById('addExpenseModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAddExpenseModal();
+    }
+});
+</script>
+{% endblock %}

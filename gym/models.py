@@ -143,3 +143,24 @@ class GymTransaction(models.Model):
 
     def __str__(self):
         return f"Gym Transaction {self.transaction_id} by {self.user.email}"
+
+class GymExpense(models.Model):
+    PAYMENT_MODE_CHOICES = [
+        ('CASH', 'Cash'),
+        ('UPI', 'UPI'),
+    ]
+
+    expense_name = models.CharField(max_length=255)
+    expense_description = models.TextField(blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField()
+    payment_mode = models.CharField(max_length=10, choices=PAYMENT_MODE_CHOICES, default='CASH')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name='expenses')
+
+    def __str__(self):
+        return f"{self.expense_name} - ₹{self.amount} ({self.date})"
+
+    def clean(self):
+        if self.payment_mode in ['UPI'] and not self.transaction_id:
+            raise ValidationError("Transaction ID is required for UPI payments")

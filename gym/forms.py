@@ -1,5 +1,5 @@
 from django import forms
-from .models import Gym, GymCard, GymSubscriptionPlan, GymUserSubscription, GymTransaction
+from .models import Gym, GymCard, GymSubscriptionPlan, GymUserSubscription, GymTransaction, GymExpense
 
 class GymForm(forms.ModelForm):
     class Meta:
@@ -61,3 +61,12 @@ class GymTransactionForm(forms.ModelForm):
     class Meta:
         model = GymTransaction
         fields = ['user', 'subscription', 'transaction_id', 'amount', 'status']
+
+class GymExpenseForm(forms.ModelForm):
+    class Meta:
+        model = GymExpense
+        fields = ['expense_name', 'expense_description', 'amount', 'date', 'payment_mode', 'transaction_id']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'expense_description': forms.Textarea(attrs={'rows': 3}),
+        }
