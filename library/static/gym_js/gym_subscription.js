@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const applyBtn = document.getElementById("apply-coupon-btn");
     const couponMessage = document.getElementById("coupon-message");
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : "";
+    const appliedCoupon = document.getElementById("applied-coupon");
 
     function showMessage(message, isSuccess = true) {
         couponMessage.textContent = message;
@@ -88,6 +89,28 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (data.subscriptions) {
                         updatePrices(data.subscriptions);
                     }
+                    // Update hidden coupon input for forms
+                    if (!appliedCoupon) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'applied-coupon';
+                        hiddenInput.value = code;
+                        couponForm.appendChild(hiddenInput);
+                    } else {
+                        appliedCoupon.value = code;
+                    }
+                    // Update coupon_code in all subscribe forms
+                    const subscribeForms = document.querySelectorAll('.subscribe-form');
+                    subscribeForms.forEach(form => {
+                        let couponInput = form.querySelector('input[name="coupon_code"]');
+                        if (!couponInput) {
+                            couponInput = document.createElement('input');
+                            couponInput.type = 'hidden';
+                            couponInput.name = 'coupon_code';
+                            form.appendChild(couponInput);
+                        }
+                        couponInput.value = code;
+                    });
                 } else {
                     showMessage(data.error || "Invalid coupon code.", false);
                 }

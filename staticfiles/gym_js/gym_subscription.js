@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const applyBtn = document.getElementById("apply-coupon-btn");
     const couponMessage = document.getElementById("coupon-message");
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : "";
+    const appliedCoupon = document.getElementById("applied-coupon");
 
     function showMessage(message, isSuccess = true) {
         couponMessage.textContent = message;
@@ -21,16 +22,32 @@ document.addEventListener("DOMContentLoaded", function() {
         subscriptions.forEach(plan => {
             const planDiv = document.querySelector(`[data-plan-id="${plan.id}"]`);
             if (planDiv) {
-                const discountPriceSpan = planDiv.querySelector('.discount-price');
-                const normalPriceSpan = planDiv.querySelector('.normal-price');
+                const priceDiv = planDiv.querySelector('.mb-4'); // The div containing prices
+                let discountPriceSpan = planDiv.querySelector('.discount-price');
+                let normalPriceSpan = planDiv.querySelector('.normal-price');
                 const diffBadge = planDiv.querySelector('.diff-badge');
 
-                if (discountPriceSpan) {
+                if (plan.discount_price_display && plan.discount_price_display !== '-') {
+                    // Has discount
+                    if (!discountPriceSpan) {
+                        discountPriceSpan = document.createElement('span');
+                        discountPriceSpan.className = 'text-3xl font-bold text-green-700 mr-3 discount-price';
+                        priceDiv.insertBefore(discountPriceSpan, normalPriceSpan);
+                    }
                     discountPriceSpan.innerHTML = plan.discount_price_display;
-                }
-                if (normalPriceSpan) {
                     normalPriceSpan.innerHTML = plan.normal_price_display;
+                    normalPriceSpan.classList.add('line-through', 'text-gray-400', 'text-base', 'align-middle');
+                    normalPriceSpan.classList.remove('text-3xl', 'font-bold');
+                } else {
+                    // No discount
+                    if (discountPriceSpan) {
+                        discountPriceSpan.remove();
+                    }
+                    normalPriceSpan.innerHTML = plan.normal_price_display;
+                    normalPriceSpan.classList.remove('line-through', 'text-gray-400', 'text-base', 'align-middle');
+                    normalPriceSpan.classList.add('text-3xl', 'font-bold', 'text-green-700');
                 }
+
                 if (diffBadge) {
                     if (plan.diff_display) {
                         diffBadge.innerHTML = plan.diff_display;
@@ -71,6 +88,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     showMessage(data.message || "Coupon applied successfully!");
                     if (data.subscriptions) {
                         updatePrices(data.subscriptions);
+                    }
+                    // Update hidden coupon input for forms
+                    if (!appliedCoupon) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'applied-coupon';
+                        hiddenInput.value = code;
+                        couponForm.appendChild(hiddenInput);
+                    } else {
+                        appliedCoupon.value = code;
                     }
                 } else {
                     showMessage(data.error || "Invalid coupon code.", false);

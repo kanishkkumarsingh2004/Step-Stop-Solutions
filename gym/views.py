@@ -17,6 +17,9 @@ import logging
 from datetime import timedelta
 from django.db.models.functions import TruncMonth
 from collections import OrderedDict
+import qrcode
+from io import BytesIO
+import base64
 logger = logging.getLogger(__name__)
 
 @login_required
@@ -696,6 +699,7 @@ def gym_details(request, gym_id):
 def gym_subscription(request, gym_id):
     gym = get_object_or_404(Gym, id=gym_id, is_approved=True)
     subscriptions = list(gym.subscription_plans.all())
+    coupon_code = request.POST.get('coupon_code') if request.method == 'POST' else None
 
     if request.method == 'POST':
         coupon_code = request.POST.get('coupon_code')
@@ -776,6 +780,7 @@ def gym_subscription(request, gym_id):
     context = {
         'gym': gym,
         'subscriptions': subscriptions,
+        'coupon_code': coupon_code,
     }
     return render(request, 'gym/gym_subscription.html', context)
 
@@ -847,6 +852,91 @@ def gym_coupon_data(request, coupon_id):
         return JsonResponse(data)
     except GymCoupon.DoesNotExist:
         return JsonResponse({'error': 'Coupon not found'}, status=404)
+
+@login_required
+def gym_payment_page(request, gym_id, plan_id):
+    gym = get_object_or_404(Gym, id=gym_id, is_approved=True)
+    plan = get_object_or_404(GymSubscriptionPlan, id=plan_id, gym=gym)
+    coupon_code = request.POST.get('coupon_code', '')
+
+    # Calculate final amount
+    final_amount = plan.discount_price if plan.discount_price else plan.normal_price
+    if coupon_code:
+        try:
+            coupon = GymCoupon.objects.get(code=coupon_code, gym=gym, is_active=True)
+            if coupon.is_valid() and (not coupon.applicable_plans.exists() or coupon.applicable_plans.filter(id=plan.id).exists()):
+                final_amount = coupon.apply_discount(final_amount)
+        except GymCoupon.DoesNotExist:
+            pass  # Ignore invalid coupon
+
+    # Generate QR code for UPI
+    qr_code_url = None
+    if gym.upi_id:
+
+        upi_string = f"upi://pay?pa={gym.upi_id}&pn={gym.recipient_name}&am={final_amount}&cu=INR"
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(upi_string)
+        qr.make(fit=True)
+        img = qr.make_image(fill='black', back_color='white')
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        qr_code_url = f"data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode()}"
+
+    context = {
+        'gym': gym,
+        'plan': plan,
+        'final_amount': final_amount,
+        'coupon_code': coupon_code,
+        'qr_code_url': qr_code_url,
+    }
+    return render(request, 'gym/gym_payment.html', context)
+
+@login_required
+def gym_payment_success(request, gym_id, plan_id):
+    gym = get_object_or_404(Gym, id=gym_id, is_approved=True)
+    plan = get_object_or_404(GymSubscriptionPlan, id=plan_id, gym=gym)
+
+    if request.method == 'POST':
+        coupon_code = request.POST.get('coupon_code', '')
+        final_amount = request.POST.get('final_amount')
+        transaction_id = request.POST.get('transaction_id')
+        payment_mode = request.POST.get('payment_mode')
+
+        # Calculate final amount again to verify
+        amount = plan.discount_price if plan.discount_price else plan.normal_price
+        coupon = None
+        if coupon_code:
+            try:
+                coupon = GymCoupon.objects.get(code=coupon_code, gym=gym, is_active=True)
+                if coupon.is_valid() and (not coupon.applicable_plans.exists() or coupon.applicable_plans.filter(id=plan.id).exists()):
+                    amount = coupon.apply_discount(amount)
+            except GymCoupon.DoesNotExist:
+                coupon = None
+
+        if float(final_amount) != amount:
+            messages.error(request, "Amount mismatch. Please try again.")
+            return redirect('gym_subscription', gym_id=gym.id)
+
+        # Create transaction
+        transaction = GymTransaction.objects.create(
+            user=request.user,
+            subscription=plan,
+            transaction_id=transaction_id,
+            amount=amount,
+            status='pending'
+        )
+
+        # Increment `times_used` if coupon was used
+        if coupon is not None:
+            coupon.increment_usage()
+
+        context = {
+            'gym': gym,
+            'transaction_id': transaction_id,
+        }
+        return render(request, 'gym/payment_success.html', context)
+
+    return redirect('gym_subscription', gym_id=gym.id)
 
 @csrf_exempt
 @login_required
