@@ -952,3 +952,35 @@ def gym_coupon_delete(request, gym_id, coupon_id):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
+@login_required
+def verify_gym_payments(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    all_transactions = GymTransaction.objects.filter(
+        subscription__gym=gym
+    ).select_related('user', 'subscription').order_by('-created_at')
+    return render(request, 'gym/verify_payments.html', {
+        'gym': gym,
+        'all_transactions': all_transactions
+    })
+
+@csrf_exempt
+@login_required
+@require_POST
+def verify_gym_payment_status(request, gym_id, transaction_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    try:
+        transaction = GymTransaction.objects.get(
+            id=transaction_id,
+            subscription__gym=gym
+        )
+        new_status = request.POST.get('status')
+        if new_status not in ['valid', 'invalid']:
+            return JsonResponse({'success': False, 'message': 'Invalid status'}, status=400)
+        transaction.status = new_status
+        transaction.save()
+        return JsonResponse({'success': True, 'message': f'Transaction marked as {new_status}'})
+    except GymTransaction.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Transaction not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+

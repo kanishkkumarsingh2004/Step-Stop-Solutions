@@ -99,6 +99,18 @@ document.addEventListener("DOMContentLoaded", function() {
                     } else {
                         appliedCoupon.value = code;
                     }
+                    // Update coupon_code in all subscribe forms
+                    const subscribeForms = document.querySelectorAll('.subscribe-form');
+                    subscribeForms.forEach(form => {
+                        let couponInput = form.querySelector('input[name="coupon_code"]');
+                        if (!couponInput) {
+                            couponInput = document.createElement('input');
+                            couponInput.type = 'hidden';
+                            couponInput.name = 'coupon_code';
+                            form.appendChild(couponInput);
+                        }
+                        couponInput.value = code;
+                    });
                 } else {
                     showMessage(data.error || "Invalid coupon code.", false);
                 }

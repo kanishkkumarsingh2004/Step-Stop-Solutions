@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-gym-id="{{ gym.id }}">
+    <div class="bg-white rounded-lg shadow-xl p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Verify Payments - {{ gym.venue_name }}</h1>
+            <p class="text-gray-600 mt-2">Review and verify pending payment transactions</p>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Filter Transactions</h3>
+            <div class="flex flex-wrap gap-4">
+                <div>
+                    <label for="statusFilter" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="statusFilter" onchange="filterTransactions()" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="valid">Valid</option>
+                        <option value="invalid">Invalid</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="dateFilter" class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="dateFilter" onchange="filterTransactions()" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                </div>
+            </div>
+        </div>
+
+        {% if all_transactions %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="transactionTableBody">
+                        {% for transaction in all_transactions %}
+                            <tr class="hover:bg-gray-50 transaction-row" data-transaction-id="{{ transaction.id }}" data-status="{{ transaction.status }}" data-date="{{ transaction.created_at|date:'Y-m-d' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ transaction.transaction_id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transaction.user.get_full_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transaction.subscription.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ transaction.amount }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if transaction.status == 'valid' %}bg-green-100 text-green-800{% elif transaction.status == 'invalid' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                        {{ transaction.status|title }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <select onchange="verifyPayment('{{ transaction.id }}', this.value)" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select Status</option>
+                                        <option value="valid" {% if transaction.status == 'valid' %}selected{% endif %}>Valid</option>
+                                        <option value="invalid" {% if transaction.status == 'invalid' %}selected{% endif %}>Invalid</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No transactions found</h3>
+                <p class="mt-1 text-sm text-gray-500">No payment transactions have been recorded yet.</p>
+            </div>
+        {% endif %}
+
+        <div class="mt-8">
+            <a href="{% url 'gym_dashboard' gym.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="bi bi-arrow-left mr-2"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'gym_js/gym_verify_payment.js' %}"></script>
+{% endblock %}

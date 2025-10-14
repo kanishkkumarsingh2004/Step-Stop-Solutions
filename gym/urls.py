@@ -36,4 +36,6 @@ urlpatterns = [
     path('coupons/<str:gym_id>/', views.gym_coupon_list, name='gym_coupon_list'),
     path('coupon/delete/<str:gym_id>/<int:coupon_id>/', views.gym_coupon_delete, name='gym_coupon_delete'),
     path('coupon/data/<int:coupon_id>/', views.gym_coupon_data, name='gym_coupon_data'),
+    path('verify-payments/<str:gym_id>/', views.verify_gym_payments, name='verify_gym_payments'),
+    path('verify-payment-status/<str:gym_id>/<int:transaction_id>/', views.verify_gym_payment_status, name='verify_gym_payment_status'),
 ]
