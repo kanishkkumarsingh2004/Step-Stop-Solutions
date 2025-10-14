@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto py-12 px-4">
+<div class="max-w-6xl mx-auto py-12 px-4">
     <div class="mb-10 text-center">
         <h1 class="text-4xl font-extrabold text-gray-900 mb-3">
             Subscription Plans at {{ gym.venue_name|default_if_none:"Our Gym" }}
@@ -13,30 +14,38 @@
 
     <!-- Coupon Apply to All Plans -->
     <div class="mb-8 max-w-lg mx-auto">
-        <form class="flex items-center gap-3" method="post" action="{% url 'gym_subscription' gym.id %}">
+        <form id="coupon-form" class="flex items-center gap-3" method="post" action="{% url 'gym_subscription' gym.id %}">
             {% csrf_token %}
-            <input 
-                type="text" 
-                name="coupon_code" 
+            <input
+                id="coupon-code"
+                type="text"
+                name="coupon_code"
                 placeholder="Apply coupon code to all plans"
                 class="flex-grow border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-green-300 focus:border-green-400 transition text-sm"
                 maxlength="32"
                 autocomplete="off"
             />
-            <button 
-                type="submit" 
+            <button
+                id="apply-coupon-btn"
+                type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold shadow text-sm transition"
             >
                 Apply to All
             </button>
             <input type="hidden" name="apply_to_all" value="1" />
         </form>
+        <div id="coupon-message" class="mt-2 hidden"></div>
     </div>
 
     {% if subscriptions %}
         <div class="grid gap-8 sm:grid-cols-2">
             {% for plan in subscriptions %}
-                <div class="bg-white border border-green-100 rounded-xl shadow-lg hover:shadow-2xl transition-all p-7 flex flex-col">
+                <div class="bg-white border border-green-100 rounded-xl shadow-lg hover:shadow-2xl transition-all p-7 flex flex-col relative" data-plan-id="{{ plan.id }}">
+                    {% if plan.diff_display %}
+                        <div class="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded diff-badge">
+                            {{ plan.diff_display }}
+                        </div>
+                    {% endif %}
                     <h2 class="text-2xl font-bold text-green-700 mb-2 capitalize">
                         {{ plan.name|default:"Unnamed Plan" }}
                     </h2>
@@ -45,13 +54,13 @@
                         <span class="font-semibold text-gray-700">Duration:</span>
                         <span class="ml-1">{{ plan.duration_display|default:"N/A" }}</span>
                     </p>
-                    
+
                     <div class="mb-4">
                         {% if plan.discount_price_display and plan.discount_price_display != '-' %}
-                            <span class="text-3xl font-bold text-green-700 mr-3">{{ plan.discount_price_display }}</span>
-                            <span class="text-base text-gray-400 line-through align-middle">{{ plan.normal_price_display }}</span>
+                            <span class="text-3xl font-bold text-green-700 mr-3 discount-price">{{ plan.discount_price_display }}</span>
+                            <span class="text-base text-gray-400 line-through align-middle normal-price">{{ plan.normal_price_display }}</span>
                         {% else %}
-                            <span class="text-3xl font-bold text-green-700">{{ plan.normal_price_display }}</span>
+                            <span class="text-3xl font-bold text-green-700 normal-price">{{ plan.normal_price_display }}</span>
                         {% endif %}
                     </div>
 
@@ -75,4 +84,5 @@
             </div>
         {% endif %}
     </div>
+    <script src="{% static 'gym_js/gym_subscription.js' %}"></script>
 {% endblock %}

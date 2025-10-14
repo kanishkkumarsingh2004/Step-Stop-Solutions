@@ -1,74 +1,85 @@
-// Gym subscription coupon logic, similar to library/static/js/subscription.js
+document.addEventListener("DOMContentLoaded", function() {
+    const couponForm = document.getElementById("coupon-form");
+    const couponInput = document.getElementById("coupon-code");
+    const applyBtn = document.getElementById("apply-coupon-btn");
+    const couponMessage = document.getElementById("coupon-message");
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : "";
 
-document.addEventListener('DOMContentLoaded', function() {
-    const applyBtn = document.getElementById('apply-coupon-btn');
-    const couponInput = document.getElementById('coupon-code');
-    const couponMsg = document.getElementById('coupon-message');
-    const gymUid = document.body.innerHTML.match(/gyms\/(.*?)\//)[1]; // crude but works for now
-    const applyCouponUrl = `/gyms/${gymUid}/apply-coupon/`;
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    function showMessage(message, isSuccess = true) {
+        couponMessage.textContent = message;
+        couponMessage.className = isSuccess
+            ? "p-2 rounded bg-green-100 text-green-800"
+            : "p-2 rounded bg-red-100 text-red-800";
+        couponMessage.classList.remove("hidden");
+        setTimeout(() => {
+            couponMessage.classList.add("hidden");
+            couponMessage.textContent = "";
+        }, 4000);
     }
-    const csrftoken = getCookie('csrftoken');
 
-    applyBtn.addEventListener('click', function() {
-        const code = couponInput.value.trim();
-        if (!code) {
-            couponMsg.textContent = 'Please enter a coupon code';
-            couponMsg.className = 'text-red-500';
-            return;
-        }
-        couponMsg.textContent = 'Applying coupon...';
-        fetch(applyCouponUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `coupon_code=${encodeURIComponent(code)}`
-        })
-        .then(res => res.json())
-        .then(data => {
-            couponMsg.textContent = data.message;
-            if (data.success && data.discounts) {
-                for (const planId in data.discounts) {
-                    const el = document.getElementById(`plan-discounted-${planId}`);
-                    const couponDiscount = document.getElementById(`coupon_discount_${planId}`);
-                    if (el) {
-                        el.textContent = `₹${parseFloat(data.discounts[planId]).toFixed(2)}`;
-                        el.classList.add('text-green-700', 'font-bold');
-                        if (couponDiscount) {
-                            couponDiscount.textContent = '(Coupon applied!)';
-                            couponDiscount.classList.remove('hidden');
-                        }
+    function updatePrices(subscriptions) {
+        subscriptions.forEach(plan => {
+            const planDiv = document.querySelector(`[data-plan-id="${plan.id}"]`);
+            if (planDiv) {
+                const discountPriceSpan = planDiv.querySelector('.discount-price');
+                const normalPriceSpan = planDiv.querySelector('.normal-price');
+                const diffBadge = planDiv.querySelector('.diff-badge');
+
+                if (discountPriceSpan) {
+                    discountPriceSpan.innerHTML = plan.discount_price_display;
+                }
+                if (normalPriceSpan) {
+                    normalPriceSpan.innerHTML = plan.normal_price_display;
+                }
+                if (diffBadge) {
+                    if (plan.diff_display) {
+                        diffBadge.innerHTML = plan.diff_display;
+                        diffBadge.classList.remove('hidden');
+                    } else {
+                        diffBadge.classList.add('hidden');
                     }
                 }
-            } else {
-                // Reset all coupon discounts
-                document.querySelectorAll('.price-display').forEach(el => {
-                    el.classList.remove('text-green-700', 'font-bold');
-                });
-                document.querySelectorAll('[id^="coupon_discount_"]').forEach(el => {
-                    el.classList.add('hidden');
-                });
             }
-        })
-        .catch(() => {
-            couponMsg.textContent = 'An error occurred while applying the coupon.';
-            couponMsg.className = 'text-red-500';
         });
-    });
-}); 
+    }
+
+    if (couponForm) {
+        couponForm.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const code = couponInput.value.trim();
+            if (!code) {
+                showMessage("Please enter a coupon code.", false);
+                return;
+            }
+            applyBtn.disabled = true;
+            applyBtn.textContent = "Applying...";
+            try {
+                const response = await fetch(window.location.href, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: new URLSearchParams({
+                        'coupon_code': code,
+                        'apply_to_all': '1'
+                    })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showMessage(data.message || "Coupon applied successfully!");
+                    if (data.subscriptions) {
+                        updatePrices(data.subscriptions);
+                    }
+                } else {
+                    showMessage(data.error || "Invalid coupon code.", false);
+                }
+            } catch (err) {
+                showMessage("An error occurred. Please try again.", false);
+            }
+            applyBtn.disabled = false;
+            applyBtn.textContent = "Apply to All";
+        });
+    }
+});

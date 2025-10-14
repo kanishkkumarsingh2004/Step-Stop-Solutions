@@ -694,8 +694,52 @@ def gym_details(request, gym_id):
 
 @login_required
 def gym_subscription(request, gym_id):
-    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    gym = get_object_or_404(Gym, id=gym_id, is_approved=True)
     subscriptions = list(gym.subscription_plans.all())
+
+    if request.method == 'POST':
+        coupon_code = request.POST.get('coupon_code')
+        apply_to_all = request.POST.get('apply_to_all')
+        if coupon_code and apply_to_all:
+            try:
+                coupon = GymCoupon.objects.get(code=coupon_code, gym=gym, is_active=True)
+                if coupon.is_valid():
+                    for plan in subscriptions:
+                        if not coupon.applicable_plans.exists() or coupon.applicable_plans.filter(id=plan.id).exists():
+                            base_price = plan.discount_price if plan.discount_price else plan.normal_price
+                            discounted_price = coupon.apply_discount(base_price)
+                            plan.discount_price = discounted_price
+                            plan.discount_price_display = f"₹{float(discounted_price):,.2f}"
+                            if discounted_price < plan.normal_price:
+                                plan.discount_amount = plan.normal_price - discounted_price
+                                plan.diff_display = f"₹{plan.discount_amount:.2f} off"
+                            else:
+                                plan.diff_display = None
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        # AJAX response
+                        subscriptions_data = []
+                        for plan in subscriptions:
+                            subscriptions_data.append({
+                                'id': plan.id,
+                                'discount_price_display': plan.discount_price_display,
+                                'normal_price_display': f"₹{float(plan.normal_price):,.2f}" if plan.normal_price else "-",
+                                'diff_display': plan.diff_display,
+                            })
+                        return JsonResponse({'success': True, 'message': f"Coupon '{coupon_code}' applied successfully!", 'subscriptions': subscriptions_data})
+                    else:
+                        messages.success(request, f"Coupon '{coupon_code}' applied successfully!")
+                else:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': False, 'error': "Coupon is not valid or expired."})
+                    else:
+                        messages.error(request, "Coupon is not valid or expired.")
+            except GymCoupon.DoesNotExist:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': "Invalid coupon code."})
+                else:
+                    messages.error(request, "Invalid coupon code.")
+        if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return redirect('gym_subscription', gym_id=gym.id)
 
     # Enhance subscription plans with display fields
     for plan in subscriptions:
@@ -722,6 +766,12 @@ def gym_subscription(request, gym_id):
             )
         except Exception:
             plan.discount_price_display = "-"
+        # Discount displays
+        if plan.discount_price and plan.discount_price < plan.normal_price:
+            plan.discount_amount = plan.normal_price - plan.discount_price
+            plan.diff_display = f"₹{plan.discount_amount:.2f} off"
+        else:
+            plan.diff_display = None
 
     context = {
         'gym': gym,
@@ -731,8 +781,6 @@ def gym_subscription(request, gym_id):
 
 
 # --- REWRITTEN TO CATCH MISSING/MIGRATION ISSUES FOR gym_gymcoupon TABLE ---
-
-from django.db import ProgrammingError, OperationalError
 
 @login_required
 def gym_coupon_list(request, gym_id):
