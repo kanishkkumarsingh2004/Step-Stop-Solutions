@@ -6,7 +6,23 @@
     <h1 class="text-2xl font-bold mb-4">My Attendance Records</h1>
 
     <div class="mb-4">
-        <input type="text" id="searchInput" placeholder="Search by library name or address" class="border rounded px-3 py-2 w-full max-w-md" />
+        <div class="flex items-center max-w-md">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search by name or address"
+                value="{{ search_query|default_if_none:'' }}"
+                class="border rounded px-3 py-2 w-full"
+                autocomplete="off"
+            />
+            <button
+                id="searchButton"
+                class="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
+                type="button"
+            >
+                Search
+            </button>
+        </div>
     </div>
 
     <table id="attendanceTable" class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -28,7 +44,7 @@
                 <td class="px-4 py-2">{{ attendance.venue_name }}</td>
                 <!-- <td class="px-4 py-2">{{ attendance.venue_address }}</td> -->
                 <td class="px-4 py-2 {% if attendance.check_in_color == 0 %}text-green-500{% else %}text-red-500{% endif %}">
-                    {{ attendance.check_in_time|date:"H:i:s" }}
+                    {% if attendance.check_in_time %}{{ attendance.check_in_time|date:"H:i:s" }}{% else %}-{% endif %}
                 </td>
                 <td class="px-4 py-2 {% if attendance.check_out_color == 0 %}text-green-500{% else %}text-red-500{% endif %}">
                     {% if attendance.check_out_time %}
@@ -40,41 +56,38 @@
                 <td class="px-4 py-2 {% if attendance.duration_color == 0 %}text-green-500{% else %}text-red-500{% endif %}">
                     {{ attendance.duration|default:"-" }}
                 </td>
-                <td class="px-4 py-2">{{ attendance.check_in_time|date:"Y-m-d" }}</td>
+                <td class="px-4 py-2">{% if attendance.check_in_time %}{{ attendance.check_in_time|date:"Y-m-d" }}{% else %}-{% endif %}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="text-center py-4 text-gray-500">No attendance records found.</td>
+                <td colspan="6" class="text-center py-4 text-gray-500">No attendance records found.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-
-    {% if attendances.has_other_pages %}
-    <div class="mt-4 flex justify-between items-center">
-        {% if attendances.has_previous %}
-        <a href="?page={{ attendances.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-gray-300 rounded">Previous</a>
-        {% else %}
-        <span class="px-4 py-2 bg-gray-300 rounded opacity-50 cursor-not-allowed">Previous</span>
-        {% endif %}
-
-        <span class="text-sm">Page {{ attendances.number }} of {{ attendances.paginator.num_pages }}</span>
-
-        {% if attendances.has_next %}
-        <a href="?page={{ attendances.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-gray-300 rounded">Next</a>
-        {% else %}
-        <span class="px-4 py-2 bg-gray-300 rounded opacity-50 cursor-not-allowed">Next</span>
-        {% endif %}
-    </div>
-    {% endif %}
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
 
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.trim();
+    // Set the input value to the current query, if any, on load (for full page reloads)
+    '{% if search_query %}'
+      searchInput.value = "{{ search_query|escapejs }}";
+    '{% endif %}'
+
+    // Only search when button is clicked or Enter is pressed
+    searchButton.addEventListener('click', submitSearch);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            submitSearch();
+        }
+    });
+
+    function submitSearch() {
+        const searchTerm = searchInput.value.trim();
         const currentUrl = new URL(window.location);
 
         if (searchTerm) {
@@ -82,12 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             currentUrl.searchParams.delete('search');
         }
-
-        // Reset to page 1 when searching
         currentUrl.searchParams.set('page', '1');
-
         window.location.href = currentUrl.toString();
-    });
+    }
 });
 </script>
 {% endblock %}

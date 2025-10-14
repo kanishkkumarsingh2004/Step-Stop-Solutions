@@ -634,179 +634,140 @@ def all_attendance(request, vendor_id):
     })
 @login_required
 def user_attendance(request):
-    # Get attendance records for the current user
-    library_attendances = list(LibraryAttendance.objects.filter(user=request.user).select_related('library').order_by('-id')[:10])
-    library_attendances = LibraryAttendance.objects.filter(user=request.user).select_related('library')[:10]
-    coaching_attendances = CoachingAttendance.objects.filter(user=request.user).select_related('institution')[:10]
-    # Add search functionality
     search_query = request.GET.get('search')
+    library_qs = LibraryAttendance.objects.filter(user=request.user)
+    coaching_qs = CoachingAttendance.objects.filter(user=request.user)
+    today = timezone.now().date()
+    library_qs = library_qs.filter(check_in_time__date__lte=today)
+    coaching_qs = coaching_qs.filter(check_in_time__date__lte=today)
+
     if search_query:
-        library_attendances = library_attendances.filter(
+        library_qs = library_qs.filter(
             Q(library__venue_name__icontains=search_query) |
             Q(library__address__icontains=search_query)
         )
-        coaching_attendances = coaching_attendances.filter(
+        coaching_qs = coaching_qs.filter(
             Q(institution__name__icontains=search_query) |
             Q(institution__address__icontains=search_query)
         )
-    # Create combined list with type field
+
+    library_qs = library_qs.select_related('library').only(
+        'id', 'library_id', 'library__venue_name', 'library__venue_location', 'check_in_time', 'check_out_time', 'nfc_id', 'user_id'
+    )
+    coaching_qs = coaching_qs.select_related('institution').only(
+        'id', 'institution_id', 'institution__name', 'institution__address', 'check_in_time', 'check_out_time', 'nfc_id', 'user_id'
+    )
+
+    all_attendances = list(library_qs) + list(coaching_qs)
+    all_attendances_sorted = sorted(
+        all_attendances,
+        key=lambda att: att.check_in_time or timezone.datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True
+    )[:10]
+
+    lib_sub_map = {}
+    subs_qs = UserSubscription.objects.filter(
+        user_id=request.user.id,
+        start_date__lte=today,
+        end_date__gte=today,
+    ).select_related('subscription', 'subscription__library').only(
+        'id', 'user_id', 'start_date', 'end_date', 'start_time', 'end_time', 'subscription__duration_in_hours', 'subscription__library_id'
+    )
+    for sub in subs_qs:
+        lib_sub_map[(sub.user_id, sub.subscription.library_id)] = sub
+
+    coach_sub_map = {}
+    from library.models import InstitutionSubscription
+    coach_subs_qs = InstitutionSubscription.objects.filter(
+        user_id=request.user.id,
+        start_date__lte=today,
+        end_date__gte=today,
+    ).select_related('subscription_plan', 'subscription_plan__institution').only(
+        'id', 'user_id', 'start_date', 'end_date', 'start_time', 'end_time', 'subscription_plan__institution_id'
+    )
+    for sub in coach_subs_qs:
+        coach_sub_map[(sub.user_id, sub.subscription_plan.institution_id)] = sub
+
     combined_attendances = []
-    # Process library attendances
-    for attendance in library_attendances:
-        # Find active subscription
-        subscription = UserSubscription.objects.filter(
-            user=attendance.user,
-            subscription__library=attendance.library,
-            start_date__lte=attendance.check_in_time.date(),
-            end_date__gte=attendance.check_in_time.date()
-        ).first()
-        # Set check-in color based on subscription time range
-        if subscription:
-            start_time = subscription.start_time
-            end_time = subscription.end_time
-            # Adjust dates based on time comparison
-            if start_time > end_time:
-                end_date = subscription.start_date + timedelta(days=1)
-                start_date = subscription.start_date
-            else:
-                start_date = subscription.start_date
-                end_date = subscription.start_date
-            # Create datetime objects with adjusted dates
-            start_datetime = timezone.make_aware(datetime.combine(
-                start_date,
-                start_time
-            ))
-            end_datetime = timezone.make_aware(datetime.combine(
-                end_date,
-                end_time
-            ))
-            check_in_datetime = timezone.make_aware(datetime.combine(
-                attendance.check_in_time.date(),
-                attendance.check_in_time.time()
-            ))
-            # Check if check-in time is within allowed period
-            check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
-            if attendance.check_out_time:
-                check_out_datetime = timezone.make_aware(datetime.combine(
-                    attendance.check_out_time.date(),
-                    attendance.check_out_time.time()
-                ))
-                check_out_color = 0 if (start_datetime <= check_out_datetime <= end_datetime) else 1
-            else:
-                check_out_color = 0
-        else:
-            check_in_color = 1
-            check_out_color = 0
+    for a in all_attendances_sorted:
         duration = "00h:00m:00s"
         duration_color = 0
-        if attendance.check_in_time and attendance.check_out_time:
-            duration_delta = attendance.check_out_time - attendance.check_in_time
-            total_seconds = duration_delta.total_seconds()
-            if subscription:
-                subscription_duration = subscription.subscription.duration_in_hours * 3600
-                duration_color = 1 if total_seconds > subscription_duration else 0
-            else:
-                duration_color = 0
-            # Format duration string correctly
-            hours = int(total_seconds // 3600)
-            minutes = int((total_seconds % 3600) // 60)
-            seconds = int(total_seconds % 60)
-            duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+        check_in_color = 1
+        check_out_color = 0
+
+        if isinstance(a, LibraryAttendance):
+            venue_name = a.library.venue_name
+            venue_address = a.library.venue_location
+            sub = lib_sub_map.get((a.user_id, a.library_id))
+            if sub and a.check_in_time:
+                start_time = sub.start_time
+                end_time = sub.end_time
+                date_ = sub.start_date
+                if start_time > end_time:
+                    end_date = date_ + timedelta(days=1)
+                else:
+                    end_date = date_
+                start_dt = timezone.make_aware(datetime.combine(date_, start_time))
+                end_dt = timezone.make_aware(datetime.combine(end_date, end_time))
+                check_in_dt = timezone.make_aware(datetime.combine(a.check_in_time.date(), a.check_in_time.time()))
+                check_in_color = 0 if start_dt <= check_in_dt <= end_dt else 1
+                if a.check_out_time:
+                    check_out_dt = timezone.make_aware(datetime.combine(a.check_out_time.date(), a.check_out_time.time()))
+                    check_out_color = 0 if start_dt <= check_out_dt <= end_dt else 1
+            if a.check_in_time and a.check_out_time:
+                dd = a.check_out_time - a.check_in_time
+                total_seconds = dd.total_seconds()
+                if sub:
+                    subscription_seconds = (sub.subscription.duration_in_hours or 0) * 3600
+                    duration_color = 1 if total_seconds > subscription_seconds else 0
+                hours, rem = divmod(int(total_seconds), 3600)
+                minutes, seconds = divmod(rem, 60)
+                duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+        else:
+            venue_name = a.institution.name
+            venue_address = a.institution.address
+            sub = coach_sub_map.get((a.user_id, a.institution_id))
+            if sub and a.check_in_time:
+                start_time = sub.start_time
+                end_time = sub.end_time
+                date_ = sub.start_date
+                if start_time > end_time:
+                    end_date = date_ + timedelta(days=1)
+                else:
+                    end_date = date_
+                start_dt = timezone.make_aware(datetime.combine(date_, start_time))
+                end_dt = timezone.make_aware(datetime.combine(end_date, end_time))
+                check_in_dt = timezone.make_aware(datetime.combine(a.check_in_time.date(), a.check_in_time.time()))
+                check_in_color = 0 if start_dt <= check_in_dt <= end_dt else 1
+                if a.check_out_time:
+                    check_out_dt = timezone.make_aware(datetime.combine(a.check_out_time.date(), a.check_out_time.time()))
+                    check_out_color = 0 if start_dt <= check_out_dt <= end_dt else 1
+            if a.check_in_time and a.check_out_time:
+                dd = a.check_out_time - a.check_in_time
+                total_seconds = dd.total_seconds()
+                if sub:
+                    subscription_seconds = (end_dt - start_dt).total_seconds()
+                    duration_color = 1 if total_seconds > subscription_seconds else 0
+                hours, rem = divmod(int(total_seconds), 3600)
+                minutes, seconds = divmod(rem, 60)
+                duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+
         combined_attendances.append({
-            'id': attendance.id,
-            'type': 'library',
-            'venue_name': attendance.library.venue_name,
-            'venue_address': attendance.library.venue_location,
-            'check_in_time': attendance.check_in_time,
-            'check_out_time': attendance.check_out_time,
+            'id': a.id,
+            'type': 'library' if isinstance(a, LibraryAttendance) else 'coaching',
+            'venue_name': venue_name,
+            'venue_address': venue_address,
+            'check_in_time': a.check_in_time,
+            'check_out_time': a.check_out_time,
             'check_in_color': check_in_color,
             'check_out_color': check_out_color,
             'duration': duration,
             'duration_color': duration_color,
-            'nfc_id': attendance.nfc_id,
+            'nfc_id': a.nfc_id,
         })
-    # Process coaching attendances
-    for attendance in coaching_attendances:
-        # Find active subscription
-        subscription = InstitutionSubscription.objects.filter(
-            user=attendance.user,
-            subscription_plan__institution=attendance.institution,
-            start_date__lte=attendance.check_in_time.date(),
-            end_date__gte=attendance.check_in_time.date()
-        ).first()
-        # Set check-in color based on subscription time range
-        if subscription:
-            start_time = subscription.start_time
-            end_time = subscription.end_time
-            # Adjust dates based on time comparison
-            if start_time > end_time:
-                end_date = subscription.start_date + timedelta(days=1)
-                start_date = subscription.start_date
-            else:
-                start_date = subscription.start_date
-                end_date = subscription.start_date
-            # Create datetime objects with adjusted dates
-            start_datetime = timezone.make_aware(datetime.combine(
-                start_date,
-                start_time
-            ))
-            end_datetime = timezone.make_aware(datetime.combine(
-                end_date,
-                end_time
-            ))
-            check_in_datetime = timezone.make_aware(datetime.combine(
-                attendance.check_in_time.date(),
-                attendance.check_in_time.time()
-            ))
-            # Check if check-in time is within allowed period
-            check_in_color = 0 if (start_datetime <= check_in_datetime <= end_datetime) else 1
-            if attendance.check_out_time:
-                check_out_datetime = timezone.make_aware(datetime.combine(
-                    attendance.check_out_time.date(),
-                    attendance.check_out_time.time()
-                ))
-                check_out_color = 0 if (start_datetime <= check_out_datetime <= end_datetime) else 1
-            else:
-                check_out_color = 0
-        else:
-            check_in_color = 1
-            check_out_color = 0
-        duration = "00h:00m:00s"
-        duration_color = 0
-        if attendance.check_in_time and attendance.check_out_time:
-            duration_delta = attendance.check_out_time - attendance.check_in_time
-            total_seconds = duration_delta.total_seconds()
-        if subscription:
-            subscription_duration = (end_datetime - start_datetime).total_seconds()
-            duration_color = 1 if total_seconds > subscription_duration else 0
-        else:
-            duration_color = 0
-            # Format duration string correctly
-            hours = int(total_seconds // 3600)
-            minutes = int((total_seconds % 3600) // 60)
-            seconds = int(total_seconds % 60)
-            duration = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
-        combined_attendances.append({
-            'id': attendance.id,
-            'type': 'coaching',
-            'venue_name': attendance.institution.name,
-            'venue_address': attendance.institution.address,
-            'check_in_time': attendance.check_in_time,
-            'check_out_time': attendance.check_out_time,
-            'check_in_color': check_in_color,
-            'check_out_color': check_out_color,
-            'duration': duration,
-            'duration_color': duration_color,
-            'nfc_id': attendance.nfc_id,
-        })
-    # Sort combined attendances by check_in_time descending
-    combined_attendances.sort(key=lambda x: x['check_in_time'], reverse=True)
-    # Paginate
-    paginator = Paginator(combined_attendances, 25)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+
     return render(request, 'users_pages/user_attendance.html', {
-        'attendances': page_obj,
+        'attendances': combined_attendances,
         'search_query': search_query,
     })
 
@@ -1489,33 +1450,6 @@ def allocate(request):
             })
         except Exception as e:
             logger.error(f"Error in allocate function: {str(e)}", exc_info=True)
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-@login_required
-@csrf_exempt
-def deallocate_nfc(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            nfc_serial = data.get("nfc_serial")
-            if not nfc_serial:
-                return JsonResponse({'error': 'NFC serial is required'}, status=400)
-            try:
-                card = AdminCard.objects.get(card_id=nfc_serial)
-            except AdminCard.DoesNotExist:
-                return JsonResponse({'error': 'No card found with this NFC ID'}, status=404)
-            if card.library is None:
-                return JsonResponse({'error': 'This card is not allocated to any library'}, status=400)
-            # Find the user to deallocate (latest mapping)
-            last_log = LibraryCardLog.objects.filter(card_id=nfc_serial, library=card.library).order_by('-timestamp').first()
-            user_to_deallocate = last_log.user if last_log else None
-            # Remove the mapping (delete the entry)
-            if user_to_deallocate:
-                LibraryCardLog.objects.filter(library=card.library, user=user_to_deallocate, card_id=nfc_serial).delete()
-            return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
-        except Exception as e:
-            logger.error(f"Error in deallocate_nfc function: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -3952,10 +3886,6 @@ def deallocate_institution_nfc(request):
 
             # Delete all allocation logs for this card
             InstitutionCardLog.objects.filter(card_id=nfc_serial, institution=card.institution).delete()
-            
-            # Remove institution association from the card
-            card.institution = None
-            card.save()
             
             return JsonResponse({'success': True, 'message': 'NFC ID deallocated and all related data deleted successfully'})
         except Exception as e:
