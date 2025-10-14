@@ -86,12 +86,12 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ expense.date|date:"d M Y" }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ expense.get_payment_mode_display }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="{% url 'edit_gym_expense' gym.id expense.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">
+                            <button onclick="openEditExpenseModal('{{ expense.id }}')" class="text-indigo-600 hover:text-indigo-900 mr-3">
                                 <i class="bi bi-pencil"></i> Edit
-                            </a>
-                            <a href="{% url 'delete_gym_expense' gym.id expense.id %}" class="text-red-600 hover:text-red-900">
+                            </button>
+                            <button onclick="openDeleteExpenseModal('{{ expense.id }}', '{{ expense.expense_name|escapejs }}')" class="text-red-600 hover:text-red-900">
                                 <i class="bi bi-trash"></i> Delete
-                            </a>
+                            </button>
                         </td>
                     </tr>
                     {% empty %}
@@ -111,6 +111,120 @@
         <a href="{% url 'gym_dashboard' gym.id %}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200">
             <i class="bi bi-arrow-left mr-2"></i>Back to Dashboard
         </a>
+    </div>
+</div>
+
+<!-- Edit Expense Modal -->
+<div id="editExpenseModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Edit Expense</h3>
+                <button onclick="closeEditExpenseModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="bi bi-x-lg text-xl"></i>
+                </button>
+            </div>
+
+            <form id="editExpenseForm" method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" id="edit_expense_id" name="expense_id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Expense Name -->
+                    <div>
+                        <label for="edit_expense_name" class="block text-sm font-medium text-gray-700 mb-1">
+                            Expense Name *
+                        </label>
+                        <input type="text" name="expense_name" id="edit_expense_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+
+                    <!-- Amount -->
+                    <div>
+                        <label for="edit_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                            Amount (₹) *
+                        </label>
+                        <input type="number" name="amount" id="edit_amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label for="edit_date" class="block text-sm font-medium text-gray-700 mb-1">
+                            Date *
+                        </label>
+                        <input type="date" name="date" id="edit_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+
+                    <!-- Payment Mode -->
+                    <div>
+                        <label for="edit_payment_mode" class="block text-sm font-medium text-gray-700 mb-1">
+                            Payment Mode *
+                        </label>
+                        <select name="payment_mode" id="edit_payment_mode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                            <option value="CASH">Cash</option>
+                            <option value="UPI">UPI</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Transaction ID (conditional) -->
+                <div id="edit_transaction_id_field_modal" class="hidden">
+                    <label for="edit_transaction_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        Transaction ID *
+                    </label>
+                    <input type="text" name="transaction_id" id="edit_transaction_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="edit_expense_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                    </label>
+                    <textarea name="expense_description" id="edit_expense_description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeEditExpenseModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors duration-200">
+                        <i class="bi bi-pencil mr-2"></i>Update Expense
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Expense Modal -->
+<div id="deleteExpenseModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Delete Expense</h3>
+                <button onclick="closeDeleteExpenseModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="bi bi-x-lg text-xl"></i>
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <p class="text-gray-700">Are you sure you want to delete the expense "<span id="delete_expense_name"></span>"? This action cannot be undone.</p>
+            </div>
+
+            <form id="deleteExpenseForm" method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" id="delete_expense_id" name="expense_id">
+
+                <!-- Submit Buttons -->
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeDeleteExpenseModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors duration-200">
+                        <i class="bi bi-trash mr-2"></i>Delete Expense
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -204,6 +318,66 @@ function closeAddExpenseModal() {
     document.getElementById('addExpenseForm').reset();
 }
 
+function openEditExpenseModal(expenseId) {
+    // Fetch expense data
+    fetch(`{% url "gym_expenses_data" gym.id %}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Find the expense data from the response
+        const expenseIdNum = parseInt(expenseId, 10);
+        const expenseData = data.find(exp => exp.id === expenseIdNum);
+        if (!expenseData) {
+            alert('Expense not found.');
+            return;
+        }
+
+        document.getElementById('edit_expense_id').value = expenseId;
+        document.getElementById('edit_expense_name').value = expenseData.expense_name;
+        document.getElementById('edit_amount').value = expenseData.amount;
+        document.getElementById('edit_date').value = expenseData.date;
+        document.getElementById('edit_payment_mode').value = expenseData.payment_mode;
+        document.getElementById('edit_transaction_id').value = expenseData.transaction_id;
+        document.getElementById('edit_expense_description').value = expenseData.expense_description;
+
+        // Show/hide transaction ID field based on payment mode
+        const transactionField = document.getElementById('edit_transaction_id_field_modal');
+        if (expenseData.payment_mode === 'UPI') {
+            transactionField.classList.remove('hidden');
+            document.getElementById('edit_transaction_id').required = true;
+        } else {
+            transactionField.classList.add('hidden');
+            document.getElementById('edit_transaction_id').required = false;
+        }
+
+        document.getElementById('editExpenseModal').classList.remove('hidden');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading expense data. Please try again.');
+    });
+}
+
+function closeEditExpenseModal() {
+    document.getElementById('editExpenseModal').classList.add('hidden');
+    document.getElementById('editExpenseForm').reset();
+}
+
+function openDeleteExpenseModal(expenseId, expenseName) {
+    document.getElementById('delete_expense_id').value = expenseId;
+    document.getElementById('delete_expense_name').textContent = expenseName;
+    document.getElementById('deleteExpenseModal').classList.remove('hidden');
+}
+
+function closeDeleteExpenseModal() {
+    document.getElementById('deleteExpenseModal').classList.add('hidden');
+    document.getElementById('deleteExpenseForm').reset();
+}
+
 // Handle payment mode change for transaction ID field
 document.getElementById('id_payment_mode').addEventListener('change', function() {
     const transactionField = document.getElementById('transaction_id_field_modal');
@@ -213,6 +387,18 @@ document.getElementById('id_payment_mode').addEventListener('change', function()
     } else {
         transactionField.classList.add('hidden');
         document.getElementById('id_transaction_id').required = false;
+    }
+});
+
+// Handle payment mode change for edit modal
+document.getElementById('edit_payment_mode').addEventListener('change', function() {
+    const transactionField = document.getElementById('edit_transaction_id_field_modal');
+    if (this.value === 'UPI') {
+        transactionField.classList.remove('hidden');
+        document.getElementById('edit_transaction_id').required = true;
+    } else {
+        transactionField.classList.add('hidden');
+        document.getElementById('edit_transaction_id').required = false;
     }
 });
 
@@ -227,7 +413,8 @@ document.getElementById('addExpenseForm').addEventListener('submit', function(e)
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRFToken': csrfToken
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => response.json())
@@ -237,7 +424,19 @@ document.getElementById('addExpenseForm').addEventListener('submit', function(e)
             location.reload(); // Refresh the page to show new expense
         } else {
             // Handle errors
-            alert('Error adding expense. Please try again.');
+            if (data.errors) {
+                let errorMessages = [];
+                for (let field in data.errors) {
+                    if (Array.isArray(data.errors[field])) {
+                        errorMessages.push(...data.errors[field]);
+                    } else {
+                        errorMessages.push(data.errors[field]);
+                    }
+                }
+                alert('Errors: ' + errorMessages.join('\n'));
+            } else {
+                alert('Error adding expense. Please try again.');
+            }
         }
     })
     .catch(error => {
@@ -246,10 +445,97 @@ document.getElementById('addExpenseForm').addEventListener('submit', function(e)
     });
 });
 
+// Handle edit form submission with AJAX
+document.getElementById('editExpenseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const expenseId = document.getElementById('edit_expense_id').value;
+    const csrfToken = document.querySelector('#editExpenseForm [name=csrfmiddlewaretoken]').value;
+
+    fetch(`/gym/edit-expense/{{ gym.id }}/${expenseId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeEditExpenseModal();
+            location.reload(); // Refresh the page to show updated expense
+        } else {
+            // Handle errors
+            if (data.errors) {
+                let errorMessages = [];
+                for (let field in data.errors) {
+                    if (Array.isArray(data.errors[field])) {
+                        errorMessages.push(...data.errors[field]);
+                    } else {
+                        errorMessages.push(data.errors[field]);
+                    }
+                }
+                alert('Errors: ' + errorMessages.join('\n'));
+            } else {
+                alert('Error updating expense. Please try again.');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating expense. Please try again.');
+    });
+});
+
+// Handle delete form submission with AJAX
+document.getElementById('deleteExpenseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const expenseId = document.getElementById('delete_expense_id').value;
+    const csrfToken = document.querySelector('#deleteExpenseForm [name=csrfmiddlewaretoken]').value;
+
+    fetch(`/gym/delete-expense/{{ gym.id }}/${expenseId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeDeleteExpenseModal();
+            location.reload(); // Refresh the page to show updated list
+        } else {
+            alert('Error deleting expense. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting expense. Please try again.');
+    });
+});
+
 // Close modal when clicking outside
 document.getElementById('addExpenseModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeAddExpenseModal();
+    }
+});
+
+document.getElementById('editExpenseModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditExpenseModal();
+    }
+});
+
+document.getElementById('deleteExpenseModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteExpenseModal();
     }
 });
 </script>

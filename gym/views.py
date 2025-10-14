@@ -575,9 +575,15 @@ def edit_gym_expense(request, gym_id, expense_id):
         form = GymExpenseForm(request.POST, instance=expense)
         if form.is_valid():
             form.save()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Expense updated successfully!'})
             messages.success(request, 'Expense updated successfully!')
             return redirect('gym_expense_dashboard', gym_id=gym_id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': form.errors})
     else:
+        pass
         form = GymExpenseForm(instance=expense)
     return render(request, 'gym/edit_expense.html', {'form': form, 'gym': gym, 'expense': expense})
 
@@ -587,9 +593,27 @@ def delete_gym_expense(request, gym_id, expense_id):
     expense = get_object_or_404(GymExpense, id=expense_id, gym=gym)
     if request.method == 'POST':
         expense.delete()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': 'Expense deleted successfully!'})
         messages.success(request, 'Expense deleted successfully!')
         return redirect('gym_expense_dashboard', gym_id=gym_id)
     return render(request, 'gym/delete_expense.html', {'gym': gym, 'expense': expense})
+
+@login_required
+def gym_expenses_data(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        expenses_data = [{
+            'id': exp.id,
+            'expense_name': exp.expense_name,
+            'expense_description': exp.expense_description or '',
+            'amount': str(exp.amount),
+            'date': exp.date.strftime('%Y-%m-%d'),
+            'payment_mode': exp.payment_mode,
+            'transaction_id': exp.transaction_id or '',
+        } for exp in GymExpense.objects.filter(gym=gym)]
+        return JsonResponse(expenses_data, safe=False)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @login_required
 def gym_balance_sheet(request, gym_id):
