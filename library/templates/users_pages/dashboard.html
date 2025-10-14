@@ -3,8 +3,9 @@
 
 {% block content %}
 <div class="container mx-auto px-2 py-4 space-y-4">
-    <!-- Top Section -->
+
     <div class="flex flex-col space-y-4">
+
         <!-- User Details Card -->
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="border-b border-gray-200 pb-4 mb-4">
@@ -121,7 +122,7 @@
                             <div class="flex items-center justify-between">
                                 <h3 class="text-sm font-bold text-gray-900">{{ subscription.subscription.name }}</h3>
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800 ml-2">
-                                 Current Seat: {{ subscription.library_seats.available_seats }}
+                                    Current Seat: {{ subscription.library_seats.available_seats }}
                                 </span>
                             </div>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
@@ -183,6 +184,73 @@
             </div>
             {% endif %}
         </div>
+
+        <!-- GYM Subscription Status Card -->
+        {% if gym_subscriptions %}
+        <div class="bg-white p-4 rounded-lg shadow">
+            <div class="flex flex-col space-y-2 mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">Gym Subscriptions</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for subscription in gym_subscriptions %}
+                <div class="p-3 border rounded-lg bg-{{ subscription.subscription_status.color }}-50">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div class="flex flex-col space-y-1">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-bold text-gray-900">{{ subscription.plan_name }}</h3>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.payment_status.color }}-100 text-{{ subscription.payment_status.color }}-800">
+                                Payment: {{ subscription.payment_status.status|title }}
+                            </span>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-{{ subscription.subscription_status.color }}-100 text-{{ subscription.subscription_status.color }}-800">
+                                Subscription: {{ subscription.subscription_status.status|title }}
+                            </span>
+                        </div>
+                        <div class="flex flex-col items-end justify-end">
+                            {% if subscription.gym_address %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
+                                {% if subscription.gym_name %}{{ subscription.gym_name }}{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                        <div>
+                            <p class="text-xs text-gray-500">Start Date</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ subscription.start_date|date:"F d, Y" }}
+                                {% if subscription.start_time %}{{ subscription.start_time|time:"H:i" }}{% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">End Date</p>
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ subscription.end_date|date:"F d, Y" }}
+                                {% if subscription.end_time %}{{ subscription.end_time|time:"H:i" }}{% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if subscription.subscription_status.status|lower == 'valid' %}
+                    <div class="grid grid-cols-2 gap-2 sm:gap-4 bg-gray-100 p-2 sm:p-3 rounded-md">
+                        <div class="text-center">
+                            <p class="text-[10px] sm:text-xs text-gray-500">Price</p>
+                            <p class="text-sm sm:text-base font-bold text-blue-600">₹{{ subscription.cost }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[10px] sm:text-xs text-gray-500">Days Left</p>
+                            <p class="text-sm sm:text-base font-bold text-green-600">
+                                {{ subscription.subscription_status.days_left }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
 
     </div>
 </div>

@@ -42,6 +42,7 @@ def register_gym_form(request):
 def gym_registration_success(request):
     return render(request, 'gym/gym_registration_success.html')
 
+@login_required
 def allocate_card_to_gym_page(request):
     if request.method == 'POST':
         if 'create_gym' in request.POST:
@@ -68,17 +69,28 @@ def allocate_card_to_gym_page(request):
             gym_id = request.POST.get('gym_id') # Changed from 'gym' to 'gym_id'
             selected_cards_ids = request.POST.getlist('nfc_serials') # Changed from 'cards' to 'nfc_serials'
 
+            if not gym_id:
+                messages.error(request, 'Please select a gym.')
+                return redirect('allocate_card_to_gym_page')
+            if not selected_cards_ids:
+                messages.error(request, 'Please select at least one card to allocate.')
+                return redirect('allocate_card_to_gym_page')
+
             try:
                 gym = Gym.objects.get(id=gym_id)
-                
+
                 with transaction.atomic():
                     for card_id in selected_cards_ids: # Iterate through selected cards
-                        card = AdminCard.objects.get(card_id=card_id) # Get AdminCard by card_id
+                        try:
+                            card = AdminCard.objects.get(card_id=card_id) # Get AdminCard by card_id
+                        except AdminCard.DoesNotExist:
+                            messages.error(request, f'Card {card_id} not found.')
+                            raise Exception("Card not found") # Rollback transaction
 
                         if card.library or card.institution or card.gym: # Check if already allocated
                             messages.error(request, f'Card {card.card_id} is already allocated to a library, institution or another gym.')
                             raise Exception("Card already allocated") # Rollback transaction
-                        
+
                         # Allocate the AdminCard to the gym
                         card.gym = gym
                         card.save()
@@ -88,11 +100,42 @@ def allocate_card_to_gym_page(request):
             except Exception as e:
                 messages.error(request, f'Error allocating cards: {e}')
                 return redirect('allocate_card_to_gym_page')
+        elif request.content_type == 'application/json':
+            # Handle AJAX request
+            try:
+                import json
+                data = json.loads(request.body)
+                gym_id = data.get('gym_id')
+                selected_cards_ids = data.get('nfc_serials')
+
+                if not gym_id:
+                    return JsonResponse({'status': 'error', 'message': 'Please select a gym.'})
+                if not selected_cards_ids:
+                    return JsonResponse({'status': 'error', 'message': 'Please select at least one card to allocate.'})
+
+                gym = Gym.objects.get(id=gym_id)
+
+                with transaction.atomic():
+                    for card_id in selected_cards_ids:
+                        try:
+                            card = AdminCard.objects.get(card_id=card_id)
+                        except AdminCard.DoesNotExist:
+                            return JsonResponse({'status': 'error', 'message': f'Card {card_id} not found.'})
+
+                        if card.library or card.institution or card.gym:
+                            return JsonResponse({'status': 'error', 'message': f'Card {card.card_id} is already allocated.'})
+
+                        card.gym = gym
+                        card.save()
+
+                return JsonResponse({'status': 'success', 'message': f'Cards allocated to {gym.venue_name}.'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)})
 
     gym_form = GymForm()
     unallocated_cards = AdminCard.objects.filter(library__isnull=True, institution__isnull=True, gym__isnull=True)
     gyms = Gym.objects.all()
-    
+
     context = {
         'gym_form': gym_form,
         'unallocated_cards': unallocated_cards,
@@ -137,12 +180,8 @@ def deallocate_gym_nfc(request):
             if card.gym is None:
                 return JsonResponse({'error': 'This card is not allocated to any gym'}, status=400)
 
-            # Set user to None in GymCard for this card
+            # Set user to None in GymCard for this card (deallocate from user, keep allocated to gym)
             GymCard.objects.filter(card_id=nfc_serial, gym=card.gym).update(user=None)
-
-            # Remove gym association from the card
-            card.gym = None
-            card.save()
 
             return JsonResponse({'success': True, 'message': 'NFC ID deallocated successfully'})
         except Exception as e:
@@ -279,8 +318,26 @@ def subscribe_to_gym(request, gym_id, plan_id):
 @login_required
 def gym_user_subscriptions(request, gym_id):
     gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
-    subscriptions = GymUserSubscription.objects.filter(subscription__gym=gym)
-    return render(request, 'gym/user_subscriptions.html', {'subscriptions': subscriptions, 'gym': gym})
+    subscriptions = GymUserSubscription.objects.all().select_related('user', 'subscription').filter(subscription__gym=gym).order_by('-id')
+
+    subscriptions_with_color = []
+    for subscription in subscriptions:
+        days_left = subscription.days_left
+        if days_left < 2:
+            color = 'red'
+        elif days_left < 5:
+            color = 'yellow'
+        else:
+            color = 'green'
+        subscriptions_with_color.append({
+            'subscription': subscription,
+            'color': color
+        })
+
+    return render(request, 'gym/user_subscriptions.html', {
+        'subscriptions': subscriptions_with_color,
+        'gym': gym
+    })
 
 @login_required
 def manage_gym_users(request, gym_id):
@@ -448,9 +505,6 @@ def mark_gym_attendance(request, gym_id):
 
         # Check time
         now = timezone.now()
-        if now.time() < gym.opening_time or now.time() > gym.closing_time:
-            errors.append('Gym is closed')
-
         if errors:
             return JsonResponse({'errors': errors}, status=400)
 
@@ -924,6 +978,16 @@ def gym_payment_success(request, gym_id, plan_id):
             transaction_id=transaction_id,
             amount=amount,
             status='pending'
+        )
+
+        # Create user subscription
+        subscription = GymUserSubscription.objects.create(
+            user=request.user,
+            subscription=plan,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=plan.duration_in_months * 30) if plan.duration_in_months else timezone.now().date() + timedelta(hours=plan.duration_in_hours) if plan.duration_in_hours else timezone.now().date(),
+            start_time=timezone.now().time() if plan.duration_in_hours else None,
+            end_time=(timezone.now() + timedelta(hours=plan.duration_in_hours)).time() if plan.duration_in_hours else None
         )
 
         # Increment `times_used` if coupon was used

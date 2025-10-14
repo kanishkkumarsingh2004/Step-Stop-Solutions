@@ -17,8 +17,9 @@ from django.db import transaction
 from django.views.decorators.http import require_POST
 import time
 from django.utils.dateparse import parse_date
-from django.core.exceptions import ValidationError
 logger = logging.getLogger(__name__)
+from gym.models import GymTransaction, GymAttendance
+
 from datetime import date
 from .forms import CustomUserCreationForm, LibraryRegistrationForm, ExpenseForm, CouponForm, BannerForm, LibraryImageForm, HomePageBannerForm, ReviewForm, UserProfileForm
 from .models import (
@@ -65,11 +66,11 @@ def home(request):
         'text_banners': text_banners,
         'image_banners': image_banners
     })
+    
 def dashboard(request):
     # Get subscriptions for the current user with library details
     active_subscriptions = []
     for subscription in UserSubscription.objects.filter(user=request.user).select_related('subscription__library'):
-        # Check if subscription is expired or valid based on end date
         if subscription.end_date and subscription.end_time:
             end_datetime = datetime.combine(subscription.end_date, subscription.end_time)
             end_datetime = timezone.make_aware(end_datetime)
@@ -79,12 +80,10 @@ def dashboard(request):
             else:
                 subscription.status = 'valid'
                 subscription.save()
-        # Get latest transaction for this subscription
         latest_transaction = Transaction.objects.filter(
             subscription=subscription.subscription,
             user=request.user
         ).order_by('-created_at').first()
-        # Determine payment status and color
         if latest_transaction:
             payment_status = latest_transaction.status
             payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
@@ -93,17 +92,14 @@ def dashboard(request):
             payment_status = 'pending'
             payment_color = 'yellow'
             cost = subscription.subscription.normal_price
-        # Get library details for this subscription
         library = subscription.subscription.library
         total_seats = library.capacity if library else 0
         available_seats = library.available_seats if library else 0
-        # Get subscription status
         subscription_status = subscription.status
         days_left = None
         if subscription.end_date:
             today = timezone.localdate() if hasattr(timezone, 'localdate') else date.today()
             days_left = (subscription.end_date - today).days
-        # Determine color based on days left
         if days_left is not None:
             if days_left > 5:
                 status_color = 'green'
@@ -141,15 +137,12 @@ def dashboard(request):
     # Get institute subscriptions with payment status and calculate end date color
     institute_subscriptions = []
     for subscription in InstitutionSubscription.objects.filter(user=request.user).select_related('subscription_plan__institution')[:3]:
-        # Use the payment_status directly from the InstitutionSubscription model
         payment_status = subscription.payment_status
         payment_color = 'green' if payment_status == 'valid' else 'yellow' if payment_status == 'pending' else 'red'
-        # Calculate days left until end_date
         days_left = None
         if subscription.end_date:
             today = timezone.localdate() if hasattr(timezone, 'localdate') else date.today()
             days_left = (subscription.end_date - today).days
-        # Determine color based on days left
         if days_left is not None:
             if days_left > 5:
                 end_date_color = 'green'
@@ -161,7 +154,6 @@ def dashboard(request):
                 end_date_color = 'green'
         else:
             end_date_color = 'red' if subscription.status == 'expired' else 'green'
-        # Check if timetable exists for the institution
         has_timetable = TimetableEntry.objects.filter(institution=subscription.subscription_plan.institution).exists()
         subscription_data = {
             'subscription_plan': subscription.subscription_plan,
@@ -182,13 +174,65 @@ def dashboard(request):
         }
         institute_subscriptions.append(subscription_data)
 
+    # --------- GYM DATA ---------
+    gym_subscriptions = []
+
+    gym_txns = list(
+        GymTransaction.objects.filter(user=request.user, status='valid')
+        .select_related('subscription__gym')
+        .order_by('-created_at')
+    )
+
+    for txn in gym_txns:
+        gym_sub = txn.subscription
+        gym = getattr(gym_sub, 'gym', None)
+        gym_name = getattr(gym, 'venue_name', None) if gym else None
+        gym_address = getattr(gym, 'address', None) if gym else None
+        duration_in_months = getattr(gym_sub, 'duration_in_months', None)
+
+        # Start date from transaction created_at
+        start_date = None
+        if hasattr(txn, 'created_at') and txn.created_at:
+            start_date = txn.created_at.date()
+
+        # Get subscription duration and add to start_date to get end_date
+        end_date = None
+        days_left = None
+        if start_date and duration_in_months:
+            end_date = start_date + timedelta(days=duration_in_months * 30)
+            days_left = (end_date - timezone.localdate()).days if end_date else None
+            if days_left is not None and days_left < 0:
+                days_left = 0
+
+        gym_subscription_data = {
+            'plan': gym_sub,
+            'plan_name': getattr(gym_sub, "name", ""),
+            'gym': gym,
+            'gym_name': gym_name,
+            'gym_address': gym_address,
+            'start_date': start_date,
+            'end_date': end_date,  # Computed from start_date + duration
+            'start_time': None,    # No time field shown/used
+            'end_time': None,      # No time field shown/used
+            'cost': txn.amount,
+            'subscription_status': {
+                'status': 'valid',
+                'color': 'green',
+                'days_left': days_left
+            },
+            'payment_status': {
+                'status': txn.status,
+                'color': 'green'
+            },
+        }
+        gym_subscriptions.append(gym_subscription_data)
 
     context = {
         'active_subscriptions': active_subscriptions,
         'institute_subscriptions': institute_subscriptions,
+        'gym_subscriptions': gym_subscriptions,
     }
     return render(request, 'users_pages/dashboard.html', context)
-
 @login_required
 def admin_dashboard(request):
     if not request.user.is_superuser:

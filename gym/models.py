@@ -121,11 +121,17 @@ class GymUserSubscription(models.Model):
         return f"{self.user.email} - {self.subscription.name}"
 
     def save(self, *args, **kwargs):
-        # Update status based on end date
         today = timezone.now().date()
         if self.end_date < today:
             self.status = 'expired'
         super().save(*args, **kwargs)
+
+    @property
+    def days_left(self):
+        today = timezone.now().date()
+        if self.end_date >= today:
+            return (self.end_date - today).days
+        return 0
 
     class Meta:
         verbose_name = "Gym User Subscription"

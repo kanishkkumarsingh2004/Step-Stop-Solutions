@@ -17,27 +17,35 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Left</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for subscription in subscriptions %}
-                            <tr>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for sub in subscriptions %}
+                            <tr class="{% if sub.color == 'green' %}bg-green-50{% elif sub.color == 'yellow' %}bg-yellow-50{% else %}bg-red-50{% endif %}">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ subscription.user.get_full_name }}
+                                    {{ sub.subscription.user.get_full_name }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ subscription.subscription.name }}
+                                    {{ sub.subscription.subscription.name }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ subscription.start_date }}
+                                    {{ sub.subscription.start_date }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ subscription.end_date }}
+                                    {{ sub.subscription.end_date }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ sub.subscription.days_left }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if subscription.status == 'valid' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                                        {{ subscription.status }}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if sub.color == 'green' %}bg-green-100 text-green-800{% elif sub.color == 'yellow' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                        {% if sub.subscription.days_left > 0 %}
+                                            valid
+                                        {% else %}
+                                            expired
+                                        {% endif %}
                                     </span>
                                 </td>
                             </tr>
@@ -50,12 +58,6 @@
                 <p class="text-gray-500 text-lg">No subscriptions found.</p>
             </div>
         {% endif %}
-
-        <div class="mt-8 flex justify-end">
-            <a href="{% url 'gym_dashboard' gym.id %}" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                Back to Dashboard
-            </a>
-        </div>
     </div>
 </div>
 {% endblock %}
