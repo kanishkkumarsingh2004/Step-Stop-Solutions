@@ -51,6 +51,13 @@ class Gym(models.Model):
             self.available_seats = self.capacity
         super().save(*args, **kwargs)
 
+    @property
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews:
+            return sum(review.rating for review in reviews) / len(reviews)
+        return 0
+
 class GymCard(models.Model):
     card_id = models.CharField(max_length=100, unique=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
@@ -164,3 +171,53 @@ class GymExpense(models.Model):
     def clean(self):
         if self.payment_mode in ['UPI'] and not self.transaction_id:
             raise ValidationError("Transaction ID is required for UPI payments")
+
+class GymReview(models.Model):
+    gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey('library.CustomUser', on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 6)])  # 1 to 5 stars
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review by {self.user.get_full_name()} for {self.gym.venue_name}"
+
+    class Meta:
+        unique_together = ('gym', 'user')  # One review per user per gym
+
+class GymCoupon(models.Model):
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    code = models.CharField(max_length=20, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    max_usage = models.PositiveIntegerField(default=1)
+    times_used = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey('library.CustomUser', on_delete=models.CASCADE, related_name='created_gym_coupons')
+    applicable_plans = models.ManyToManyField('GymSubscriptionPlan', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name='coupons', null=True)
+    def is_valid(self):
+        now = timezone.now()
+        return (
+            self.is_active and
+            self.times_used < self.max_usage and
+            self.valid_from <= now <= self.valid_to
+        )
+
+    def increment_usage(self):
+        self.times_used = models.F('times_used') + 1
+        self.save(update_fields=['times_used'])
+
+    def apply_discount(self, price):
+        if self.discount_type == 'percentage':
+            return price * (1 - self.discount_value / 100)
+        return max(price - self.discount_value, 0)
+
+    def __str__(self):
+        return f"{self.code} ({self.discount_value}{'%' if self.discount_type == 'percentage' else '₹'}) - {self.gym.venue_name if self.gym else 'Global'}"

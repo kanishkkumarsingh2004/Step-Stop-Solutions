@@ -30,4 +30,8 @@ urlpatterns = [
     path('browse/', views.browse_gyms, name='browse_gyms'),
     path('graph/<str:gym_id>/', views.gym_graph, name='gym_graph'),
     path('details/<str:gym_id>/', views.gym_details, name='gym_details'),
+    path('subscription/<str:gym_id>/', views.gym_subscription, name='gym_subscription'),
+    path('coupons/<str:gym_id>/', views.gym_coupon_list, name='gym_coupon_list'),
+    path('coupon/delete/<str:gym_id>/<int:coupon_id>/', views.gym_coupon_delete, name='gym_coupon_delete'),
+    path('coupon/data/<int:coupon_id>/', views.gym_coupon_data, name='gym_coupon_data'),
 ]

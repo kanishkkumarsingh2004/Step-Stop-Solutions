@@ -1,5 +1,5 @@
 from django import forms
-from .models import Gym, GymCard, GymSubscriptionPlan, GymUserSubscription, GymTransaction, GymExpense
+from .models import Gym, GymCard, GymSubscriptionPlan, GymUserSubscription, GymTransaction, GymExpense, GymReview, GymCoupon
 
 class GymForm(forms.ModelForm):
     class Meta:
@@ -69,4 +69,51 @@ class GymExpenseForm(forms.ModelForm):
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'expense_description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class GymReviewForm(forms.ModelForm):
+    class Meta:
+        model = GymReview
+        fields = ['rating', 'comment']
+        widgets = {
+            'rating': forms.Select(attrs={
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'
+            }),
+            'comment': forms.Textarea(attrs={
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out',
+                'rows': 3
+            }),
+        }
+
+class GymCouponForm(forms.ModelForm):
+    class Meta:
+        model = GymCoupon
+        fields = [
+            'code', 'discount_type', 'discount_value', 'valid_from', 'valid_to',
+            'max_usage', 'is_active', 'created_by', 'applicable_plans', 'gym'
+        ]
+        widgets = {
+            'code': forms.TextInput(attrs={
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'
+            }),
+            'discount_type': forms.Select(attrs={
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'
+            }),
+            'discount_value': forms.NumberInput(attrs={
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'
+            }),
+            'max_usage': forms.NumberInput(attrs={
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'
+            }),
+            'valid_from': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'
+            }),
+            'valid_to': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'block w-full rounded-lg border-2 border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 ease-in-out'
+            }),
+            'applicable_plans': forms.CheckboxSelectMultiple(attrs={
+                'class': 'space-y-2'
+            }),
         }

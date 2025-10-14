@@ -1,12 +1,13 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Gym, GymCard, GymAttendance, GymSubscriptionPlan, GymUserSubscription, GymTransaction, GymExpense
-from .forms import GymForm, GymRegistrationForm, GymUPIForm, GymSubscriptionPlanForm, GymUserSubscriptionForm, GymTransactionForm, GymExpenseForm
+from .models import Gym, GymCard, GymAttendance, GymSubscriptionPlan, GymUserSubscription, GymTransaction, GymExpense, GymCoupon
+from .forms import GymForm, GymRegistrationForm, GymUPIForm, GymSubscriptionPlanForm, GymUserSubscriptionForm, GymTransactionForm, GymExpenseForm, GymReviewForm, GymCouponForm
 from library.models import AdminCard, CustomUser
 from django.contrib import messages
 from django.db import models, transaction
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
+from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied
@@ -644,14 +645,11 @@ def gym_graph(request, gym_id):
 
 def gym_details(request, gym_id):
     gym = get_object_or_404(Gym, id=gym_id, is_approved=True)
-    # Gather reviews and compute average rating, if relevant
-    reviews = gym.reviews.select_related('user').all() if hasattr(gym, 'reviews') else []
-    average_rating = getattr(gym, 'average_rating', None)
-    # Prepare extra details if needed, e.g., subscription plans
-    subscription_plans = gym.subscriptionplan_set.all() if hasattr(gym, 'subscriptionplan_set') else []
+    reviews = gym.reviews.select_related('user').all()
+    average_rating = gym.average_rating
+    subscription_plans = gym.subscription_plans.all()
 
     # Parse social media links into a list of dicts: [{"url": ..., "display": ...}]
-    # Expecting gym.social_media_links as comma separated list of URLs (optionally with "name|url" format)
     social_links = []
     if gym.social_media_links:
         for raw_item in gym.social_media_links.split(','):
@@ -668,11 +666,151 @@ def gym_details(request, gym_id):
                 "display": display,
             })
 
+    # Check if user has already reviewed this gym
+    user_has_reviewed = gym.reviews.filter(user=request.user).exists()
+
+    if request.method == 'POST' and not user_has_reviewed:
+        form = GymReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.gym = gym
+            review.user = request.user
+            review.save()
+            messages.success(request, 'Your review has been submitted!')
+            return redirect('gym_details', gym_id=gym_id)
+    else:
+        form = GymReviewForm()
+
     context = {
         'gym': gym,
         'reviews': reviews,
         'average_rating': average_rating,
         'subscription_plans': subscription_plans,
         'social_links': social_links,
+        'form': form,
+        'user_has_reviewed': user_has_reviewed,
     }
     return render(request, 'gym/gym_details.html', context)
+
+@login_required
+def gym_subscription(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    subscriptions = list(gym.subscription_plans.all())
+
+    # Enhance subscription plans with display fields
+    for plan in subscriptions:
+        # Duration display
+        months = getattr(plan, 'duration_in_months', None)
+        hours = getattr(plan, 'duration_in_hours', None)
+        duration_parts = []
+        if months:
+            duration_parts.append(f"{months} month{'s' if months != 1 else ''}")
+        if hours:
+            duration_parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        if duration_parts:
+            plan.duration_display = " + ".join(duration_parts)
+        else:
+            plan.duration_display = "N/A"
+        # Price display
+        try:
+            plan.normal_price_display = f"₹{float(plan.normal_price):,.2f}" if plan.normal_price is not None else "-"
+        except Exception:
+            plan.normal_price_display = "-"
+        try:
+            plan.discount_price_display = (
+                f"₹{float(plan.discount_price):,.2f}" if plan.discount_price else "-"
+            )
+        except Exception:
+            plan.discount_price_display = "-"
+
+    context = {
+        'gym': gym,
+        'subscriptions': subscriptions,
+    }
+    return render(request, 'gym/gym_subscription.html', context)
+
+
+# --- REWRITTEN TO CATCH MISSING/MIGRATION ISSUES FOR gym_gymcoupon TABLE ---
+
+from django.db import ProgrammingError, OperationalError
+
+@login_required
+def gym_coupon_list(request, gym_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    coupons = GymCoupon.objects.filter(gym=gym)
+
+    if request.method == "POST":
+        # Add or update logic, based on POST param "coupon_id"
+        coupon_id = request.POST.get("coupon_id")
+        if coupon_id:
+            try:
+                coupon_instance = GymCoupon.objects.get(pk=coupon_id, gym=gym)
+                form = GymCouponForm(request.POST, instance=coupon_instance)
+                submit_type = "edit"
+            except GymCoupon.DoesNotExist:
+                form = GymCouponForm(request.POST, initial={'gym': gym, 'created_by': request.user})
+                submit_type = "create"
+        else:
+            form = GymCouponForm(request.POST, initial={'gym': gym, 'created_by': request.user})
+            submit_type = "create"
+
+        if form.is_valid():
+            coupon = form.save(commit=False)
+            coupon.gym = gym
+            if not coupon_id:
+                coupon.created_by = request.user
+            coupon.save()
+            if 'applicable_plans' in form.cleaned_data:
+                coupon.applicable_plans.set(form.cleaned_data['applicable_plans'])
+            else:
+                coupon.applicable_plans.clear()
+            if submit_type == "edit":
+                messages.success(request, "Coupon updated successfully!")
+            else:
+                messages.success(request, "Coupon created successfully!")
+            return redirect('gym_coupon_list', gym_id=gym.id)
+    else:
+        form = GymCouponForm(initial={'gym': gym, 'created_by': request.user})
+
+    return render(request, 'gym/gym_coupon_list.html', {
+        'gym': gym,
+        'coupons': coupons,
+        'form': form,
+    })
+
+
+@login_required
+def gym_coupon_data(request, coupon_id):
+    try:
+        coupon = GymCoupon.objects.get(pk=coupon_id)
+        # Check if user owns the gym
+        if coupon.gym.owner != request.user:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        data = {
+            'code': coupon.code,
+            'discount_type': coupon.discount_type,
+            'discount_value': str(coupon.discount_value),
+            'max_usage': coupon.max_usage,
+            'valid_from': coupon.valid_from.strftime('%Y-%m-%dT%H:%M'),
+            'valid_to': coupon.valid_to.strftime('%Y-%m-%dT%H:%M'),
+            'is_active': coupon.is_active,
+            'applicable_plans': list(coupon.applicable_plans.values_list('id', flat=True)),
+        }
+        return JsonResponse(data)
+    except GymCoupon.DoesNotExist:
+        return JsonResponse({'error': 'Coupon not found'}, status=404)
+
+@csrf_exempt
+@login_required
+@require_POST
+def gym_coupon_delete(request, gym_id, coupon_id):
+    gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
+    try:
+        coupon = GymCoupon.objects.get(pk=coupon_id, gym=gym)
+        coupon.delete()
+        return JsonResponse({'success': True, 'message': "Coupon deleted successfully!"})
+    except GymCoupon.DoesNotExist:
+        return JsonResponse({'success': False, 'message': "Coupon not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+

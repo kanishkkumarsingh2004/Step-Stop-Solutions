@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6">
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
+                <i class="bi bi-ticket-perforated text-pink-500 mr-1"></i> Manage Gym Coupons
+            </h1>
+            <p class="text-gray-600 mt-2">Create, edit, and manage discount coupons for <span class="font-semibold">{{ gym.venue_name }}</span></p>
+        </div>
+        <button onclick="openModal()" class="bg-pink-600 hover:bg-pink-700 text-white font-medium px-6 py-2 rounded-xl shadow">
+            <i class="bi bi-plus-circle mr-2"></i>Add Coupon
+        </button>
+    </div>
+
+    {# Show Django messages #}
+    {% if messages %}
+        <div class="mb-4 space-y-2">
+            {% for message in messages %}
+                <div class="rounded px-4 py-2 {{ message.tags }} bg-{{ message.tags|default:"gray" }}-50 text-{{ message.tags|default:"gray" }}-800 text-sm">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+
+
+     <div class="bg-white shadow rounded-xl p-6">
+        <h2 class="text-lg font-semibold text-gray-700 mb-3">Existing Coupons</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="py-2 px-3 font-semibold text-gray-700">Code</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Type</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Value</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Period</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Max</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Used</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Active</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Plans</th>
+                        <th class="py-2 px-3 font-semibold text-gray-700">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if coupons is not None %}
+                        {% for coupon in coupons %}
+                            <tr class="{% if not coupon.is_active %}bg-gray-100{% elif coupon.valid_to < now %}bg-yellow-50{% endif %}">
+                                <td class="py-2 px-3 font-mono">{{ coupon.code }}</td>
+                                <td class="py-2 px-3 capitalize">{{ coupon.get_discount_type_display }}</td>
+                                <td class="py-2 px-3">
+                                    {% if coupon.discount_type == "percentage" %}
+                                        {{ coupon.discount_value|stringformat:"g" }}%
+                                    {% else %}
+                                        ₹{{ coupon.discount_value|stringformat:"g" }}
+                                    {% endif %}
+                                </td>
+                                <td class="py-2 px-3">
+                                    <span class="block text-xs text-gray-600">{{ coupon.valid_from|date:"Y-m-d H:i" }}</span>
+                                    <span class="block text-xs text-gray-500">to</span>
+                                    <span class="block text-xs text-gray-600">{{ coupon.valid_to|date:"Y-m-d H:i" }}</span>
+                                </td>
+                                <td class="py-2 px-3">{{ coupon.max_usage }}</td>
+                                <td class="py-2 px-3">{{ coupon.times_used }}</td>
+                                <td class="py-2 px-3">
+                                    {% if coupon.is_active %}
+                                        <span class="inline-block px-2 py-0.5 text-green-800 bg-green-100 rounded text-xs">Yes</span>
+                                    {% else %}
+                                        <span class="inline-block px-2 py-0.5 text-red-700 bg-red-100 rounded text-xs">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-2 px-3">
+                                    {% if coupon.applicable_plans.exists %}
+                                        <ul class="list-disc list-inside space-y-0.5">
+                                            {% for plan in coupon.applicable_plans.all %}
+                                                <li>{{ plan.name }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="text-gray-400">All</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-2 px-3">
+                                    <button onclick="openModal(true, '{{ coupon.id }}')" class="text-blue-600 hover:text-blue-800 underline mr-2"><i class="bi bi-pencil-square"></i></button>
+                                    <button type="button" onclick="deleteCoupon('{{ coupon.id }}')" class="text-red-600 hover:text-red-800 underline"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-gray-400 text-center py-6">No coupons found.</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-gray-400 text-center py-6">Coupons data unavailable (migration required).</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Coupon -->
+<div id="couponModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900" id="modalTitle">Create Coupon</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form id="couponForm" method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="coupon_id" id="couponId">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Coupon Code</label>
+                        {{ form.code }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Discount Type</label>
+                        {{ form.discount_type }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Discount Value</label>
+                        {{ form.discount_value }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Maximum Usage</label>
+                        {{ form.max_usage }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Valid From</label>
+                        {{ form.valid_from }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Valid To</label>
+                        {{ form.valid_to }}
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Applicable Plans</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {{ form.applicable_plans }}
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="id_is_active" name="is_active" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                        <label for="id_is_active" class="ml-2 text-sm font-medium text-gray-600">Active?</label>
+                    </div>
+                </div>
+                {# Hidden fields #}
+                {{ form.gym.as_hidden }}
+                {{ form.created_by.as_hidden }}
+                <div class="flex justify-end space-x-3 mt-4">
+                    <button type="button" onclick="closeModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-4 py-2 rounded-xl">Cancel</button>
+                    <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white font-medium px-6 py-2 rounded-xl shadow">Save Coupon</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function deleteCoupon(couponId) {
+        if (!confirm("Are you sure you want to delete this coupon? This cannot be undone.")) {
+            return;
+        }
+        fetch("{% url 'gym_coupon_delete' gym.id 0 %}".replace('0', couponId), {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Accept": "application/json"
+            }
+        }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert("Delete failed: " + data.message);
+                }
+            })
+            .catch(error => alert("Error deleting coupon."));
+    }
+
+    function openModal(edit = false, couponId = null) {
+        const modal = document.getElementById('couponModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const couponIdInput = document.getElementById('couponId');
+
+        if (edit && couponId) {
+            modalTitle.textContent = 'Edit Coupon';
+            couponIdInput.value = couponId;
+            // Populate form with existing data via AJAX
+            fetch(`{% url 'gym_coupon_data' 0 %}`.replace('0', couponId), {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('id_code').value = data.code;
+                document.getElementById('id_discount_type').value = data.discount_type;
+                document.getElementById('id_discount_value').value = data.discount_value;
+                document.getElementById('id_max_usage').value = data.max_usage;
+                document.getElementById('id_valid_from').value = data.valid_from;
+                document.getElementById('id_valid_to').value = data.valid_to;
+                document.getElementById('id_is_active').checked = data.is_active;
+                // Handle applicable_plans - set selected checkboxes
+                if (data.applicable_plans) {
+                    data.applicable_plans.forEach(planId => {
+                        const checkbox = document.getElementById(`id_applicable_plans_${planId}`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error fetching coupon data:', error));
+        } else {
+            modalTitle.textContent = 'Create Coupon';
+            couponIdInput.value = '';
+            // Reset form
+            document.getElementById('couponForm').reset();
+            // Uncheck all applicable plans checkboxes
+            const checkboxes = document.querySelectorAll('input[name="applicable_plans"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('couponModal');
+        modal.classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('couponModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+</script>
+{% endblock %}
